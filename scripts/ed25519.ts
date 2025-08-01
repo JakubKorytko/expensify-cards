@@ -36,4 +36,25 @@ function generateKey(updateCallback: (token: string | undefined) => void) {
   return ed.etc.bytesToHex(keys.publicKey);
 }
 
-export default generateKey;
+function randomToken() {
+  const token = ed.etc.randomBytes(8);
+
+  return {
+    bytes: token,
+    hex: ed.etc.bytesToHex(token),
+  };
+}
+
+function signToken(token: string) {
+  if (!keyStorage.key) {
+    throw new Error("Key is required!");
+  }
+
+  return ed.etc.bytesToHex(ed.sign(token, keyStorage.key));
+}
+
+function verifyToken(signature: string, token: string, publicKey: string) {
+  return ed.verify(signature, token, publicKey);
+}
+
+export { generateKey, randomToken, signToken, verifyToken };
