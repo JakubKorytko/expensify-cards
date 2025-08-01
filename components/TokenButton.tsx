@@ -1,11 +1,13 @@
-import { Text, TouchableOpacity } from "react-native";
+import { Text, TouchableOpacity, ViewStyle } from "react-native";
 
 function TokenButton({
   callback,
   buttonText,
+  containerStyle = {},
 }: {
   callback: () => void;
   buttonText: string;
+  containerStyle?: ViewStyle;
 }) {
   return (
     <TouchableOpacity
@@ -18,6 +20,7 @@ function TokenButton({
         borderRadius: 9999,
         height: 50,
         backgroundColor: "#03d47c",
+        ...containerStyle,
       }}
     >
       <Text

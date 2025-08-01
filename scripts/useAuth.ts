@@ -1,20 +1,15 @@
 import { useState } from "react";
-
-declare global {
-  function REVOKE_TOKEN(): void;
-}
-
-const TOKEN = "abcdefghijklmnopqrst";
+import generateKey from "@/scripts/generateKey";
 
 function useAuth() {
   const [token, setToken] = useState<string | undefined>(undefined);
 
-  global.REVOKE_TOKEN = () => {
-    setToken(undefined);
+  const tokenUpdate = (token: string | undefined) => {
+    setToken(token);
   };
 
   const requestToken = () => {
-    setToken(TOKEN);
+    setToken(generateKey(tokenUpdate));
   };
 
   return [token, requestToken] as [string | undefined, () => void];

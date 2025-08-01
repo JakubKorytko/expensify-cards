@@ -1,6 +1,14 @@
-import { Text, View } from "react-native";
+import { Text, TextStyle, View } from "react-native";
 import useAuth from "@/scripts/useAuth";
 import TokenButton from "@/components/TokenButton";
+import keyStorage from "@/scripts/keyStorage";
+
+const textStyle: TextStyle = {
+  color: "white",
+  fontSize: 25,
+  fontWeight: "bold",
+  textAlign: "center",
+};
 
 function SecretInfo() {
   const [token, requestToken] = useAuth();
@@ -11,27 +19,38 @@ function SecretInfo() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
+        gap: 40,
         width: "80%",
       }}
     >
-      <Text
+      <View
         style={{
-          marginBottom: 40,
-          color: "white",
-          fontSize: 25,
-          fontWeight: "bold",
-          textAlign: "center",
+          display: "flex",
+          gap: 15,
         }}
       >
-        {token
-          ? `Token: ${token}`
-          : "Click on the button below to reveal the secret!"}
-      </Text>
-      {!!token ? (
-        <TokenButton callback={global.REVOKE_TOKEN} buttonText="Revoke token" />
-      ) : (
-        <TokenButton callback={requestToken} buttonText="Secret Reveal" />
-      )}
+        <Text
+          style={{
+            ...textStyle,
+            backgroundColor: "black",
+            borderRadius: 40,
+            padding: 20,
+          }}
+        >
+          Public key: {token}
+        </Text>
+        <Text style={textStyle}>
+          Click on the button below to reveal the secret!
+        </Text>
+      </View>
+      <TokenButton callback={requestToken} buttonText="Generate key pair" />
+      <TokenButton
+        callback={keyStorage.revoke}
+        buttonText="Revoke token"
+        containerStyle={{
+          marginTop: -20,
+        }}
+      />
     </View>
   );
 }
