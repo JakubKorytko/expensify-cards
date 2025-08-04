@@ -1,4 +1,5 @@
 import { Bytes } from "@noble/ed25519";
+import api from "@/api";
 
 type Storage = {
   revoke(): void;
@@ -17,6 +18,7 @@ storage.update = (token: string | undefined) => {
 
 storage.revoke = () => {
   storage.key = undefined;
+  api.revokeKey();
   storage.update?.(undefined);
 };
 

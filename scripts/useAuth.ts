@@ -1,21 +1,41 @@
 import { useState } from "react";
-import { generateKey } from "@/scripts/ed25519";
+import { generateKey, signToken } from "@/scripts/ed25519";
 import onyxStorage from "@/scripts/onyxStorage";
+import api from "@/api";
 
 function useAuth() {
-  const [token, setToken] = useState<string | undefined>(undefined);
+  const [key, setKey] = useState<string | undefined>(onyxStorage.publicKey);
 
-  const tokenUpdate = (token: string | undefined) => {
-    setToken(token);
+  const keyUpdate = (key: string | undefined) => {
+    setKey(key);
   };
 
-  const requestToken = () => {
-    const generatedToken = generateKey(tokenUpdate);
-    onyxStorage.publicKey = generatedToken;
-    setToken(generatedToken);
+  const requestKey = async () => {
+    const generatedKey = generateKey(keyUpdate);
+
+    if (generatedKey instanceof Error) {
+      return;
+    }
+
+    const result = await api("/key", {
+      key: generatedKey,
+    });
+
+    const message = await result.text();
+
+    if (message === "Key error") {
+      return;
+    }
+
+    onyxStorage.publicKey = generatedKey;
+    setKey(generatedKey);
   };
 
-  return [token, requestToken] as [string | undefined, () => void];
+  return {
+    key,
+    generate: requestKey,
+    sign: signToken,
+  };
 }
 
 export default useAuth;

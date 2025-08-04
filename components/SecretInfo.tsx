@@ -30,28 +30,28 @@ const innerStyles: {
 };
 
 function SecretInfo() {
-  const [token, requestToken] = useAuth();
+  const { key, generate } = useAuth();
   const router = useRouter();
 
   return (
     <View style={styles.container}>
       <View style={innerStyles.container}>
-        <Text style={innerStyles.text}>Public key: {token}</Text>
+        <Text style={innerStyles.text}>Public key: {key}</Text>
         <Text style={styles.text}>
           Click on the button below to reveal the secret!
         </Text>
       </View>
       <TokenButton
-        callback={requestToken}
+        callback={generate}
         buttonText="Generate key pair"
-        containerStyle={!!token ? innerStyles.bgRed : undefined}
+        containerStyle={!!key ? innerStyles.bgRed : undefined}
       />
       <TokenButton
         callback={keyStorage.revoke}
         buttonText="Revoke token"
         containerStyle={innerStyles.mtn20}
       />
-      {!!token && (
+      {!!key && (
         <TokenButton
           callback={() => router.navigate("/signToken")}
           buttonText="Sign a token"

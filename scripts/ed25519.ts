@@ -26,7 +26,7 @@ function generateKeyPair() {
 
 function generateKey(updateCallback: (token: string | undefined) => void) {
   if (keyStorage.key) {
-    throw new Error("Key is already stored!");
+    return new Error("Key is already stored!");
   }
 
   const keys = generateKeyPair();
@@ -34,15 +34,6 @@ function generateKey(updateCallback: (token: string | undefined) => void) {
   keyStorage.updateCallback = updateCallback;
 
   return ed.etc.bytesToHex(keys.publicKey);
-}
-
-function randomToken() {
-  const token = ed.etc.randomBytes(8);
-
-  return {
-    bytes: token,
-    hex: ed.etc.bytesToHex(token),
-  };
 }
 
 function signToken(token: string) {
@@ -53,8 +44,4 @@ function signToken(token: string) {
   return ed.etc.bytesToHex(ed.sign(token, keyStorage.key));
 }
 
-function verifyToken(signature: string, token: string, publicKey: string) {
-  return ed.verify(signature, token, publicKey);
-}
-
-export { generateKey, randomToken, signToken, verifyToken };
+export { generateKey, signToken };
