@@ -2,7 +2,6 @@ import * as ed from "@noble/ed25519";
 import "react-native-get-random-values";
 import { sha512 } from "@noble/hashes/sha2";
 import { Bytes } from "@noble/ed25519";
-import keyStorage from "@/scripts/keyStorage";
 
 ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
 ed.etc.sha512Async = (...m) =>
@@ -24,24 +23,17 @@ function generateKeyPair() {
   };
 }
 
-function generateKey(updateCallback: (token: string | undefined) => void) {
-  if (keyStorage.key) {
-    return new Error("Key is already stored!");
-  }
-
+async function generateKeys() {
   const keys = generateKeyPair();
-  keyStorage.key = keys.privateKey;
-  keyStorage.updateCallback = updateCallback;
 
-  return ed.etc.bytesToHex(keys.publicKey);
+  return {
+    privateKey: ed.etc.bytesToHex(keys.privateKey),
+    publicKey: ed.etc.bytesToHex(keys.publicKey),
+  };
 }
 
-function signToken(token: string) {
-  if (!keyStorage.key) {
-    throw new Error("Key is required!");
-  }
-
-  return ed.etc.bytesToHex(ed.sign(token, keyStorage.key));
+function signToken(token: string, key: string) {
+  return ed.etc.bytesToHex(ed.sign(token, key));
 }
 
-export { generateKey, signToken };
+export { generateKeys, signToken };

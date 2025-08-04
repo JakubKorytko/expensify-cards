@@ -1,7 +1,6 @@
 import { Text, TextStyle, View, ViewStyle } from "react-native";
 import useAuth from "@/scripts/useAuth";
 import TokenButton from "@/components/TokenButton";
-import keyStorage from "@/scripts/keyStorage";
 import { useRouter } from "expo-router";
 import styles from "@/styles";
 
@@ -30,7 +29,7 @@ const innerStyles: {
 };
 
 function SecretInfo() {
-  const { key, generate } = useAuth();
+  const { key, generate, revoke } = useAuth();
   const router = useRouter();
 
   return (
@@ -47,7 +46,7 @@ function SecretInfo() {
         containerStyle={!!key ? innerStyles.bgRed : undefined}
       />
       <TokenButton
-        callback={keyStorage.revoke}
+        callback={revoke}
         buttonText="Revoke token"
         containerStyle={innerStyles.mtn20}
       />

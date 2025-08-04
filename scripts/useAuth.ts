@@ -1,24 +1,28 @@
-import { useState } from "react";
-import { generateKey, signToken } from "@/scripts/ed25519";
-import onyxStorage from "@/scripts/onyxStorage";
+import { useEffect, useState } from "react";
+import { generateKeys, signToken as signTokenED25519 } from "@/scripts/ed25519";
 import api from "@/api";
+import { PrivateKeyStorage, PublicKeyStorage } from "@/scripts/keyStorage";
 
 function useAuth() {
-  const [key, setKey] = useState<string | undefined>(onyxStorage.publicKey);
+  const [key, setKey] = useState<string | undefined>();
 
-  const keyUpdate = (key: string | undefined) => {
-    setKey(key);
-  };
+  useEffect(() => {
+    PublicKeyStorage.get().then((key) => {
+      setKey(key ? key : undefined);
+    });
+  });
 
   const requestKey = async () => {
-    const generatedKey = generateKey(keyUpdate);
+    const { privateKey, publicKey } = await generateKeys();
 
-    if (generatedKey instanceof Error) {
-      return;
+    const setResult = await PrivateKeyStorage.set(privateKey);
+
+    if (!setResult) {
+      return new Error("Key is already stored!");
     }
 
     const result = await api("/key", {
-      key: generatedKey,
+      key: publicKey,
     });
 
     const message = await result.text();
@@ -27,14 +31,31 @@ function useAuth() {
       return;
     }
 
-    onyxStorage.publicKey = generatedKey;
-    setKey(generatedKey);
+    await PublicKeyStorage.set(publicKey);
+    setKey(publicKey);
+  };
+
+  const signToken = async (token: string) => {
+    const key = await PrivateKeyStorage.get();
+
+    if (!key) {
+      return new Error("Key is required!");
+    }
+
+    return signTokenED25519(token, key);
+  };
+
+  const revokeKey = async () => {
+    await PrivateKeyStorage.delete();
+    await PublicKeyStorage.delete();
+    await api.revokeKey();
   };
 
   return {
     key,
     generate: requestKey,
     sign: signToken,
+    revoke: revokeKey,
   };
 }
 

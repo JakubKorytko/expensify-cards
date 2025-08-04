@@ -1,4 +1,4 @@
-const SERVER_URL = "http://IP_SERWERA:3000";
+const SERVER_URL = "http://192.168.82.143:3000";
 
 const api = async (path: string, body?: object) => {
   if (!body) {

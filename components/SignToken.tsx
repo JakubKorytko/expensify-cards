@@ -33,9 +33,12 @@ function SignToken() {
     setToken(tokenData);
   };
 
-  const saveSignedToken = () => {
+  const saveSignedToken = async () => {
     if (!token.hex) return;
-    setSignedToken(sign(token.hex));
+    const signResult = await sign(token.hex);
+    if (signResult instanceof Error) return;
+
+    setSignedToken(signResult);
   };
 
   const verifySignedToken = async () => {
