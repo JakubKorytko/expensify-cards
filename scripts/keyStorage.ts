@@ -1,7 +1,9 @@
 import * as SecureStore from "expo-secure-store";
 
 async function setKey(key: string, value: string) {
-  await SecureStore.setItemAsync(key, value);
+  await SecureStore.setItemAsync(key, value, {
+    requireAuthentication: key === "3DS_SCA_KEY_PRIVATE",
+  });
 }
 
 async function getKey(key: string) {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { generateKeys, signToken as signTokenED25519 } from "@/scripts/ed25519";
+import { generateKeys } from "@/scripts/ed25519";
 import api from "@/api";
 import { PrivateKeyStorage, PublicKeyStorage } from "@/scripts/keyStorage";
 
@@ -35,16 +35,6 @@ function useAuth() {
     setKey(publicKey);
   };
 
-  const signToken = async (token: string) => {
-    const key = await PrivateKeyStorage.get();
-
-    if (!key) {
-      return new Error("Key is required!");
-    }
-
-    return signTokenED25519(token, key);
-  };
-
   const revokeKey = async () => {
     await PrivateKeyStorage.delete();
     await PublicKeyStorage.delete();
@@ -54,7 +44,6 @@ function useAuth() {
   return {
     key,
     generate: requestKey,
-    sign: signToken,
     revoke: revokeKey,
   };
 }
