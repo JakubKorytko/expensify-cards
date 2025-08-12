@@ -1,5 +1,37 @@
+diff --git a/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/AuthenticationHelper.kt b/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/AuthenticationHelper.kt
+index 62a9908..56453e1 100644
+--- a/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/AuthenticationHelper.kt
++++ b/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/AuthenticationHelper.kt
+@@ -57,25 +57,8 @@ class AuthenticationHelper(
+   }
+ 
+   fun assertBiometricsSupport() {
+-    val biometricManager = BiometricManager.from(context)
+-    @SuppressLint("SwitchIntDef") // BiometricManager.BIOMETRIC_SUCCESS shouldn't do anything
+-    when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)) {
+-      BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE, BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> {
+-        throw AuthenticationException("No hardware available for biometric authentication. Use expo-local-authentication to check if the device supports it")
+-      }
+-      BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
+-        throw AuthenticationException("No biometrics are currently enrolled")
+-      }
+-      BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED -> {
+-        throw AuthenticationException("An update is required before the biometrics can be used")
+-      }
+-      BiometricManager.BIOMETRIC_ERROR_UNSUPPORTED -> {
+-        throw AuthenticationException("Biometric authentication is unsupported")
+-      }
+-      BiometricManager.BIOMETRIC_STATUS_UNKNOWN -> {
+-        throw AuthenticationException("Biometric authentication status is unknown")
+-      }
+-    }
++    // This needs to be handled correctly, removed for now.
++    return
+   }
+ 
+   private fun getCurrentActivity(): Activity? {
 diff --git a/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/AuthenticationPrompt.kt b/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/AuthenticationPrompt.kt
-index e5729cc..e9108c9 100644
+index e5729cc..453d5fa 100644
 --- a/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/AuthenticationPrompt.kt
 +++ b/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/AuthenticationPrompt.kt
 @@ -1,5 +1,7 @@
@@ -10,15 +42,44 @@ index e5729cc..e9108c9 100644
  import android.content.Context
  import androidx.biometric.BiometricPrompt
  import androidx.biometric.BiometricPrompt.PromptInfo
-@@ -15,7 +17,10 @@ class AuthenticationPrompt(private val currentActivity: FragmentActivity, contex
+@@ -15,7 +17,7 @@ class AuthenticationPrompt(private val currentActivity: FragmentActivity, contex
    private var executor: Executor = ContextCompat.getMainExecutor(context)
    private var promptInfo = PromptInfo.Builder()
      .setTitle(title)
 -    .setNegativeButtonText(context.getString(android.R.string.cancel))
-+    .setDescription("Please authenticate using your biometrics or device PIN")
-+    .setSubtitle("Login to proceed")
 +    .setAllowedAuthenticators(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)
-+    .setConfirmationRequired(true)
      .build()
  
    suspend fun authenticate(cipher: Cipher): BiometricPrompt.AuthenticationResult? =
+diff --git a/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/encryptors/AESEncryptor.kt b/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/encryptors/AESEncryptor.kt
+index 3a12dc9..f111a54 100644
+--- a/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/encryptors/AESEncryptor.kt
++++ b/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/encryptors/AESEncryptor.kt
+@@ -1,9 +1,11 @@
+ package expo.modules.securestore.encryptors
+ 
+ import android.annotation.TargetApi
++import android.os.Build
+ import android.security.keystore.KeyGenParameterSpec
+ import android.security.keystore.KeyProperties
+ import android.util.Base64
++import androidx.annotation.RequiresApi
+ import expo.modules.securestore.AuthenticationHelper
+ import expo.modules.securestore.DecryptException
+ import expo.modules.securestore.SecureStoreModule
+@@ -50,6 +52,7 @@ class AESEncryptor : KeyBasedEncryptor<KeyStore.SecretKeyEntry> {
+     return "${getKeyStoreAlias(options)}:$suffix"
+   }
+ 
++  @RequiresApi(Build.VERSION_CODES.R)
+   @TargetApi(23)
+   @Throws(GeneralSecurityException::class)
+   override fun initializeKeyStoreEntry(keyStore: KeyStore, options: SecureStoreOptions): KeyStore.SecretKeyEntry {
+@@ -61,6 +64,7 @@ class AESEncryptor : KeyBasedEncryptor<KeyStore.SecretKeyEntry> {
+       .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+       .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+       .setUserAuthenticationRequired(options.requireAuthentication)
++      .setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG or KeyProperties.AUTH_DEVICE_CREDENTIAL)
+       .build()
+ 
+     val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, keyStore.provider)

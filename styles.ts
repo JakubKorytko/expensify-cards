@@ -1,20 +1,17 @@
 import { ImageStyle, TextStyle, ViewStyle } from "react-native";
 
 type Styles = {
-  text: TextStyle;
   container: ViewStyle;
-  textBlackBG: TextStyle;
   layoutContainer: ViewStyle;
   logoImage: ImageStyle;
+  button: ViewStyle;
+  floatingButton: ViewStyle;
+  whiteText: TextStyle;
+  buttonText: TextStyle;
+  mtn25: TextStyle;
 };
 
 const styles: Styles = {
-  text: {
-    color: "white",
-    fontSize: 25,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
   container: {
     display: "flex",
     justifyContent: "center",
@@ -22,21 +19,46 @@ const styles: Styles = {
     gap: 40,
     width: "80%",
   },
-  textBlackBG: {
-    backgroundColor: "black",
-    borderRadius: 40,
-    padding: 20,
-  },
   layoutContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#051c09",
+    backgroundColor: "#FCFBF9",
     gap: 40,
   },
   logoImage: {
     width: 200,
     height: 200,
+  },
+  button: {
+    width: 200,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 9999,
+    height: 50,
+    backgroundColor: "#03d47c",
+  },
+  floatingButton: {
+    position: "absolute",
+    top: 0,
+    backgroundColor: "#051c09",
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingBottom: 10,
+  },
+  whiteText: {
+    color: "white",
+  },
+  buttonText: {
+    fontWeight: "bold",
+    color: "white",
+    fontSize: 15,
+  },
+  mtn25: {
+    marginTop: -25,
   },
 };
 

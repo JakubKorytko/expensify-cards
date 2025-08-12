@@ -23,7 +23,7 @@ function generateKeyPair() {
   };
 }
 
-async function generateKeys() {
+function generateKeys() {
   const keys = generateKeyPair();
 
   return {

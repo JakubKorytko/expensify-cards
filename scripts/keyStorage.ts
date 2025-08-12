@@ -1,41 +1,129 @@
 import * as SecureStore from "expo-secure-store";
+import {
+  authReasonCodes,
+  AuthReturnValue,
+  PRIVATE_KEY,
+  PUBLIC_KEY,
+} from "@/scripts/authCodes";
 
-async function setKey(key: string, value: string) {
-  await SecureStore.setItemAsync(key, value, {
-    requireAuthentication: key === "3DS_SCA_KEY_PRIVATE",
-  });
+function decodeExpoErrorCode(error: unknown) {
+  const errorString = String(error);
+  return (errorString.split("Caused by:").at(-1) ?? errorString).trim();
 }
 
-async function getKey(key: string) {
-  return await SecureStore.getItemAsync(key);
+async function setKey(
+  key: string,
+  value: string,
+): Promise<AuthReturnValue<boolean>> {
+  try {
+    await SecureStore.setItemAsync(key, value, {
+      requireAuthentication: key === PRIVATE_KEY,
+    });
+    return {
+      value: true,
+      reason: authReasonCodes.keySavedInSecureStore,
+    };
+  } catch (error) {
+    return {
+      value: false,
+      reason: decodeExpoErrorCode(error),
+    };
+  }
 }
 
-async function revokeKey(key: string) {
-  await SecureStore.deleteItemAsync(key);
+async function getKey(key: string): Promise<AuthReturnValue<string | null>> {
+  try {
+    const retrievedKey = await SecureStore.getItemAsync(key);
+    return {
+      value: retrievedKey,
+      reason: authReasonCodes.keyRetrievedFromSecureStore,
+    };
+  } catch (error) {
+    return {
+      value: null,
+      reason: decodeExpoErrorCode(error),
+    };
+  }
+}
+
+async function revokeKey(key: string): Promise<AuthReturnValue<boolean>> {
+  try {
+    await SecureStore.deleteItemAsync(key);
+    return {
+      value: true,
+      reason: authReasonCodes.keyDeletedSuccessfully,
+    };
+  } catch (error) {
+    return {
+      value: false,
+      reason: decodeExpoErrorCode(error),
+    };
+  }
 }
 
 class KeyStorage {
-  key: "3DS_SCA_KEY_PRIVATE" | "3DS_SCA_KEY_PUBLIC";
+  key: typeof PRIVATE_KEY | typeof PUBLIC_KEY;
 
   constructor(type: "public" | "private") {
-    this.key = type === "public" ? "3DS_SCA_KEY_PUBLIC" : "3DS_SCA_KEY_PRIVATE";
+    this.key = type === "public" ? PUBLIC_KEY : PRIVATE_KEY;
   }
 
-  async set(value: string) {
+  async set(value: string): Promise<AuthReturnValue<boolean>> {
     const currentKey = await getKey(this.key);
-    if (currentKey) {
-      return false;
+
+    if (currentKey.value) {
+      return {
+        value: false,
+        reason: authReasonCodes.keyExists,
+      };
     }
-    await setKey(this.key, value);
-    return true;
+
+    const result = await setKey(this.key, value);
+
+    if (result.value) {
+      console.log("Saved key", this.key, "with value", value, "to SecureStore");
+    } else {
+      console.log(
+        "Unable to save key",
+        this.key,
+        "with value",
+        this.key,
+        "to SecureStore",
+      );
+    }
+
+    return result;
   }
 
-  async delete() {
-    await revokeKey(this.key);
+  async delete(): Promise<AuthReturnValue<boolean>> {
+    const result = await revokeKey(this.key);
+    if (result.value) {
+      console.log("Deleted Key", this.key, "from SecureStore");
+    } else {
+      console.log("Unable to delete key", this.key, "from SecureStore");
+    }
+
+    return result;
   }
 
-  async get() {
-    return await getKey(this.key);
+  async get(): Promise<AuthReturnValue<string | null>> {
+    const key = await getKey(this.key);
+
+    if (key.value) {
+      console.log(
+        "Retrieved Key",
+        this.key,
+        "with value",
+        key.value,
+        "from SecureStore",
+      );
+    } else {
+      console.log("Unable to retrieve key", this.key, "from SecureStore");
+    }
+
+    console.log(key);
+
+    return key;
   }
 }
 
