@@ -1,0 +1,24 @@
+diff --git a/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/AuthenticationPrompt.kt b/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/AuthenticationPrompt.kt
+index e5729cc..e9108c9 100644
+--- a/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/AuthenticationPrompt.kt
++++ b/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/AuthenticationPrompt.kt
+@@ -1,5 +1,7 @@
+ package expo.modules.securestore
+ 
++import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
++import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+ import android.content.Context
+ import androidx.biometric.BiometricPrompt
+ import androidx.biometric.BiometricPrompt.PromptInfo
+@@ -15,7 +17,10 @@ class AuthenticationPrompt(private val currentActivity: FragmentActivity, contex
+   private var executor: Executor = ContextCompat.getMainExecutor(context)
+   private var promptInfo = PromptInfo.Builder()
+     .setTitle(title)
+-    .setNegativeButtonText(context.getString(android.R.string.cancel))
++    .setDescription("Please authenticate using your biometrics or device PIN")
++    .setSubtitle("Login to proceed")
++    .setAllowedAuthenticators(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)
++    .setConfirmationRequired(true)
+     .build()
+ 
+   suspend fun authenticate(cipher: Cipher): BiometricPrompt.AuthenticationResult? =
