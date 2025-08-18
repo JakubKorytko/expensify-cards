@@ -8,7 +8,9 @@ import {
 
 function decodeExpoErrorCode(error: unknown) {
   const errorString = String(error);
-  return (errorString.split("Caused by:").at(-1) ?? errorString).trim();
+  return (
+    errorString.split("Caused by:").slice(1).join(";") ?? errorString
+  ).trim();
 }
 
 async function setKey(
@@ -16,12 +18,14 @@ async function setKey(
   value: string,
 ): Promise<AuthReturnValue<boolean>> {
   try {
-    await SecureStore.setItemAsync(key, value, {
+    const authType = await SecureStore.setItemAsync(key, value, {
       requireAuthentication: key === PRIVATE_KEY,
     });
+
     return {
       value: true,
       reason: authReasonCodes.keySavedInSecureStore,
+      authType,
     };
   } catch (error) {
     return {
@@ -33,10 +37,14 @@ async function setKey(
 
 async function getKey(key: string): Promise<AuthReturnValue<string | null>> {
   try {
-    const retrievedKey = await SecureStore.getItemAsync(key);
+    const [retrievedKey, authType] = await SecureStore.getItemAsync(key);
+
     return {
       value: retrievedKey,
-      reason: authReasonCodes.keyRetrievedFromSecureStore,
+      reason: !!retrievedKey
+        ? authReasonCodes.keyRetrievedFromSecureStore
+        : `${authReasonCodes.emptyEntryForTheKey} ${key}`,
+      authType,
     };
   } catch (error) {
     return {
@@ -87,7 +95,7 @@ class KeyStorage {
         "Unable to save key",
         this.key,
         "with value",
-        this.key,
+        value,
         "to SecureStore",
       );
     }
@@ -120,8 +128,6 @@ class KeyStorage {
     } else {
       console.log("Unable to retrieve key", this.key, "from SecureStore");
     }
-
-    console.log(key);
 
     return key;
   }

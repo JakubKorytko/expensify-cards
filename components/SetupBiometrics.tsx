@@ -12,7 +12,9 @@ function SetupBiometrics() {
 
   const setupBiometrics = async () => {
     const value = await Biometrics.request();
-    setReason(value.reason);
+    setReason(
+      `${value.reason}${value.authTypeMessage ? `\nAuth method: ${value.authTypeMessage}` : ""}`,
+    );
   };
 
   return (

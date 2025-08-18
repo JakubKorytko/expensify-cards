@@ -5,6 +5,7 @@ import {
   APIResponses,
   authReasonCodes,
   AuthReturnValue,
+  authType,
 } from "@/scripts/authCodes";
 import { useCallback, useEffect, useState } from "react";
 
@@ -29,6 +30,7 @@ const signToken = async (
     return {
       value: undefined,
       reason,
+      authType: key.authType,
     };
   }
 
@@ -124,7 +126,8 @@ const runTokenization = async (): Promise<AuthReturnValue<boolean>> => {
     };
   }
 
-  return await verifySignedToken(token.value, signedToken.value);
+  const verifiedToken = await verifySignedToken(token.value, signedToken.value);
+  return wrapAuthReturnWithAuthTypeMessage(verifiedToken);
 };
 
 const requestKey = async (): Promise<AuthReturnValue<boolean>> => {
@@ -181,6 +184,7 @@ const requestKey = async (): Promise<AuthReturnValue<boolean>> => {
   return {
     value: true,
     reason: authReasonCodes.keyPairGeneratedSuccessfully,
+    authType: setResult.authType,
   };
 };
 
@@ -217,6 +221,23 @@ type Biometrics = {
   isConfigured: boolean;
 };
 
+const authTypeMessages: Record<number, string> = {
+  [authType.NONE]: "None",
+  [authType.CREDENTIALS]: "Credentials",
+  [authType.BIOMETRICS]: "Biometrics",
+};
+
+const wrapAuthReturnWithAuthTypeMessage = <T>(
+  returnValue: AuthReturnValue<T>,
+) => {
+  if (!returnValue.authType) return returnValue;
+
+  return {
+    ...returnValue,
+    authTypeMessage: authTypeMessages[returnValue.authType],
+  };
+};
+
 function useBiometrics(): Biometrics {
   const [isConfigured, setIsConfigured] = useState<boolean>(false);
 
@@ -228,14 +249,14 @@ function useBiometrics(): Biometrics {
     const result = await requestKey();
     const biometricsStatus = await checkBiometricsStatus();
     setIsConfigured(biometricsStatus);
-    return result;
+    return wrapAuthReturnWithAuthTypeMessage(result);
   }, []);
 
   const revoke = useCallback(async () => {
     const result = await revokeKey();
     const biometricsStatus = await checkBiometricsStatus();
     setIsConfigured(biometricsStatus);
-    return result;
+    return wrapAuthReturnWithAuthTypeMessage(result);
   }, []);
 
   return {

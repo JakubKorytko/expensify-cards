@@ -11,6 +11,7 @@ const authReasonCodes = {
   keyExists: "Key already exists in the SecureStore",
   keySavedInSecureStore: "Successfully saved key in SecureStore",
   keyRetrievedFromSecureStore: "Successfully retrieved key from SecureStore",
+  emptyEntryForTheKey: "Entry is empty for the key",
   keyExistsInBE: "Key already exists on the backend",
   invalidRequestKeyMissingInBody:
     "Invalid request to API, key not present in request body",
@@ -27,10 +28,18 @@ const authReasonCodes = {
 type AuthReturnValue<T> = {
   value: T;
   reason: string;
+  authType?: number;
+  authTypeMessage?: string;
+};
+
+const authType = {
+  NONE: -1,
+  CREDENTIALS: 1,
+  BIOMETRICS: 2,
 };
 
 const PUBLIC_KEY = "3DS_SCA_KEY_PUBLIC";
 const PRIVATE_KEY = "3DS_SCA_KEY_PRIVATE";
 
-export { authReasonCodes, APIResponses, PRIVATE_KEY, PUBLIC_KEY };
+export { authReasonCodes, APIResponses, PRIVATE_KEY, PUBLIC_KEY, authType };
 export type { AuthReturnValue };
