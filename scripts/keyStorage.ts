@@ -5,9 +5,13 @@ import {
   PRIVATE_KEY,
   PUBLIC_KEY,
 } from "@/scripts/authCodes";
+import Logger from "@/scripts/Logger";
 
 function decodeExpoErrorCode(error: unknown) {
   const errorString = String(error);
+  if (!errorString.includes("Caused by:")) {
+    return errorString;
+  }
   return (
     errorString.split("Caused by:").slice(1).join(";") ?? errorString
   ).trim();
@@ -18,8 +22,13 @@ async function setKey(
   value: string,
 ): Promise<AuthReturnValue<boolean>> {
   try {
+    SecureStore.canUseBiometricAuthentication();
+
     const authType = await SecureStore.setItemAsync(key, value, {
       requireAuthentication: key === PRIVATE_KEY,
+      failOnDuplicate: key === PRIVATE_KEY,
+      keychainService: "Expensify",
+      keychainAccessible: SecureStore.WHEN_PASSCODE_SET_THIS_DEVICE_ONLY,
     });
 
     return {
@@ -37,7 +46,11 @@ async function setKey(
 
 async function getKey(key: string): Promise<AuthReturnValue<string | null>> {
   try {
-    const [retrievedKey, authType] = await SecureStore.getItemAsync(key);
+    const [retrievedKey, authType] = await SecureStore.getItemAsync(key, {
+      requireAuthentication: key === PRIVATE_KEY,
+      keychainService: "Expensify",
+      keychainAccessible: SecureStore.WHEN_PASSCODE_SET_THIS_DEVICE_ONLY,
+    });
 
     return {
       value: retrievedKey,
@@ -56,7 +69,9 @@ async function getKey(key: string): Promise<AuthReturnValue<string | null>> {
 
 async function revokeKey(key: string): Promise<AuthReturnValue<boolean>> {
   try {
-    await SecureStore.deleteItemAsync(key);
+    await SecureStore.deleteItemAsync(key, {
+      keychainService: "Expensify",
+    });
     return {
       value: true,
       reason: authReasonCodes.keyDeletedSuccessfully,
@@ -77,21 +92,12 @@ class KeyStorage {
   }
 
   async set(value: string): Promise<AuthReturnValue<boolean>> {
-    const currentKey = await getKey(this.key);
-
-    if (currentKey.value) {
-      return {
-        value: false,
-        reason: authReasonCodes.keyExists,
-      };
-    }
-
     const result = await setKey(this.key, value);
 
     if (result.value) {
-      console.log("Saved key", this.key, "with value", value, "to SecureStore");
+      Logger.m("Saved key", this.key, "with value", value, "to SecureStore");
     } else {
-      console.log(
+      Logger.w(
         "Unable to save key",
         this.key,
         "with value",
@@ -106,9 +112,9 @@ class KeyStorage {
   async delete(): Promise<AuthReturnValue<boolean>> {
     const result = await revokeKey(this.key);
     if (result.value) {
-      console.log("Deleted Key", this.key, "from SecureStore");
+      Logger.m("Deleted Key", this.key, "from SecureStore");
     } else {
-      console.log("Unable to delete key", this.key, "from SecureStore");
+      Logger.w("Unable to delete key", this.key, "from SecureStore");
     }
 
     return result;
@@ -118,7 +124,7 @@ class KeyStorage {
     const key = await getKey(this.key);
 
     if (key.value) {
-      console.log(
+      Logger.m(
         "Retrieved Key",
         this.key,
         "with value",
@@ -126,7 +132,7 @@ class KeyStorage {
         "from SecureStore",
       );
     } else {
-      console.log("Unable to retrieve key", this.key, "from SecureStore");
+      Logger.w("Unable to retrieve key", this.key, "from SecureStore");
     }
 
     return key;

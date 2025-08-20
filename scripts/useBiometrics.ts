@@ -8,6 +8,7 @@ import {
   authType,
 } from "@/scripts/authCodes";
 import { useCallback, useEffect, useState } from "react";
+import Logger from "@/scripts/Logger";
 
 const signToken = async (
   token: string | undefined,
@@ -25,7 +26,7 @@ const signToken = async (
       reason = authReasonCodes.keyMissing;
     }
 
-    console.log(reason);
+    Logger.m(reason);
 
     return {
       value: undefined,
@@ -36,7 +37,7 @@ const signToken = async (
 
   const signedToken = signTokenED25519(token, key.value);
 
-  console.log(authReasonCodes.successfulSign, signedToken);
+  Logger.m(authReasonCodes.successfulSign, signedToken);
 
   return {
     value: signedToken,
@@ -45,19 +46,19 @@ const signToken = async (
 };
 
 const requestToken = async (): Promise<AuthReturnValue<string | undefined>> => {
-  console.log("Requesting token from API...");
+  Logger.m("Requesting token from API...");
   const apiToken = await api("/token");
   const token = await apiToken.json();
 
   if (!!token && "hex" in token && typeof token.hex === "string") {
-    console.log(authReasonCodes.successfullyReceivedToken, token.hex);
+    Logger.m(authReasonCodes.successfullyReceivedToken, token.hex);
     return {
       value: token.hex,
       reason: authReasonCodes.successfullyReceivedToken,
     };
   }
 
-  console.log(authReasonCodes.badToken);
+  Logger.w(authReasonCodes.badToken);
   return {
     value: undefined,
     reason: authReasonCodes.badToken,
@@ -79,7 +80,7 @@ const verifySignedToken = async (
       reason = authReasonCodes.signatureMissing;
     }
 
-    console.log(reason);
+    Logger.w(reason);
 
     return {
       value: false,
@@ -87,7 +88,7 @@ const verifySignedToken = async (
     };
   }
 
-  console.log("Sending signed token to API...");
+  Logger.m("Sending signed token to API...");
 
   const val = await api("/verify", {
     signature: signedToken,
@@ -99,7 +100,7 @@ const verifySignedToken = async (
     ? authReasonCodes.verificationSuccessful
     : authReasonCodes.apiRejectedToken;
 
-  console.log(reason);
+  Logger[bool ? "m" : "w"](reason);
 
   return {
     value: bool,
@@ -133,7 +134,7 @@ const runTokenization = async (): Promise<AuthReturnValue<boolean>> => {
 const requestKey = async (): Promise<AuthReturnValue<boolean>> => {
   const { privateKey, publicKey } = generateKeys();
 
-  console.log(
+  Logger.m(
     "Generated key pair",
     "\nPrivate key:",
     privateKey,
@@ -144,7 +145,7 @@ const requestKey = async (): Promise<AuthReturnValue<boolean>> => {
   const setResult = await PrivateKeyStorage.set(privateKey);
 
   if (!setResult.value) {
-    console.log(setResult.reason);
+    Logger.w(setResult.reason);
 
     return {
       value: false,
@@ -223,6 +224,7 @@ type Biometrics = {
 
 const authTypeMessages: Record<number, string> = {
   [authType.NONE]: "None",
+  [authType.IOS]: "iOS",
   [authType.CREDENTIALS]: "Credentials",
   [authType.BIOMETRICS]: "Biometrics",
 };
@@ -230,7 +232,7 @@ const authTypeMessages: Record<number, string> = {
 const wrapAuthReturnWithAuthTypeMessage = <T>(
   returnValue: AuthReturnValue<T>,
 ) => {
-  if (!returnValue.authType) return returnValue;
+  if (returnValue.authType === undefined) return returnValue;
 
   return {
     ...returnValue,

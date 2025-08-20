@@ -3,7 +3,7 @@ import styles from "@/styles";
 import { Image } from "expo-image";
 import FingerIcon from "@/assets/images/finger.svg";
 import { useState } from "react";
-import { useBiometricsContext } from "@/scripts/BiometricsContext";
+import { useBiometricsContext } from "@/components/BiometricsContext";
 
 function SetupBiometrics() {
   const [reason, setReason] = useState<string>("Not requested yet");

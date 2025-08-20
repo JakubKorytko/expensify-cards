@@ -3,7 +3,7 @@ import styles from "@/styles";
 import { Image } from "expo-image";
 import LockIcon from "@/assets/images/lock.svg";
 import { useState } from "react";
-import { useBiometricsContext } from "@/scripts/BiometricsContext";
+import { useBiometricsContext } from "@/components/BiometricsContext";
 
 function ConfirmTransaction() {
   const [status, setStatus] = useState<string>("Not requested yet");

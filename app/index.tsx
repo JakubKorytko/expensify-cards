@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import styles from "@/styles";
 import ConfirmTransaction from "@/components/ConfirmTransaction";
 import SetupBiometrics from "@/components/SetupBiometrics";
-import { useBiometricsContext } from "@/scripts/BiometricsContext";
+import { useBiometricsContext } from "@/components/BiometricsContext";
 
 export default function Index() {
   const Biometrics = useBiometricsContext();

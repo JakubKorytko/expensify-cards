@@ -47,7 +47,8 @@ const styles: Styles = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    paddingBottom: 10,
+    padding: 10,
+    marginBottom: 20,
   },
   whiteText: {
     color: "white",

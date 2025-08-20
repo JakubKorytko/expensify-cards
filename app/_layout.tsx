@@ -1,14 +1,17 @@
 import { Stack } from "expo-router";
-import { BiometricsContextProvider } from "@/scripts/BiometricsContext";
+import { BiometricsContextProvider } from "@/components/BiometricsContext";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function RootLayout() {
   return (
     <BiometricsContextProvider>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-        }}
-      />
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#051c09" }}>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+          }}
+        />
+      </SafeAreaView>
     </BiometricsContextProvider>
   );
 }

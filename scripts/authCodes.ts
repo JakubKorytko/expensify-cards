@@ -1,3 +1,10 @@
+type AuthReturnValue<T> = {
+  value: T;
+  reason: string;
+  authType?: number;
+  authTypeMessage?: string;
+};
+
 const APIResponses = {
   keyExists: "Key already exists",
   keyNotPresentInBody: "Key is not present in body",
@@ -25,18 +32,12 @@ const authReasonCodes = {
   keyDeletedSuccessfully: "Key deleted successfully",
 };
 
-type AuthReturnValue<T> = {
-  value: T;
-  reason: string;
-  authType?: number;
-  authTypeMessage?: string;
-};
-
-const authType = {
-  NONE: -1,
-  CREDENTIALS: 1,
-  BIOMETRICS: 2,
-};
+enum authType {
+  NONE = -1,
+  IOS,
+  CREDENTIALS,
+  BIOMETRICS,
+}
 
 const PUBLIC_KEY = "3DS_SCA_KEY_PUBLIC";
 const PRIVATE_KEY = "3DS_SCA_KEY_PRIVATE";
