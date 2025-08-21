@@ -5,11 +5,6 @@ type AuthReturnValue<T> = {
   authTypeMessage?: string;
 };
 
-const APIResponses = {
-  keyExists: "Key already exists",
-  keyNotPresentInBody: "Key is not present in body",
-};
-
 const authReasonCodes = {
   successfulSign: "Successfully signed token",
   tokenMissing: "Token is missing",
@@ -42,5 +37,5 @@ enum authType {
 const PUBLIC_KEY = "3DS_SCA_KEY_PUBLIC";
 const PRIVATE_KEY = "3DS_SCA_KEY_PRIVATE";
 
-export { authReasonCodes, APIResponses, PRIVATE_KEY, PUBLIC_KEY, authType };
+export { authReasonCodes, PRIVATE_KEY, PUBLIC_KEY, authType };
 export type { AuthReturnValue };

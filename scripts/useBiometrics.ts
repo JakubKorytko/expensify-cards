@@ -1,14 +1,19 @@
 import { generateKeys, signToken as signTokenED25519 } from "@/scripts/ed25519";
-import api from "@/api";
 import { PrivateKeyStorage, PublicKeyStorage } from "@/scripts/keyStorage";
 import {
-  APIResponses,
   authReasonCodes,
   AuthReturnValue,
   authType,
 } from "@/scripts/authCodes";
 import { useCallback, useEffect, useState } from "react";
 import Logger from "@/scripts/Logger";
+import API from "@/api";
+
+function rnd(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+const randomTransactionID = () => rnd(100_000_000, 999_999_999).toString();
 
 const signToken = async (
   token: string | undefined,
@@ -35,6 +40,7 @@ const signToken = async (
     };
   }
 
+  Logger.m("Signing token", token, "with key", key.value);
   const signedToken = signTokenED25519(token, key.value);
 
   Logger.m(authReasonCodes.successfulSign, signedToken);
@@ -47,13 +53,19 @@ const signToken = async (
 
 const requestToken = async (): Promise<AuthReturnValue<string | undefined>> => {
   Logger.m("Requesting token from API...");
-  const apiToken = await api("/token");
-  const token = await apiToken.json();
+  const apiToken = await API.read("RequestBiometricChallenge");
+  let token;
 
-  if (!!token && "hex" in token && typeof token.hex === "string") {
-    Logger.m(authReasonCodes.successfullyReceivedToken, token.hex);
+  try {
+    token = await apiToken.json();
+  } catch (e) {
+    Logger.e(e);
+  }
+
+  if (!!token && "challenge" in token && typeof token.challenge === "string") {
+    Logger.m(authReasonCodes.successfullyReceivedToken, token.challenge);
     return {
-      value: token.hex,
+      value: token.challenge,
       reason: authReasonCodes.successfullyReceivedToken,
     };
   }
@@ -66,33 +78,22 @@ const requestToken = async (): Promise<AuthReturnValue<string | undefined>> => {
 };
 
 const verifySignedToken = async (
-  token: string | undefined,
   signedToken: string | undefined,
 ): Promise<AuthReturnValue<boolean>> => {
-  if (!token || !signedToken) {
-    let reason;
-
-    if (!token && !signedToken) {
-      reason = authReasonCodes.tokenAndSignatureMissing;
-    } else if (!token) {
-      reason = authReasonCodes.tokenMissing;
-    } else {
-      reason = authReasonCodes.signatureMissing;
-    }
-
-    Logger.w(reason);
+  if (!signedToken) {
+    Logger.w(authReasonCodes.signatureMissing);
 
     return {
       value: false,
-      reason,
+      reason: authReasonCodes.signatureMissing,
     };
   }
 
   Logger.m("Sending signed token to API...");
 
-  const val = await api("/verify", {
-    signature: signedToken,
-    token: token,
+  const val = await API.write("AuthorizeTransaction", {
+    transactionID: randomTransactionID(),
+    signedChallenge: signedToken,
   });
 
   const bool = (await val.text()) === "true";
@@ -127,7 +128,7 @@ const runTokenization = async (): Promise<AuthReturnValue<boolean>> => {
     };
   }
 
-  const verifiedToken = await verifySignedToken(token.value, signedToken.value);
+  const verifiedToken = await verifySignedToken(signedToken.value);
   return wrapAuthReturnWithAuthTypeMessage(verifiedToken);
 };
 
@@ -153,23 +154,16 @@ const requestKey = async (): Promise<AuthReturnValue<boolean>> => {
     };
   }
 
-  const result = await api("/key", {
-    key: publicKey,
+  const result = await API.write("RegisterBiometrics", {
+    publicKey,
   });
 
   const message = await result.text();
 
-  if (message === APIResponses.keyExists) {
+  if (result.status !== 200) {
     return {
       value: false,
-      reason: authReasonCodes.keyExistsInBE,
-    };
-  }
-
-  if (message === APIResponses.keyNotPresentInBody) {
-    return {
-      value: false,
-      reason: authReasonCodes.invalidRequestKeyMissingInBody,
+      reason: message,
     };
   }
 
@@ -201,8 +195,6 @@ const revokeKey = async (): Promise<AuthReturnValue<boolean>> => {
   if (!publicKeyResult.value) {
     return publicKeyResult;
   }
-
-  await api.revokeKey();
 
   return {
     value: true,

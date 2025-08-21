@@ -33,7 +33,7 @@ function generateKeys() {
 }
 
 function signToken(token: string, key: string) {
-  return ed.etc.bytesToHex(ed.sign(token, key));
+  return ed.etc.bytesToHex(ed.sign(new TextEncoder().encode(token), key));
 }
 
 export { generateKeys, signToken };
