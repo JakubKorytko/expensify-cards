@@ -2,30 +2,23 @@ import { TouchableOpacity, View, Text } from "react-native";
 import styles from "@/styles";
 import { Image } from "expo-image";
 import FingerIcon from "@/assets/images/finger.svg";
-import { useState } from "react";
 import { useBiometricsContext } from "@/components/BiometricsContext";
 
 function SetupBiometrics() {
-  const [reason, setReason] = useState<string>("Not requested yet");
-
   const Biometrics = useBiometricsContext();
-
-  const setupBiometrics = async () => {
-    const value = await Biometrics.request();
-    setReason(
-      `${value.reason}${value.authTypeMessage ? `\nAuth method: ${value.authTypeMessage}` : ""}`,
-    );
-  };
 
   return (
     <View style={styles.container}>
       <Image source={FingerIcon} style={styles.logoImage} />
       <Text style={styles.mtn25}>
-        Status: {Biometrics.isConfigured ? "Configured" : "Not configured"}
+        Status: {Biometrics.status ? "Configured" : "Not configured"}
         {"\n"}
-        {`Last action feedback: ${reason}`}
+        {`Last action feedback: ${Biometrics.feedback.key.reason}`}
+        {"\n"}
+        {Biometrics.feedback.key.authTypeMessage &&
+          `Auth method: ${Biometrics.feedback.key.authTypeMessage}`}
       </Text>
-      <TouchableOpacity style={styles.button} onPress={setupBiometrics}>
+      <TouchableOpacity style={styles.button} onPress={Biometrics.request}>
         <Text style={styles.buttonText}>Setup biometrics</Text>
       </TouchableOpacity>
     </View>

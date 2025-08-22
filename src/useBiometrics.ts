@@ -1,21 +1,20 @@
-import { generateKeys, signToken as signTokenED25519 } from "@/scripts/ed25519";
-import { PrivateKeyStorage, PublicKeyStorage } from "@/scripts/keyStorage";
-import {
-  authReasonCodes,
-  AuthReturnValue,
-  authType,
-} from "@/scripts/authCodes";
+import { generateKeys, signToken as signTokenED25519 } from "@/src/ed25519";
+import { PrivateKeyStorage, PublicKeyStorage } from "@/src/keyStorage";
 import { useCallback, useEffect, useState } from "react";
-import Logger from "@/scripts/Logger";
-import API from "@/api";
+import type {
+  AuthReturnValue,
+  AuthType,
+  Biometrics,
+  Feedback,
+} from "@/src/types";
+import { Logger, randomTransactionID } from "@/src/helpers";
+import API from "@/src/api";
+import CONST from "@/src/const";
 
-function rnd(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+const getAuthType = (authCode: number): AuthType | undefined =>
+  Object.values(CONST.AUTH_TYPE).find((authType) => authType.CODE === authCode);
 
-const randomTransactionID = () => rnd(100_000_000, 999_999_999).toString();
-
-const signToken = async (
+const signChallenge = async (
   token: string | undefined,
 ): Promise<AuthReturnValue<string | undefined>> => {
   const key = await PrivateKeyStorage.get();
@@ -24,11 +23,11 @@ const signToken = async (
     let reason;
 
     if (!key && !token) {
-      reason = authReasonCodes.keyAndTokenMissing;
+      reason = CONST.REASON_CODES.ERROR.KEY_AND_TOKEN_MISSING;
     } else if (!token) {
-      reason = authReasonCodes.tokenMissing;
+      reason = CONST.REASON_CODES.ERROR.TOKEN_MISSING;
     } else {
-      reason = authReasonCodes.keyMissing;
+      reason = CONST.REASON_CODES.ERROR.KEY_MISSING;
     }
 
     Logger.m(reason);
@@ -40,19 +39,21 @@ const signToken = async (
     };
   }
 
-  Logger.m("Signing token", token, "with key", key.value);
   const signedToken = signTokenED25519(token, key.value);
 
-  Logger.m(authReasonCodes.successfulSign, signedToken);
+  Logger.mw(CONST.REASON_CODES.SUCCESS.TOKEN_SIGNED, {
+    token: signedToken,
+  });
 
   return {
     value: signedToken,
-    reason: authReasonCodes.successfulSign,
+    reason: CONST.REASON_CODES.SUCCESS.TOKEN_SIGNED,
   };
 };
 
-const requestToken = async (): Promise<AuthReturnValue<string | undefined>> => {
-  Logger.m("Requesting token from API...");
+const requestChallenge = async (): Promise<
+  AuthReturnValue<string | undefined>
+> => {
   const apiToken = await API.read("RequestBiometricChallenge");
   let token;
 
@@ -63,33 +64,37 @@ const requestToken = async (): Promise<AuthReturnValue<string | undefined>> => {
   }
 
   if (!!token && "challenge" in token && typeof token.challenge === "string") {
-    Logger.m(authReasonCodes.successfullyReceivedToken, token.challenge);
+    Logger.mw(CONST.REASON_CODES.SUCCESS.TOKEN_RECEIVED, {
+      token: token.challenge,
+    });
+
     return {
       value: token.challenge,
-      reason: authReasonCodes.successfullyReceivedToken,
+      reason: CONST.REASON_CODES.SUCCESS.TOKEN_RECEIVED,
     };
   }
 
-  Logger.w(authReasonCodes.badToken);
+  Logger.w(CONST.REASON_CODES.ERROR.BAD_TOKEN);
+
   return {
     value: undefined,
-    reason: authReasonCodes.badToken,
+    reason: CONST.REASON_CODES.ERROR.BAD_TOKEN,
   };
 };
 
-const verifySignedToken = async (
+const sendSignedChallenge = async (
   signedToken: string | undefined,
 ): Promise<AuthReturnValue<boolean>> => {
   if (!signedToken) {
-    Logger.w(authReasonCodes.signatureMissing);
+    Logger.w(CONST.REASON_CODES.ERROR.SIGNATURE_MISSING);
 
     return {
       value: false,
-      reason: authReasonCodes.signatureMissing,
+      reason: CONST.REASON_CODES.ERROR.SIGNATURE_MISSING,
     };
   }
 
-  Logger.m("Sending signed token to API...");
+  Logger.m("Sending signed challenge to the API...");
 
   const val = await API.write("AuthorizeTransaction", {
     transactionID: randomTransactionID(),
@@ -98,8 +103,8 @@ const verifySignedToken = async (
 
   const bool = (await val.text()) === "true";
   const reason = bool
-    ? authReasonCodes.verificationSuccessful
-    : authReasonCodes.apiRejectedToken;
+    ? CONST.REASON_CODES.SUCCESS.VERIFICATION_SUCCESS
+    : CONST.REASON_CODES.ERROR.CHALLENGE_REJECTED;
 
   Logger[bool ? "m" : "w"](reason);
 
@@ -109,8 +114,8 @@ const verifySignedToken = async (
   };
 };
 
-const runTokenization = async (): Promise<AuthReturnValue<boolean>> => {
-  const token = await requestToken();
+const runChallenge = async (): Promise<AuthReturnValue<boolean>> => {
+  const token = await requestChallenge();
 
   if (!token.value) {
     return {
@@ -119,7 +124,7 @@ const runTokenization = async (): Promise<AuthReturnValue<boolean>> => {
     };
   }
 
-  const signedToken = await signToken(token.value);
+  const signedToken = await signChallenge(token.value);
 
   if (!signedToken.value) {
     return {
@@ -128,20 +133,11 @@ const runTokenization = async (): Promise<AuthReturnValue<boolean>> => {
     };
   }
 
-  const verifiedToken = await verifySignedToken(signedToken.value);
-  return wrapAuthReturnWithAuthTypeMessage(verifiedToken);
+  return await sendSignedChallenge(signedToken.value);
 };
 
 const requestKey = async (): Promise<AuthReturnValue<boolean>> => {
   const { privateKey, publicKey } = generateKeys();
-
-  Logger.m(
-    "Generated key pair",
-    "\nPrivate key:",
-    privateKey,
-    "\nPublic key:",
-    publicKey,
-  );
 
   const setResult = await PrivateKeyStorage.set(privateKey);
 
@@ -163,7 +159,7 @@ const requestKey = async (): Promise<AuthReturnValue<boolean>> => {
   if (result.status !== 200) {
     return {
       value: false,
-      reason: message,
+      reason: message || "API error",
     };
   }
 
@@ -176,9 +172,14 @@ const requestKey = async (): Promise<AuthReturnValue<boolean>> => {
     };
   }
 
+  Logger.mw(CONST.REASON_CODES.SUCCESS.KEY_PAIR_GENERATED, {
+    publicKey,
+    privateKey,
+  });
+
   return {
     value: true,
-    reason: authReasonCodes.keyPairGeneratedSuccessfully,
+    reason: CONST.REASON_CODES.SUCCESS.KEY_PAIR_GENERATED,
     authType: setResult.authType,
   };
 };
@@ -196,29 +197,17 @@ const revokeKey = async (): Promise<AuthReturnValue<boolean>> => {
     return publicKeyResult;
   }
 
+  Logger.w(CONST.REASON_CODES.SUCCESS.KEY_DELETED);
+
   return {
     value: true,
-    reason: authReasonCodes.keyDeletedSuccessfully,
+    reason: CONST.REASON_CODES.SUCCESS.KEY_DELETED,
   };
 };
 
 const checkBiometricsStatus = async () => {
   const publicKey = await PublicKeyStorage.get();
   return !!publicKey.value;
-};
-
-type Biometrics = {
-  request: () => Promise<AuthReturnValue<boolean>>;
-  revoke: () => Promise<AuthReturnValue<boolean>>;
-  signToken: () => Promise<AuthReturnValue<boolean>>;
-  isConfigured: boolean;
-};
-
-const authTypeMessages: Record<number, string> = {
-  [authType.NONE]: "None",
-  [authType.IOS]: "iOS",
-  [authType.CREDENTIALS]: "Credentials",
-  [authType.BIOMETRICS]: "Biometrics",
 };
 
 const wrapAuthReturnWithAuthTypeMessage = <T>(
@@ -228,36 +217,60 @@ const wrapAuthReturnWithAuthTypeMessage = <T>(
 
   return {
     ...returnValue,
-    authTypeMessage: authTypeMessages[returnValue.authType],
+    authTypeMessage: getAuthType(returnValue.authType)?.NAME,
   };
 };
 
+const emptyAuthReason = {
+  reason: "Not requested yet",
+  value: false,
+};
+
 function useBiometrics(): Biometrics {
-  const [isConfigured, setIsConfigured] = useState<boolean>(false);
+  const [status, setStatus] = useState<boolean>(false);
+  const [feedback, setFeedback] = useState<Feedback>({
+    challenge: { ...emptyAuthReason },
+    key: { ...emptyAuthReason },
+  });
+
+  const refreshStatus = useCallback(
+    async () => setStatus(await checkBiometricsStatus()),
+    [],
+  );
 
   useEffect(() => {
-    checkBiometricsStatus().then((value) => setIsConfigured(value));
-  }, []);
+    refreshStatus();
+  }, [refreshStatus]);
 
   const request = useCallback(async () => {
     const result = await requestKey();
-    const biometricsStatus = await checkBiometricsStatus();
-    setIsConfigured(biometricsStatus);
-    return wrapAuthReturnWithAuthTypeMessage(result);
-  }, []);
+    const wrappedResult = wrapAuthReturnWithAuthTypeMessage(result);
+    setFeedback((_feedback) => ({ ..._feedback, key: wrappedResult }));
+    await refreshStatus();
+    return wrappedResult;
+  }, [refreshStatus]);
 
   const revoke = useCallback(async () => {
     const result = await revokeKey();
-    const biometricsStatus = await checkBiometricsStatus();
-    setIsConfigured(biometricsStatus);
-    return wrapAuthReturnWithAuthTypeMessage(result);
+    const wrappedResult = wrapAuthReturnWithAuthTypeMessage(result);
+    setFeedback((_feedback) => ({ ..._feedback, key: wrappedResult }));
+    await refreshStatus();
+    return wrappedResult;
+  }, [refreshStatus]);
+
+  const challenge = useCallback(async () => {
+    const result = await runChallenge();
+    const wrappedResult = wrapAuthReturnWithAuthTypeMessage(result);
+    setFeedback((_feedback) => ({ ..._feedback, challenge: wrappedResult }));
+    return wrappedResult;
   }, []);
 
   return {
     request,
-    signToken: runTokenization,
+    challenge,
     revoke,
-    isConfigured,
+    feedback,
+    status,
   };
 }
 
