@@ -48,6 +48,16 @@ const CONST = {
       VALIDATE_CODE_REQUIRED: "Validate code required",
     },
   },
+  FEEDBACK_TYPE: {
+    CHALLENGE: "Challenge",
+    KEY: "Key",
+  },
+  REASON_MESSAGE: {
+    SUCCESS: "You’ve successfully authenticated.",
+    SUCCESS_USING: "You’ve successfully authenticated using",
+    FAILED: "Your authentication attempt was unsuccessful.",
+    FAILED_BECAUSE: "Your authentication attempt failed with error",
+  },
   MISC: {
     EXPO_ERROR_SEPARATOR: "Caused by:",
   },

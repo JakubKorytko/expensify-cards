@@ -35,7 +35,6 @@ const signChallenge = async (
     return {
       value: undefined,
       reason,
-      authType: key.authType,
     };
   }
 
@@ -48,6 +47,7 @@ const signChallenge = async (
   return {
     value: signedToken,
     reason: CONST.REASON_CODES.SUCCESS.TOKEN_SIGNED,
+    authType: key.authType,
   };
 };
 
@@ -83,7 +83,7 @@ const requestChallenge = async (): Promise<
 };
 
 const sendSignedChallenge = async (
-  signedToken: string | undefined,
+  signedToken: AuthReturnValue<string | undefined>,
 ): Promise<AuthReturnValue<boolean>> => {
   if (!signedToken) {
     Logger.w(CONST.REASON_CODES.ERROR.SIGNATURE_MISSING);
@@ -98,7 +98,7 @@ const sendSignedChallenge = async (
 
   const val = await API.write("AuthorizeTransaction", {
     transactionID: randomTransactionID(),
-    signedChallenge: signedToken,
+    signedChallenge: signedToken.value,
   });
 
   const bool = (await val.text()) === "true";
@@ -111,6 +111,7 @@ const sendSignedChallenge = async (
   return {
     value: bool,
     reason,
+    authType: signedToken.authType,
   };
 };
 
@@ -126,6 +127,7 @@ const runChallenge = async (): Promise<AuthReturnValue<boolean>> => {
 
   const signedToken = await signChallenge(token.value);
 
+  console.log("PODPISANY", signedToken);
   if (!signedToken.value) {
     return {
       value: false,
@@ -133,7 +135,7 @@ const runChallenge = async (): Promise<AuthReturnValue<boolean>> => {
     };
   }
 
-  return await sendSignedChallenge(signedToken.value);
+  return await sendSignedChallenge(signedToken);
 };
 
 const requestKey = async (
@@ -238,6 +240,7 @@ function useBiometrics(): Biometrics {
   const [feedback, setFeedback] = useState<Feedback>({
     challenge: { ...emptyAuthReason },
     key: { ...emptyAuthReason },
+    lastAction: undefined,
   });
   const [generator, setGenerator] = useState<
     | AsyncGenerator<
@@ -271,7 +274,11 @@ function useBiometrics(): Biometrics {
         result = await requestKey(yield result);
       }
       const wrappedResult = wrapAuthReturnWithAuthTypeMessage(result);
-      setFeedback((_feedback) => ({ ..._feedback, key: wrappedResult }));
+      setFeedback((_feedback) => ({
+        ..._feedback,
+        key: wrappedResult,
+        lastAction: CONST.FEEDBACK_TYPE.KEY,
+      }));
       await refreshStatus();
       return wrappedResult;
     },
@@ -304,7 +311,11 @@ function useBiometrics(): Biometrics {
   const revoke = useCallback(async () => {
     const result = await revokeKey();
     const wrappedResult = wrapAuthReturnWithAuthTypeMessage(result);
-    setFeedback((_feedback) => ({ ..._feedback, key: wrappedResult }));
+    setFeedback((_feedback) => ({
+      ..._feedback,
+      key: wrappedResult,
+      lastAction: CONST.FEEDBACK_TYPE.KEY,
+    }));
     await refreshStatus();
     return wrappedResult;
   }, [refreshStatus]);
@@ -312,7 +323,11 @@ function useBiometrics(): Biometrics {
   const challenge = useCallback(async () => {
     const result = await runChallenge();
     const wrappedResult = wrapAuthReturnWithAuthTypeMessage(result);
-    setFeedback((_feedback) => ({ ..._feedback, challenge: wrappedResult }));
+    setFeedback((_feedback) => ({
+      ..._feedback,
+      challenge: wrappedResult,
+      lastAction: CONST.FEEDBACK_TYPE.CHALLENGE,
+    }));
     return wrappedResult;
   }, []);
 

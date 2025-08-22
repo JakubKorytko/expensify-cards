@@ -1,4 +1,5 @@
 import CONST from "@/src/const";
+import { AuthReturnValue } from "@/src/types";
 
 const DISABLE_LOGGER = false;
 
@@ -37,4 +38,19 @@ function rnd(min: number, max: number) {
 
 const randomTransactionID = () => rnd(100_000_000, 999_999_999).toString();
 
-export { Logger, decodeExpoErrorCode, randomTransactionID };
+const getReasonMessage = (authData: AuthReturnValue<boolean>) => {
+  console.log(authData);
+  if (authData.value) {
+    const isAuthMessageIncluded = !!authData.authTypeMessage;
+    return isAuthMessageIncluded
+      ? `${CONST.REASON_MESSAGE.SUCCESS_USING} ${authData.authTypeMessage}`
+      : CONST.REASON_MESSAGE.SUCCESS;
+  }
+
+  const isReasonIncluded = !!authData.reason;
+  return isReasonIncluded
+    ? `${CONST.REASON_MESSAGE.FAILED_BECAUSE}: ${authData.reason}`
+    : CONST.REASON_MESSAGE.FAILED;
+};
+
+export { Logger, decodeExpoErrorCode, randomTransactionID, getReasonMessage };

@@ -22,6 +22,27 @@ type KeyType = (typeof CONST.KEY_ALIASES)[keyof typeof CONST.KEY_ALIASES];
 type Feedback = {
   challenge: AuthReturnValue<boolean>;
   key: AuthReturnValue<boolean>;
+  lastAction:
+    | (typeof CONST.FEEDBACK_TYPE)[keyof typeof CONST.FEEDBACK_TYPE]
+    | undefined;
 };
 
-export type { Biometrics, AuthReturnValue, KeyType, AuthType, Feedback };
+type CallbackProps = {
+  show?: boolean;
+  hide?: () => void;
+  authData: AuthReturnValue<boolean>;
+};
+
+type MagicCodeProps = {
+  callback: () => void;
+};
+
+export type {
+  Biometrics,
+  AuthReturnValue,
+  KeyType,
+  AuthType,
+  Feedback,
+  MagicCodeProps,
+  CallbackProps,
+};
