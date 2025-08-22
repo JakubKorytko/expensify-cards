@@ -136,7 +136,9 @@ const runChallenge = async (): Promise<AuthReturnValue<boolean>> => {
   return await sendSignedChallenge(signedToken.value);
 };
 
-const requestKey = async (): Promise<AuthReturnValue<boolean>> => {
+const requestKey = async (
+  validateCode?: number,
+): Promise<AuthReturnValue<boolean>> => {
   const { privateKey, publicKey } = generateKeys();
 
   const setResult = await PrivateKeyStorage.set(privateKey);
@@ -150,25 +152,30 @@ const requestKey = async (): Promise<AuthReturnValue<boolean>> => {
     };
   }
 
-  const result = await API.write("RegisterBiometrics", {
-    publicKey,
-  });
-
-  const message = await result.text();
-
-  if (result.status !== 200) {
-    return {
-      value: false,
-      reason: message || "API error",
-    };
-  }
-
   const publicKeyResult = await PublicKeyStorage.set(publicKey);
 
   if (!publicKeyResult.value) {
     return {
       value: false,
       reason: publicKeyResult.reason,
+    };
+  }
+
+  const result = await API.write("RegisterBiometrics", {
+    publicKey,
+    validateCode,
+  });
+
+  const message = await result.text();
+
+  if (result.status !== 200) {
+    Logger.w(message || "API error");
+
+    await revokeKey();
+
+    return {
+      value: false,
+      reason: message || "API error",
     };
   }
 
@@ -232,6 +239,14 @@ function useBiometrics(): Biometrics {
     challenge: { ...emptyAuthReason },
     key: { ...emptyAuthReason },
   });
+  const [generator, setGenerator] = useState<
+    | AsyncGenerator<
+        AuthReturnValue<boolean>,
+        AuthReturnValue<boolean>,
+        number | undefined
+      >
+    | undefined
+  >();
 
   const refreshStatus = useCallback(
     async () => setStatus(await checkBiometricsStatus()),
@@ -242,13 +257,49 @@ function useBiometrics(): Biometrics {
     refreshStatus();
   }, [refreshStatus]);
 
+  const requestGenerator = useCallback(
+    async function* () {
+      let result = await requestKey();
+
+      if (
+        !result.value &&
+        result.reason === CONST.REASON_CODES.ERROR.VALIDATE_CODE_REQUIRED
+      ) {
+        await API.read("ResendValidateCode", {
+          email: CONST.USER_EMAIL,
+        });
+        result = await requestKey(yield result);
+      }
+      const wrappedResult = wrapAuthReturnWithAuthTypeMessage(result);
+      setFeedback((_feedback) => ({ ..._feedback, key: wrappedResult }));
+      await refreshStatus();
+      return wrappedResult;
+    },
+    [refreshStatus],
+  );
+
   const request = useCallback(async () => {
-    const result = await requestKey();
-    const wrappedResult = wrapAuthReturnWithAuthTypeMessage(result);
-    setFeedback((_feedback) => ({ ..._feedback, key: wrappedResult }));
-    await refreshStatus();
-    return wrappedResult;
-  }, [refreshStatus]);
+    const gen = requestGenerator();
+    const { value: authValue } = await gen.next();
+    if (authValue.reason === CONST.REASON_CODES.ERROR.VALIDATE_CODE_REQUIRED) {
+      setGenerator(gen);
+    } else {
+      setGenerator(undefined);
+    }
+    return authValue;
+  }, [requestGenerator]);
+
+  const requestContinue = useCallback(
+    async (code?: number) => {
+      if (!generator) {
+        return await request();
+      }
+      const { value: authValue } = await generator.next(code);
+      setGenerator(undefined);
+      return authValue;
+    },
+    [generator, request],
+  );
 
   const revoke = useCallback(async () => {
     const result = await revokeKey();
@@ -266,7 +317,8 @@ function useBiometrics(): Biometrics {
   }, []);
 
   return {
-    request,
+    request: !!generator ? requestContinue : request,
+    validateCodeRequired: !!generator,
     challenge,
     revoke,
     feedback,

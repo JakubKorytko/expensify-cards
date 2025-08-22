@@ -5,7 +5,7 @@ import type { AuthReturnValue, KeyType } from "@/src/types";
 import { Logger, decodeExpoErrorCode } from "@/src/helpers";
 
 async function setKey(
-  key: string,
+  key: KeyType,
   value: string,
 ): Promise<AuthReturnValue<boolean>> {
   try {
@@ -29,7 +29,7 @@ async function setKey(
   }
 }
 
-async function getKey(key: string): Promise<AuthReturnValue<string | null>> {
+async function getKey(key: KeyType): Promise<AuthReturnValue<string | null>> {
   try {
     const [retrievedKey, authType] = await SecureStore.getItemAsync(key, {
       requireAuthentication: key === CONST.KEY_ALIASES.PRIVATE_KEY,
@@ -52,7 +52,7 @@ async function getKey(key: string): Promise<AuthReturnValue<string | null>> {
   }
 }
 
-async function revokeKey(key: string): Promise<AuthReturnValue<boolean>> {
+async function revokeKey(key: KeyType): Promise<AuthReturnValue<boolean>> {
   try {
     await SecureStore.deleteItemAsync(key, {
       keychainService: CONST.KEYCHAIN_SERVICE,

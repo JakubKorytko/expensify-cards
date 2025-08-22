@@ -1,5 +1,5 @@
 import { Stack } from "expo-router";
-import { BiometricsContextProvider } from "@/components/BiometricsContext";
+import { BiometricsContextProvider } from "@/src/BiometricsContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function RootLayout() {

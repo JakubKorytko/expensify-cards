@@ -45,11 +45,13 @@ const CONST = {
       UNABLE_TO_DELETE_KEY: "Unable to delete key from the SecureStore",
       UNABLE_TO_RETRIEVE_KEY: "Unable to retrieve key from the SecureStore",
       SIGNATURE_MISSING: "Signature is missing",
+      VALIDATE_CODE_REQUIRED: "Validate code required",
     },
   },
   MISC: {
     EXPO_ERROR_SEPARATOR: "Caused by:",
   },
+  USER_EMAIL: "user@example.com",
 };
 
 export default CONST;

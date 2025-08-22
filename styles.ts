@@ -1,23 +1,24 @@
-import { ImageStyle, TextStyle, ViewStyle } from "react-native";
-
-type Styles = {
-  container: ViewStyle;
-  layoutContainer: ViewStyle;
-  logoImage: ImageStyle;
-  button: ViewStyle;
-  floatingButton: ViewStyle;
-  whiteText: TextStyle;
-  buttonText: TextStyle;
-  mtn25: TextStyle;
-};
-
-const styles: Styles = {
+const styles = {
   container: {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    gap: 40,
+    width: "90%",
+    gap: 5,
+    backgroundColor: "#F8F4F0",
+    borderRadius: 5,
+  },
+  textInput: {
+    backgroundColor: "#FFF",
+    width: "100%",
+  },
+  magicCodeContainer: {
     width: "80%",
+    gap: 10,
+    marginBottom: 20,
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
   },
   layoutContainer: {
     flex: 1,
@@ -26,41 +27,44 @@ const styles: Styles = {
     backgroundColor: "#FCFBF9",
     gap: 40,
   },
-  logoImage: {
-    width: 200,
-    height: 200,
+  content: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 20,
   },
   button: {
-    width: 200,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 9999,
-    height: 50,
-    backgroundColor: "#03d47c",
-  },
-  floatingButton: {
-    position: "absolute",
-    top: 0,
-    backgroundColor: "#051c09",
-    width: "100%",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 10,
-    marginBottom: 20,
-  },
-  whiteText: {
-    color: "white",
+    backgroundColor: "#E6E1DA",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
   },
   buttonText: {
     fontWeight: "bold",
-    color: "white",
-    fontSize: 15,
+    fontSize: 12,
   },
-  mtn25: {
-    marginTop: -25,
+  buttonNegative: {
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    backgroundColor: "#F25730",
   },
-};
+  buttonTextNegative: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+  title: {
+    fontSize: 14,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    gap: 5,
+  },
+  w80: {
+    width: 80,
+  },
+} as const;
 
 export default styles;
