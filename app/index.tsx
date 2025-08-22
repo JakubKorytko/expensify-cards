@@ -77,6 +77,9 @@ export default function Index() {
       setShowCallback(true);
     } else {
       await Biometrics.request();
+      if (!Biometrics.validateCodeRequired) {
+        setShowCallback(true);
+      }
     }
   };
 

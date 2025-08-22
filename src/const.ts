@@ -21,6 +21,18 @@ const CONST = {
       CODE: 2,
       NAME: "Biometrics",
     },
+    FACE_ID: {
+      CODE: 3,
+      NAME: "FaceID",
+    },
+    TOUCH_ID: {
+      CODE: 4,
+      NAME: "TouchID",
+    },
+    OPTIC_ID: {
+      CODE: 5,
+      NAME: "OpticID",
+    },
   } as const,
   REASON_CODES: {
     SUCCESS: {
