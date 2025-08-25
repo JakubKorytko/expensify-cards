@@ -51,12 +51,11 @@ function rnd(min: number, max: number) {
 
 const randomTransactionID = () => rnd(100_000_000, 999_999_999).toString();
 
-const getReasonMessage = (authData: AuthReturnValue<boolean>) => {
-  console.log(authData);
+const getReasonMessage = <T>(authData: AuthReturnValue<T>) => {
   if (authData.value) {
-    const isAuthMessageIncluded = !!authData.authTypeMessage;
+    const isAuthMessageIncluded = !!authData.typeName;
     return isAuthMessageIncluded
-      ? `${CONST.REASON_MESSAGE.SUCCESS_USING} ${authData.authTypeMessage}`
+      ? `${CONST.REASON_MESSAGE.SUCCESS_USING} ${authData.typeName}`
       : CONST.REASON_MESSAGE.SUCCESS;
   }
 

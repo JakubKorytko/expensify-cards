@@ -1,30 +1,32 @@
-import { View, Text, TouchableOpacity, TextInput } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  TouchableWithoutFeedback,
+} from "react-native";
 import styles from "@/styles";
 import { useState } from "react";
 import { CallbackProps, MagicCodeProps } from "@/src/types";
-import { getReasonMessage } from "@/src/helpers";
 import useBiometrics from "@/src/useBiometrics";
 
-function Callback({ authData, onClose = () => {} }: CallbackProps) {
+function Callback({ authData: { value, message }, onClose }: CallbackProps) {
   return (
-    <View style={[styles.magicCodeContainer, styles.container200H]}>
+    <View style={styles.callbackContainer}>
       <View style={styles.gap15}>
         <Text style={styles.hugeText}>
-          Authorization {authData.value ? "successful" : "failed"}
+          Authorization {value ? "successful" : "failed"}
         </Text>
-        <Text>{getReasonMessage(authData)}</Text>
+        <Text>{message}</Text>
       </View>
-      <TouchableOpacity
-        style={[styles.button, styles.w100Bottom, styles.greenButton]}
-        onPress={onClose}
-      >
-        <Text style={[styles.buttonText, styles.greenButtonText]}>Got it</Text>
+      <TouchableOpacity style={styles.greenButton} onPress={onClose}>
+        <Text style={styles.greenButtonText}>Got it</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
-function MagicCode({ onSubmit = () => {} }: MagicCodeProps) {
+function MagicCode({ onSubmit }: MagicCodeProps) {
   const [validateCode, setValidateCode] = useState("");
 
   return (
@@ -42,12 +44,10 @@ function MagicCode({ onSubmit = () => {} }: MagicCodeProps) {
         />
       </View>
       <TouchableOpacity
-        style={[styles.button, styles.w100Bottom, styles.greenButton]}
+        style={styles.greenButton}
         onPress={() => onSubmit(Number(validateCode))}
       >
-        <Text style={[styles.buttonText, styles.greenButtonText]}>
-          Authorize
-        </Text>
+        <Text style={styles.greenButtonText}>Authorize</Text>
       </TouchableOpacity>
     </View>
   );
@@ -56,53 +56,59 @@ function MagicCode({ onSubmit = () => {} }: MagicCodeProps) {
 export default function Index() {
   const Biometrics = useBiometrics();
   const [showCallback, setShowCallback] = useState(false);
+  const hideCallback = () => setShowCallback(false);
 
-  const onTestPress = async () => {
-    await Biometrics[Biometrics.status ? "challenge" : "request"]();
+  const isModalShown = Biometrics.validateCodeRequired || showCallback;
+
+  const statusText = `Biometrics (${Biometrics.status ? "Registered" : "Not registered"})`;
+
+  const passValidateCode = async (validateCode: number) => {
+    await Biometrics.request(validateCode);
+    setShowCallback(true);
+  };
+
+  const runTest = async () => {
+    const biometricsNextStep = Biometrics.status ? "challenge" : "request";
+    await Biometrics[biometricsNextStep]();
     setShowCallback(!Biometrics.validateCodeRequired);
   };
 
   return (
     <>
-      <View
-        style={[
-          styles.layoutContainer,
-          (Biometrics.validateCodeRequired || showCallback) &&
-            styles.layoutContainerMagicCode,
-        ]}
-      >
-        <View style={[styles.container]}>
-          <View style={styles.content}>
-            <Text style={styles.title}>
-              Biometrics ({Biometrics.status ? "Registered" : "Not registered"})
-            </Text>
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.button} onPress={onTestPress}>
-                <Text style={styles.buttonText}>Test</Text>
-              </TouchableOpacity>
-              {Biometrics.status && (
-                <TouchableOpacity
-                  style={styles.buttonNegative}
-                  onPress={Biometrics.revoke}
-                >
-                  <Text style={styles.buttonTextNegative}>Remove</Text>
+      <TouchableWithoutFeedback onPress={hideCallback}>
+        <View
+          style={[
+            styles.layoutContainer,
+            isModalShown && styles.layoutContainerMagicCode,
+          ]}
+        >
+          <View style={styles.container}>
+            <View style={styles.content}>
+              <Text style={styles.title}>{statusText}</Text>
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity style={styles.button} onPress={runTest}>
+                  <Text style={styles.buttonText}>Test</Text>
                 </TouchableOpacity>
-              )}
+                {Biometrics.status && (
+                  <TouchableOpacity
+                    style={styles.buttonNegative}
+                    onPress={Biometrics.revoke}
+                  >
+                    <Text style={styles.buttonTextNegative}>Remove</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
       {Biometrics.validateCodeRequired && (
-        <MagicCode
-          onSubmit={(validateCode) =>
-            Biometrics.request(validateCode).then(() => setShowCallback(true))
-          }
-        />
+        <MagicCode onSubmit={passValidateCode} />
       )}
       {showCallback && !Biometrics.validateCodeRequired && (
         <Callback
           authData={Biometrics.feedback.lastAction.value}
-          onClose={() => setShowCallback(false)}
+          onClose={hideCallback}
         />
       )}
     </>

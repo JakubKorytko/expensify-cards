@@ -18,7 +18,16 @@ const styles = {
     letterSpacing: 5,
     fontSize: 20,
   },
-  container200H: {
+  callbackContainer: {
+    width: "100%",
+    gap: 10,
+    position: "absolute",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    bottom: 0,
+    flexDirection: "column",
+    padding: 30,
+    backgroundColor: "#FCFBF9",
     height: 200,
     alignItems: "flex-start",
     justifyContent: "space-between",
@@ -74,10 +83,17 @@ const styles = {
     fontSize: 11,
   },
   greenButtonText: {
+    fontWeight: "bold",
     color: "white",
     fontSize: 15,
   },
   greenButton: {
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    paddingVertical: 10,
     backgroundColor: "#03D47C",
   },
   buttonNegative: {
@@ -110,10 +126,6 @@ const styles = {
   buttonContainer: {
     flexDirection: "row",
     gap: 5,
-  },
-  w100Bottom: {
-    width: "100%",
-    paddingVertical: 10,
   },
 } as const;
 

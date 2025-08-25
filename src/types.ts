@@ -12,8 +12,9 @@ type Biometrics = {
 type AuthReturnValue<T> = {
   value: T;
   reason: string;
-  authType?: number;
-  authTypeMessage?: string;
+  type?: number;
+  typeName?: string;
+  message?: string;
 };
 
 type AuthType = (typeof CONST.AUTH_TYPE)[keyof typeof CONST.AUTH_TYPE];

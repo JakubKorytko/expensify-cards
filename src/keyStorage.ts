@@ -19,7 +19,7 @@ async function setKey(
     return {
       value: true,
       reason: CONST.REASON_CODES.SUCCESS.KEY_SAVED,
-      authType,
+      type: authType,
     };
   } catch (error) {
     return {
@@ -42,7 +42,7 @@ async function getKey(key: KeyType): Promise<AuthReturnValue<string | null>> {
       reason: !!retrievedKey
         ? CONST.REASON_CODES.SUCCESS.KEY_RETRIEVED
         : CONST.REASON_CODES.SUCCESS.KEY_NOT_IN_SECURE_STORE,
-      authType,
+      type: authType,
     };
   } catch (error) {
     return {

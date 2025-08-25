@@ -7,7 +7,7 @@ import type {
   Biometrics,
   Feedback,
 } from "@/src/types";
-import { Logger, randomTransactionID } from "@/src/helpers";
+import { getReasonMessage, Logger, randomTransactionID } from "@/src/helpers";
 import API from "@/src/api";
 import CONST from "@/src/const";
 
@@ -47,7 +47,7 @@ const signChallenge = async (
   return {
     value: signedToken,
     reason: CONST.REASON_CODES.SUCCESS.TOKEN_SIGNED,
-    authType: key.authType,
+    type: key.type,
   };
 };
 
@@ -104,7 +104,7 @@ const sendSignedChallenge = async (
   return {
     value: bool,
     reason,
-    authType: signedToken.authType,
+    type: signedToken.type,
   };
 };
 
@@ -179,7 +179,7 @@ const requestKey = async (
   return {
     value: true,
     reason: CONST.REASON_CODES.SUCCESS.KEY_PAIR_GENERATED,
-    authType: setResult.authType,
+    type: setResult.type,
   };
 };
 
@@ -212,11 +212,16 @@ const checkBiometricsStatus = async () => {
 const wrapAuthReturnWithAuthTypeMessage = <T>(
   returnValue: AuthReturnValue<T>,
 ) => {
-  if (returnValue.authType === undefined) return returnValue;
+  if (returnValue.type === undefined) return returnValue;
+
+  const authWithTypeName = {
+    ...returnValue,
+    typeName: getAuthType(returnValue.type)?.NAME,
+  };
 
   return {
-    ...returnValue,
-    authTypeMessage: getAuthType(returnValue.authType)?.NAME,
+    ...authWithTypeName,
+    message: getReasonMessage(authWithTypeName),
   };
 };
 
