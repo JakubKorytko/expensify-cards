@@ -1,18 +1,13 @@
-const SERVER_URL = "http://192.168.1.84:3000";
+import fetch from "@/API_mock/router";
 
 const api = async (
   path: string,
   method: "GET" | "POST",
   body?: Record<string, unknown>,
 ) => {
-  return await fetch(SERVER_URL + path, {
+  return await fetch(path, {
     method,
-    body: body ? JSON.stringify(body) : undefined,
-    headers: body
-      ? {
-          "Content-Type": "application/json",
-        }
-      : undefined,
+    body,
   });
 };
 
@@ -37,6 +32,7 @@ type WriteCommands = {
       publicKey: string;
       validateCode?: number;
     };
+    returns: string | true;
   };
   AuthorizeTransaction: {
     route: typeof APIRoutes.Write.AuthorizeTransaction;
@@ -48,6 +44,7 @@ type WriteCommands = {
       validateCode?: number; // magic code
       otp?: number; // 2FA / SMS OTP
     };
+    returns: string | boolean;
   };
 };
 
@@ -57,11 +54,17 @@ type ReadCommands = {
     parameters: {
       email: string;
     };
+    returns: boolean;
   };
   RequestBiometricChallenge: {
     route: typeof APIRoutes.Read.RequestBiometricChallenge;
     parameters?: Record<string, unknown>;
+    returns: Nonce | string;
   };
+};
+
+type Nonce = {
+  challenge: string;
 };
 
 const API = {
@@ -71,7 +74,9 @@ const API = {
   ) => {
     const routePath = APIRoutes.Read[route];
     const [protocol, path] = routePath.split(":") as ["GET" | "POST", string];
-    return await api(path, protocol, parameters);
+    return (await api(path, protocol, parameters)) as Promise<
+      ReadCommands[typeof route]["returns"]
+    >;
   },
   write: async (
     route: keyof typeof APIRoutes.Write,
@@ -79,9 +84,11 @@ const API = {
   ) => {
     const routePath = APIRoutes.Write[route];
     const [protocol, path] = routePath.split(":") as ["GET" | "POST", string];
-    console.log(path, protocol, parameters);
-    return await api(path, protocol, parameters);
+    return (await api(path, protocol, parameters)) as Promise<
+      WriteCommands[typeof route]["returns"]
+    >;
   },
 };
 
 export default API;
+export type { WriteCommands, ReadCommands, Nonce };

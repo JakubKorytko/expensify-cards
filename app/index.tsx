@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import styles from "@/styles";
 import { useBiometricsContext } from "@/src/BiometricsContext";
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { CallbackProps, MagicCodeProps } from "@/src/types";
 import { getReasonMessage } from "@/src/helpers";
 import CONST from "@/src/const";
@@ -82,6 +82,12 @@ export default function Index() {
       }
     }
   };
+
+  useLayoutEffect(() => {
+    if (showCallback && Biometrics.validateCodeRequired) {
+      setShowCallback(false);
+    }
+  }, [Biometrics.validateCodeRequired, showCallback]);
 
   const isModalOpened = Biometrics.validateCodeRequired || showCallback;
   const authData =

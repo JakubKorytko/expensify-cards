@@ -11,13 +11,26 @@ const wrapReasonWithSourceData = (
 };
 
 const Logger = {
-  e: (...args: any[]) => !DISABLE_LOGGER && console.error(...args),
-  w: (...args: any[]) => !DISABLE_LOGGER && console.warn(...args),
-  m: (...args: any[]) => !DISABLE_LOGGER && console.log(...args),
-  mw: (reason: string, args: Record<string, unknown>) =>
-    !DISABLE_LOGGER && console.log(wrapReasonWithSourceData(reason, args)),
-  ww: (reason: string, args: Record<string, unknown>) =>
-    !DISABLE_LOGGER && console.warn(wrapReasonWithSourceData(reason, args)),
+  e: (...args: any[]) => {
+    if (!DISABLE_LOGGER) console.error(...args);
+    return args.join(" ");
+  },
+  w: (...args: any[]) => {
+    if (!DISABLE_LOGGER) console.warn(...args);
+    return args.join(" ");
+  },
+  m: (...args: any[]) => {
+    if (!DISABLE_LOGGER) console.log(...args);
+    return args.join(" ");
+  },
+  mw: (reason: string, args: Record<string, unknown>) => {
+    if (!DISABLE_LOGGER) console.log(wrapReasonWithSourceData(reason, args));
+    return reason;
+  },
+  ww: (reason: string, args: Record<string, unknown>) => {
+    if (!DISABLE_LOGGER) console.warn(wrapReasonWithSourceData(reason, args));
+    return reason;
+  },
 };
 
 function decodeExpoErrorCode(error: unknown) {

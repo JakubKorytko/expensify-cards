@@ -55,21 +55,14 @@ const requestChallenge = async (): Promise<
   AuthReturnValue<string | undefined>
 > => {
   const apiToken = await API.read("RequestBiometricChallenge");
-  let token;
 
-  try {
-    token = await apiToken.json();
-  } catch (e) {
-    Logger.e(e);
-  }
-
-  if (!!token && "challenge" in token && typeof token.challenge === "string") {
+  if (!!apiToken && typeof apiToken === "object" && "challenge" in apiToken) {
     Logger.mw(CONST.REASON_CODES.SUCCESS.TOKEN_RECEIVED, {
-      token: token.challenge,
+      token: apiToken.challenge,
     });
 
     return {
-      value: token.challenge,
+      value: apiToken.challenge,
       reason: CONST.REASON_CODES.SUCCESS.TOKEN_RECEIVED,
     };
   }
@@ -101,7 +94,7 @@ const sendSignedChallenge = async (
     signedChallenge: signedToken.value,
   });
 
-  const bool = (await val.text()) === "true";
+  const bool = val === true;
   const reason = bool
     ? CONST.REASON_CODES.SUCCESS.VERIFICATION_SUCCESS
     : CONST.REASON_CODES.ERROR.CHALLENGE_REJECTED;
@@ -168,16 +161,14 @@ const requestKey = async (
     validateCode,
   });
 
-  const message = await result.text();
-
-  if (result.status !== 200) {
-    Logger.w(message || "API error");
+  if (typeof result === "string") {
+    Logger.w(result || "API error");
 
     await revokeKey();
 
     return {
       value: false,
-      reason: message || "API error",
+      reason: result || "API error",
     };
   }
 
