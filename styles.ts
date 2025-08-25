@@ -42,8 +42,6 @@ const styles = {
   },
   layoutContainerMagicCode: {
     backgroundColor: "#EBE6DF",
-  },
-  containerMagicCode: {
     filter: "blur(3px)",
   },
   layoutContainer: {

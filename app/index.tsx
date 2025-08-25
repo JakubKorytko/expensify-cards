@@ -1,14 +1,11 @@
 import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import styles from "@/styles";
-import { useBiometricsContext } from "@/src/BiometricsContext";
-import { useLayoutEffect, useState } from "react";
+import { useState } from "react";
 import { CallbackProps, MagicCodeProps } from "@/src/types";
 import { getReasonMessage } from "@/src/helpers";
-import CONST from "@/src/const";
+import useBiometrics from "@/src/useBiometrics";
 
-function Callback({ authData, show = false, hide = () => {} }: CallbackProps) {
-  if (!show) return;
-
+function Callback({ authData, onClose = () => {} }: CallbackProps) {
   return (
     <View style={[styles.magicCodeContainer, styles.container200H]}>
       <View style={styles.gap15}>
@@ -19,7 +16,7 @@ function Callback({ authData, show = false, hide = () => {} }: CallbackProps) {
       </View>
       <TouchableOpacity
         style={[styles.button, styles.w100Bottom, styles.greenButton]}
-        onPress={hide}
+        onPress={onClose}
       >
         <Text style={[styles.buttonText, styles.greenButtonText]}>Got it</Text>
       </TouchableOpacity>
@@ -27,19 +24,8 @@ function Callback({ authData, show = false, hide = () => {} }: CallbackProps) {
   );
 }
 
-function MagicCode({ callback = () => {} }: MagicCodeProps) {
-  const Biometrics = useBiometricsContext();
+function MagicCode({ onSubmit = () => {} }: MagicCodeProps) {
   const [validateCode, setValidateCode] = useState("");
-
-  if (!Biometrics.validateCodeRequired) return;
-
-  const handleNumberChange = (text: string) =>
-    setValidateCode(text.replace(/[^0-9]/g, ""));
-
-  const proceedWithMagicCode = async () => {
-    await Biometrics.request(Number(validateCode));
-    callback();
-  };
 
   return (
     <View style={styles.magicCodeContainer}>
@@ -48,7 +34,7 @@ function MagicCode({ callback = () => {} }: MagicCodeProps) {
           You need to provide a magic code to proceed
         </Text>
         <TextInput
-          onChangeText={handleNumberChange}
+          onChangeText={(text) => setValidateCode(text)}
           value={validateCode}
           keyboardType="numeric"
           maxLength={6}
@@ -57,7 +43,7 @@ function MagicCode({ callback = () => {} }: MagicCodeProps) {
       </View>
       <TouchableOpacity
         style={[styles.button, styles.w100Bottom, styles.greenButton]}
-        onPress={proceedWithMagicCode}
+        onPress={() => onSubmit(Number(validateCode))}
       >
         <Text style={[styles.buttonText, styles.greenButtonText]}>
           Authorize
@@ -68,66 +54,57 @@ function MagicCode({ callback = () => {} }: MagicCodeProps) {
 }
 
 export default function Index() {
-  const Biometrics = useBiometricsContext();
+  const Biometrics = useBiometrics();
   const [showCallback, setShowCallback] = useState(false);
-  const statusText = Biometrics.status ? "Registered" : "Not registered";
-  const testCallback = async () => {
-    if (Biometrics.status) {
-      await Biometrics.challenge();
-      setShowCallback(true);
-    } else {
-      await Biometrics.request();
-      if (!Biometrics.validateCodeRequired) {
-        setShowCallback(true);
-      }
-    }
+
+  const onTestPress = async () => {
+    await Biometrics[Biometrics.status ? "challenge" : "request"]();
+    setShowCallback(!Biometrics.validateCodeRequired);
   };
 
-  useLayoutEffect(() => {
-    if (showCallback && Biometrics.validateCodeRequired) {
-      setShowCallback(false);
-    }
-  }, [Biometrics.validateCodeRequired, showCallback]);
-
-  const isModalOpened = Biometrics.validateCodeRequired || showCallback;
-  const authData =
-    Biometrics.feedback.lastAction === CONST.FEEDBACK_TYPE.KEY
-      ? Biometrics.feedback.key
-      : Biometrics.feedback.challenge;
-
   return (
-    <View
-      style={[
-        styles.layoutContainer,
-        isModalOpened && styles.layoutContainerMagicCode,
-      ]}
-    >
+    <>
       <View
-        style={[styles.container, isModalOpened && styles.containerMagicCode]}
+        style={[
+          styles.layoutContainer,
+          (Biometrics.validateCodeRequired || showCallback) &&
+            styles.layoutContainerMagicCode,
+        ]}
       >
-        <View style={styles.content}>
-          <Text style={styles.title}>Biometrics ({statusText})</Text>
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button} onPress={testCallback}>
-              <Text style={styles.buttonText}>Test</Text>
-            </TouchableOpacity>
-            {Biometrics.status && (
-              <TouchableOpacity
-                style={styles.buttonNegative}
-                onPress={Biometrics.revoke}
-              >
-                <Text style={styles.buttonTextNegative}>Remove</Text>
+        <View style={[styles.container]}>
+          <View style={styles.content}>
+            <Text style={styles.title}>
+              Biometrics ({Biometrics.status ? "Registered" : "Not registered"})
+            </Text>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity style={styles.button} onPress={onTestPress}>
+                <Text style={styles.buttonText}>Test</Text>
               </TouchableOpacity>
-            )}
+              {Biometrics.status && (
+                <TouchableOpacity
+                  style={styles.buttonNegative}
+                  onPress={Biometrics.revoke}
+                >
+                  <Text style={styles.buttonTextNegative}>Remove</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         </View>
       </View>
-      <MagicCode callback={() => setShowCallback(true)} />
-      <Callback
-        authData={authData}
-        show={showCallback}
-        hide={() => setShowCallback(false)}
-      />
-    </View>
+      {Biometrics.validateCodeRequired && (
+        <MagicCode
+          onSubmit={(validateCode) =>
+            Biometrics.request(validateCode).then(() => setShowCallback(true))
+          }
+        />
+      )}
+      {showCallback && !Biometrics.validateCodeRequired && (
+        <Callback
+          authData={Biometrics.feedback.lastAction.value}
+          onClose={() => setShowCallback(false)}
+        />
+      )}
+    </>
   );
 }

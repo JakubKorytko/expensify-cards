@@ -61,6 +61,7 @@ const CONST = {
     },
   },
   FEEDBACK_TYPE: {
+    NONE: "None",
     CHALLENGE: "Challenge",
     KEY: "Key",
   },

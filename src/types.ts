@@ -22,19 +22,19 @@ type KeyType = (typeof CONST.KEY_ALIASES)[keyof typeof CONST.KEY_ALIASES];
 type Feedback = {
   challenge: AuthReturnValue<boolean>;
   key: AuthReturnValue<boolean>;
-  lastAction:
-    | (typeof CONST.FEEDBACK_TYPE)[keyof typeof CONST.FEEDBACK_TYPE]
-    | undefined;
+  lastAction: {
+    type: (typeof CONST.FEEDBACK_TYPE)[keyof typeof CONST.FEEDBACK_TYPE];
+    value: AuthReturnValue<boolean>;
+  };
 };
 
 type CallbackProps = {
-  show?: boolean;
-  hide?: () => void;
+  onClose?: () => void;
   authData: AuthReturnValue<boolean>;
 };
 
 type MagicCodeProps = {
-  callback: () => void;
+  onSubmit: (validateCode: number) => void;
 };
 
 export type {

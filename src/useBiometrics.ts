@@ -120,7 +120,6 @@ const runChallenge = async (): Promise<AuthReturnValue<boolean>> => {
 
   const signedToken = await signChallenge(token.value);
 
-  console.log("PODPISANY", signedToken);
   if (!signedToken.value) {
     return {
       value: false,
@@ -231,7 +230,12 @@ function useBiometrics(): Biometrics {
   const [feedback, setFeedback] = useState<Feedback>({
     challenge: { ...emptyAuthReason },
     key: { ...emptyAuthReason },
-    lastAction: undefined,
+    lastAction: {
+      type: CONST.FEEDBACK_TYPE.NONE,
+      value: {
+        ...emptyAuthReason,
+      },
+    },
   });
   const [generator, setGenerator] = useState<
     | AsyncGenerator<
@@ -268,7 +272,10 @@ function useBiometrics(): Biometrics {
       setFeedback((_feedback) => ({
         ..._feedback,
         key: wrappedResult,
-        lastAction: CONST.FEEDBACK_TYPE.KEY,
+        lastAction: {
+          type: CONST.FEEDBACK_TYPE.KEY,
+          value: wrappedResult,
+        },
       }));
       await refreshStatus();
       return wrappedResult;
@@ -305,7 +312,10 @@ function useBiometrics(): Biometrics {
     setFeedback((_feedback) => ({
       ..._feedback,
       key: wrappedResult,
-      lastAction: CONST.FEEDBACK_TYPE.KEY,
+      lastAction: {
+        type: CONST.FEEDBACK_TYPE.KEY,
+        value: wrappedResult,
+      },
     }));
     await refreshStatus();
     return wrappedResult;
@@ -317,7 +327,10 @@ function useBiometrics(): Biometrics {
     setFeedback((_feedback) => ({
       ..._feedback,
       challenge: wrappedResult,
-      lastAction: CONST.FEEDBACK_TYPE.CHALLENGE,
+      lastAction: {
+        type: CONST.FEEDBACK_TYPE.CHALLENGE,
+        value: wrappedResult,
+      },
     }));
     return wrappedResult;
   }, []);
