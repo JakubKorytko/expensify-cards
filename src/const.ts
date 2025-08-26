@@ -5,13 +5,13 @@ const CONST = {
     PRIVATE_KEY: "3DS_SCA_KEY_PRIVATE",
   },
   AUTH_TYPE: {
-    NONE: {
+    UNKNOWN: {
       CODE: -1,
-      NAME: "None",
+      NAME: "Unknown",
     },
-    IOS: {
+    NONE: {
       CODE: 0,
-      NAME: "iOS",
+      NAME: "None",
     },
     CREDENTIALS: {
       CODE: 1,

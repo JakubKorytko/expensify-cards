@@ -212,16 +212,16 @@ const checkBiometricsStatus = async () => {
 const wrapAuthReturnWithAuthTypeMessage = <T>(
   returnValue: AuthReturnValue<T>,
 ) => {
-  if (returnValue.type === undefined) return returnValue;
-
-  const authWithTypeName = {
+  const authDataWithTypeName = {
     ...returnValue,
-    typeName: getAuthType(returnValue.type)?.NAME,
+    typeName: returnValue.type
+      ? getAuthType(returnValue.type)?.NAME
+      : undefined,
   };
 
   return {
-    ...authWithTypeName,
-    message: getReasonMessage(authWithTypeName),
+    ...authDataWithTypeName,
+    message: getReasonMessage(authDataWithTypeName),
   };
 };
 
