@@ -12,8 +12,10 @@ async function setKey(
     const authType = await SecureStore.setItemAsync(key, value, {
       requireAuthentication: key === CONST.KEY_ALIASES.PRIVATE_KEY,
       failOnDuplicate: key === CONST.KEY_ALIASES.PRIVATE_KEY,
+      authOnEveryAction: key === CONST.KEY_ALIASES.PRIVATE_KEY,
       keychainService: CONST.KEYCHAIN_SERVICE,
       keychainAccessible: SecureStore.WHEN_PASSCODE_SET_THIS_DEVICE_ONLY,
+      enableCredentialsAlternative: true,
     });
 
     return {
@@ -35,6 +37,8 @@ async function getKey(key: KeyType): Promise<AuthReturnValue<string | null>> {
       requireAuthentication: key === CONST.KEY_ALIASES.PRIVATE_KEY,
       keychainService: CONST.KEYCHAIN_SERVICE,
       keychainAccessible: SecureStore.WHEN_PASSCODE_SET_THIS_DEVICE_ONLY,
+      authOnEveryAction: key === CONST.KEY_ALIASES.PRIVATE_KEY,
+      enableCredentialsAlternative: true,
     });
 
     return {
