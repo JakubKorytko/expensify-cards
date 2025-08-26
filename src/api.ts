@@ -59,12 +59,17 @@ type ReadCommands = {
   RequestBiometricChallenge: {
     route: typeof APIRoutes.Read.RequestBiometricChallenge;
     parameters?: Record<string, unknown>;
-    returns: Nonce | string;
+    returns: ChallengeObject | string;
   };
 };
 
-type Nonce = {
-  challenge: string;
+type ChallengeObject = {
+  challenge: Challenge;
+};
+
+type Challenge = {
+  nonce: string;
+  expires: number;
 };
 
 const API = {
@@ -91,4 +96,4 @@ const API = {
 };
 
 export default API;
-export type { WriteCommands, ReadCommands, Nonce };
+export type { WriteCommands, ReadCommands, ChallengeObject, Challenge };

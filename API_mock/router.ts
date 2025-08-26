@@ -1,5 +1,5 @@
 import { Logger } from "@/src/helpers";
-import { Nonce, ReadCommands, WriteCommands } from "@/src/api";
+import { ChallengeObject, ReadCommands, WriteCommands } from "@/src/api";
 import {
   ed,
   generateSixDigitNumber,
@@ -7,7 +7,6 @@ import {
   STORAGE,
   USER_EMAIL,
 } from "@/API_mock/utils";
-import { sign } from "react-native-pure-jwt";
 
 const router: {
   post: Record<string, Function>;
@@ -37,7 +36,7 @@ router.post["/resend_validate_code"] = ({
 };
 
 router.get["/request_biometric_challenge"] = async (): Promise<
-  Nonce | string
+  ChallengeObject | string
 > => {
   Logger.m("Requested biometric challenge");
 
@@ -53,25 +52,21 @@ router.get["/request_biometric_challenge"] = async (): Promise<
     expires: expirationDate,
   };
 
-  const challengeJWT = await sign(
-    challenge,
-    ed.etc.bytesToHex(ed.utils.randomPrivateKey()),
-    { alg: "HS512" },
-  );
-  STORAGE.challenges[challengeJWT] = challenge;
+  const challengeString = JSON.stringify(challenge);
+  STORAGE.challenges[challengeString] = challenge;
 
   setTimeout(
     () => {
-      Logger.m(`Challenge ${challengeJWT} expired, removed from storage`);
-      delete STORAGE.challenges[challengeJWT];
+      Logger.m(`Challenge ${challengeString} expired, removed from storage`);
+      delete STORAGE.challenges[challengeString];
     },
     10 * 1000 * 60,
   );
 
-  Logger.m("Challenge", challengeJWT, "sent to the client");
+  Logger.m("Challenge", challengeString, "sent to the client");
 
   return {
-    challenge: challengeJWT,
+    challenge,
   };
 };
 

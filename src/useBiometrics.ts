@@ -62,7 +62,7 @@ const requestChallenge = async (): Promise<
     });
 
     return {
-      value: apiToken.challenge,
+      value: JSON.stringify(apiToken.challenge),
       reason: CONST.REASON_CODES.SUCCESS.TOKEN_RECEIVED,
     };
   }
