@@ -1,4 +1,4 @@
-import { generateKeys, signToken as signTokenED25519 } from "@/src/ed25519";
+import { generateKeyPair, signToken as signTokenED25519 } from "@/src/ed25519";
 import { PrivateKeyStorage, PublicKeyStorage } from "@/src/keyStorage";
 import { useCallback, useEffect, useState } from "react";
 import type {
@@ -8,7 +8,7 @@ import type {
   Feedback,
 } from "@/src/types";
 import { getReasonMessage, Logger, randomTransactionID } from "@/src/helpers";
-import API from "@/src/api";
+import API, { READ_COMMANDS, WRITE_COMMANDS } from "@/src/api";
 import CONST from "@/src/const";
 
 const getAuthType = (authCode: number): AuthType | undefined =>
@@ -54,7 +54,7 @@ const signChallenge = async (
 const requestChallenge = async (): Promise<
   AuthReturnValue<string | undefined>
 > => {
-  const apiToken = await API.read("RequestBiometricChallenge");
+  const apiToken = await API.read(READ_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE);
 
   if (!!apiToken && typeof apiToken === "object" && "challenge" in apiToken) {
     Logger.mw(CONST.REASON_CODES.SUCCESS.TOKEN_RECEIVED, {
@@ -89,7 +89,7 @@ const sendSignedChallenge = async (
 
   Logger.m("Sending signed challenge to the API...");
 
-  const val = await API.write("AuthorizeTransaction", {
+  const val = await API.write(WRITE_COMMANDS.AUTHORIZE_TRANSACTION, {
     transactionID: randomTransactionID(),
     signedChallenge: signedToken.value,
   });
@@ -133,7 +133,7 @@ const runChallenge = async (): Promise<AuthReturnValue<boolean>> => {
 const requestKey = async (
   validateCode?: number,
 ): Promise<AuthReturnValue<boolean>> => {
-  const { privateKey, publicKey } = generateKeys();
+  const { privateKey, publicKey } = generateKeyPair();
 
   const setResult = await PrivateKeyStorage.set(privateKey);
 
@@ -155,7 +155,7 @@ const requestKey = async (
     };
   }
 
-  const result = await API.write("RegisterBiometrics", {
+  const result = await API.write(WRITE_COMMANDS.REGISTER_BIOMETRICS, {
     publicKey,
     validateCode,
   });
@@ -268,7 +268,7 @@ function useBiometrics(): Biometrics {
         !result.value &&
         result.reason === CONST.REASON_CODES.ERROR.VALIDATE_CODE_REQUIRED
       ) {
-        await API.read("ResendValidateCode", {
+        await API.write(WRITE_COMMANDS.RESEND_VALIDATE_CODE, {
           email: CONST.USER_EMAIL,
         });
         result = await requestKey(yield result);

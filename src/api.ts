@@ -16,10 +16,10 @@ const APIRoutes: {
   Write: Record<keyof WriteCommands, `${"POST" | "GET"}:${string}`>;
 } = {
   Read: {
-    ResendValidateCode: "POST:/resend_validate_code",
     RequestBiometricChallenge: "GET:/request_biometric_challenge",
   },
   Write: {
+    ResendValidateCode: "POST:/resend_validate_code",
     RegisterBiometrics: "POST:/register_biometrics",
     AuthorizeTransaction: "POST:/authorize_transaction",
   },
@@ -46,16 +46,16 @@ type WriteCommands = {
     };
     returns: string | boolean;
   };
-};
-
-type ReadCommands = {
   ResendValidateCode: {
-    route: typeof APIRoutes.Read.ResendValidateCode;
+    route: typeof APIRoutes.Write.ResendValidateCode;
     parameters: {
       email: string;
     };
     returns: boolean;
   };
+};
+
+type ReadCommands = {
   RequestBiometricChallenge: {
     route: typeof APIRoutes.Read.RequestBiometricChallenge;
     parameters?: Record<string, unknown>;
@@ -72,9 +72,22 @@ type Challenge = {
   expires: number;
 };
 
+const WRITE_COMMANDS = {
+  REGISTER_BIOMETRICS: "RegisterBiometrics",
+  AUTHORIZE_TRANSACTION: "AuthorizeTransaction",
+  RESEND_VALIDATE_CODE: "ResendValidateCode",
+} as const;
+
+const READ_COMMANDS = {
+  REQUEST_BIOMETRIC_CHALLENGE: "RequestBiometricChallenge",
+} as const;
+
+type WriteCommandType = (typeof WRITE_COMMANDS)[keyof typeof WRITE_COMMANDS];
+type ReadCommandType = (typeof READ_COMMANDS)[keyof typeof READ_COMMANDS];
+
 const API = {
   read: async (
-    route: keyof typeof APIRoutes.Read,
+    route: ReadCommandType,
     parameters?: ReadCommands[typeof route]["parameters"],
   ) => {
     const routePath = APIRoutes.Read[route];
@@ -84,7 +97,7 @@ const API = {
     >;
   },
   write: async (
-    route: keyof typeof APIRoutes.Write,
+    route: WriteCommandType,
     parameters: WriteCommands[typeof route]["parameters"],
   ) => {
     const routePath = APIRoutes.Write[route];
@@ -96,4 +109,5 @@ const API = {
 };
 
 export default API;
+export { WRITE_COMMANDS, READ_COMMANDS };
 export type { WriteCommands, ReadCommands, ChallengeObject, Challenge };
