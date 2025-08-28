@@ -1,3 +1,5 @@
+import { AUTH_TYPE } from "expo-secure-store";
+
 const CONST = {
   KEYCHAIN_SERVICE: "Expensify",
   KEY_ALIASES: {
@@ -6,34 +8,34 @@ const CONST = {
   },
   AUTH_TYPE: {
     UNKNOWN: {
-      CODE: -1,
+      CODE: AUTH_TYPE.UNKNOWN,
       NAME: "Unknown",
     },
     NONE: {
-      CODE: 0,
+      CODE: AUTH_TYPE.NONE,
       NAME: "None",
     },
     CREDENTIALS: {
-      CODE: 1,
+      CODE: AUTH_TYPE.CREDENTIALS,
       NAME: "Credentials",
     },
     BIOMETRICS: {
-      CODE: 2,
+      CODE: AUTH_TYPE.BIOMETRICS,
       NAME: "Biometrics",
     },
     FACE_ID: {
-      CODE: 3,
+      CODE: AUTH_TYPE.FACE_ID,
       NAME: "FaceID",
     },
     TOUCH_ID: {
-      CODE: 4,
+      CODE: AUTH_TYPE.TOUCH_ID,
       NAME: "TouchID",
     },
     OPTIC_ID: {
-      CODE: 5,
+      CODE: AUTH_TYPE.OPTIC_ID,
       NAME: "OpticID",
     },
-  } as const,
+  },
   FEEDBACK_TYPE: {
     NONE: "None",
     CHALLENGE: "Challenge",

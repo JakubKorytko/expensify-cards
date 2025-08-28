@@ -21,7 +21,7 @@ class KeyStorage {
     };
   }
 
-  async set(value: string): Promise<AuthReturnValue<boolean>> {
+  public async set(value: string): Promise<AuthReturnValue<boolean>> {
     try {
       return {
         value: true,
@@ -38,7 +38,7 @@ class KeyStorage {
     }
   }
 
-  async delete(): Promise<AuthReturnValue<boolean>> {
+  public async delete(): Promise<AuthReturnValue<boolean>> {
     try {
       await SecureStore.deleteItemAsync(this.key, {
         keychainService: CONST.KEYCHAIN_SERVICE,
@@ -58,7 +58,7 @@ class KeyStorage {
     }
   }
 
-  async get(): Promise<AuthReturnValue<string | null>> {
+  public async get(): Promise<AuthReturnValue<string | null>> {
     try {
       const [retrievedKey, authType] = await SecureStore.getItemAsync(
         this.key,

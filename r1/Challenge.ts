@@ -24,7 +24,7 @@ class Challenge {
     };
   }
 
-  async request(): Promise<AuthReturnValue<boolean>> {
+  public async request(): Promise<AuthReturnValue<boolean>> {
     const { status, response } = await API.read(
       READ_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE,
     );
@@ -50,7 +50,7 @@ class Challenge {
     };
   }
 
-  async sign(): Promise<AuthReturnValue<boolean>> {
+  public async sign(): Promise<AuthReturnValue<boolean>> {
     if (!this.auth.value) {
       return this.createErrorReturnValue(
         "biometrics.reason.error.tokenMissing",
@@ -75,7 +75,7 @@ class Challenge {
     };
   }
 
-  async send(transactionID: string): Promise<AuthReturnValue<boolean>> {
+  public async send(transactionID: string): Promise<AuthReturnValue<boolean>> {
     if (!this.auth.value) {
       return this.createErrorReturnValue(
         "biometrics.reason.error.signatureMissing",

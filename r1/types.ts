@@ -1,5 +1,6 @@
 import CONST from "./const";
 import type { ReasonType } from "./Reason";
+import { AUTH_TYPE } from "expo-secure-store";
 
 type TranslationPaths = `biometrics.${string}`;
 type AuthType = (typeof CONST.AUTH_TYPE)[keyof typeof CONST.AUTH_TYPE];
@@ -7,7 +8,7 @@ type AuthType = (typeof CONST.AUTH_TYPE)[keyof typeof CONST.AUTH_TYPE];
 type AuthReturnValue<T> = {
   value: T;
   reason: ReasonType;
-  type?: AuthType["CODE"];
+  type?: AUTH_TYPE;
   typeName?: string;
   message?: string;
 };
