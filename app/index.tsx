@@ -12,12 +12,12 @@ export default function Index() {
     await Biometrics.request();
   }, [Biometrics]);
 
-  const lastAction = Biometrics.feedback.lastAction.value;
+  const { message } = Biometrics.feedback.lastAction.value;
 
   return (
     <View>
       <Button title="Test" onPress={onPress} />
-      <Text>{lastAction.message}</Text>
+      <Text>{message}</Text>
     </View>
   );
 }

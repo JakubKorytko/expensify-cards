@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import translations from "@/src/en";
+import translations from "@/r1/en";
 
 export default function useLocalize() {
   const translate = useCallback((path: string, ...args: any[]): string => {
