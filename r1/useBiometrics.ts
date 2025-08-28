@@ -6,7 +6,7 @@ import type { AuthReturnValue, Biometrics } from "./types";
 import CONST from "./const";
 import Challenge from "./Challenge";
 import useFeedback from "./useFeedback";
-import { ReasonPlain, ReasonTranslation } from "./Reason";
+import Reason from "./Reason";
 
 function useBiometrics(): Biometrics {
   const [status, setStatus] = useState<boolean>(false);
@@ -45,15 +45,15 @@ function useBiometrics(): Biometrics {
     );
 
     const reasonMessage = message
-      ? new ReasonPlain(message)
-      : new ReasonTranslation("biometrics.reason.generic.apiError");
+      ? Reason.Message(message)
+      : Reason.TPath("biometrics.reason.generic.apiError");
 
     const isCallSuccessful = status === 200;
 
     const authReason: AuthReturnValue<boolean> = {
       value: isCallSuccessful,
       reason: isCallSuccessful
-        ? new ReasonTranslation("biometrics.reason.success.keyPairGenerated")
+        ? Reason.TPath("biometrics.reason.success.keyPairGenerated")
         : reasonMessage,
       type: setResult.type,
     };

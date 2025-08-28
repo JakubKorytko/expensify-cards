@@ -2,7 +2,8 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import useLocalize from "@/src/useLocalize";
 import CONST from "./const";
 import { AuthReturnValue, Feedback, FeedbackKeyType } from "./types";
-import { ReasonTranslation, ReasonPlain } from "./Reason";
+import Reason, { isReasonTPath } from "./Reason";
+import type { ReasonType } from "./Reason";
 
 type SetFeedback = (
   value: AuthReturnValue<boolean>,
@@ -10,26 +11,24 @@ type SetFeedback = (
   message?: string,
 ) => AuthReturnValue<boolean>;
 
-const getReasonMessage = <T>(
-  authData: AuthReturnValue<T>,
-): (ReasonTranslation | ReasonPlain)[] => {
+const getReasonMessage = <T>(authData: AuthReturnValue<T>): ReasonType[] => {
   if (authData.value) {
     const isAuthMessageIncluded = !!authData.typeName;
     return isAuthMessageIncluded
       ? [
-          new ReasonTranslation("biometrics.feedbackMessage.successUsing"),
-          new ReasonPlain(authData.typeName ?? ""),
+          Reason.TPath("biometrics.feedbackMessage.successUsing"),
+          Reason.Message(authData.typeName ?? ""),
         ]
-      : [new ReasonTranslation("biometrics.feedbackMessage.success")];
+      : [Reason.TPath("biometrics.feedbackMessage.success")];
   }
 
   const isReasonIncluded = !!authData.reason;
   return isReasonIncluded
     ? [
-        new ReasonTranslation("biometrics.feedbackMessage.failedBecause"),
+        Reason.TPath("biometrics.feedbackMessage.failedBecause"),
         authData.reason,
       ]
-    : [new ReasonTranslation("biometrics.feedbackMessage.failed")];
+    : [Reason.TPath("biometrics.feedbackMessage.failed")];
 };
 
 const wrapAuthReturnWithAuthTypeMessage = <T>(
@@ -50,7 +49,7 @@ export default function useFeedback(): [Feedback, SetFeedback] {
 
   const emptyAuth: AuthReturnValue<boolean> = useMemo(
     () => ({
-      reason: new ReasonTranslation("biometrics.reason.generic.notRequested"),
+      reason: Reason.TPath("biometrics.reason.generic.notRequested"),
       message: translate("biometrics.reason.generic.notRequested"),
       value: false,
     }),
@@ -67,7 +66,7 @@ export default function useFeedback(): [Feedback, SetFeedback] {
       const isAuthorization = type === CONST.FEEDBACK_TYPE.CHALLENGE;
 
       const reasonMessage = getReasonMessage(wrappedValue).map((reason) =>
-        reason instanceof ReasonTranslation
+        isReasonTPath(reason)
           ? translate(reason.value, isAuthorization)
           : reason.value,
       );

@@ -1,21 +1,33 @@
 import type { TranslationPaths } from "./types";
 
-class Reason {
+class ReasonBase {
   constructor(public value: string | TranslationPaths) {
     this.value = value;
   }
 }
 
-class ReasonTranslation extends Reason {
+class ReasonTranslation extends ReasonBase {
   constructor(public value: TranslationPaths) {
     super(value);
   }
 }
 
-class ReasonPlain extends Reason {
+class ReasonPlain extends ReasonBase {
   constructor(public value: string) {
     super(value);
   }
 }
 
-export { ReasonPlain, ReasonTranslation };
+const Reason = {
+  Message: (value: string) => new ReasonPlain(value),
+  TPath: (value: TranslationPaths) => new ReasonTranslation(value),
+};
+
+const isReasonTPath = (reason: ReasonBase): reason is ReasonTranslation =>
+  reason instanceof ReasonTranslation;
+
+type ReasonType = ReasonTranslation | ReasonPlain;
+
+export default Reason;
+export { isReasonTPath };
+export type { ReasonType };

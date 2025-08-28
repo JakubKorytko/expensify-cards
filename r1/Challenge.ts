@@ -2,12 +2,12 @@ import API, { READ_COMMANDS, WRITE_COMMANDS } from "@/src/api";
 import type { AuthReturnValue } from "./types";
 import { PrivateKeyStorage, PublicKeyStorage } from "./KeyStorage";
 import { signToken as signTokenED25519 } from "./ED25519";
-import { ReasonTranslation } from "./Reason";
+import Reason from "./Reason";
 
 class Challenge {
   auth: AuthReturnValue<string | undefined> = {
     value: undefined,
-    reason: new ReasonTranslation("biometrics.reason.generic.notRequested"),
+    reason: Reason.TPath("biometrics.reason.generic.notRequested"),
   };
   signed?: boolean;
   authorized?: boolean;
@@ -24,8 +24,8 @@ class Challenge {
 
     const challenge = !!response ? response.challenge : undefined;
     const reason = challenge
-      ? new ReasonTranslation("biometrics.reason.success.tokenReceived")
-      : new ReasonTranslation("biometrics.reason.error.badToken");
+      ? Reason.TPath("biometrics.reason.success.tokenReceived")
+      : Reason.TPath("biometrics.reason.error.badToken");
 
     this.auth = {
       value: challenge ? JSON.stringify(challenge) : challenge,
@@ -42,7 +42,7 @@ class Challenge {
     if (!this.auth.value) {
       return {
         value: false,
-        reason: new ReasonTranslation("biometrics.reason.error.tokenMissing"),
+        reason: Reason.TPath("biometrics.reason.error.tokenMissing"),
       };
     }
 
@@ -51,13 +51,13 @@ class Challenge {
     if (!key.value) {
       return {
         value: false,
-        reason: new ReasonTranslation("biometrics.reason.error.keyMissing"),
+        reason: Reason.TPath("biometrics.reason.error.keyMissing"),
       };
     }
 
     this.auth = {
       value: signTokenED25519(this.auth.value, key.value),
-      reason: new ReasonTranslation("biometrics.reason.success.tokenSigned"),
+      reason: Reason.TPath("biometrics.reason.success.tokenSigned"),
       type: key.type,
     };
 
@@ -73,9 +73,7 @@ class Challenge {
     if (!this.signed || !this.auth.value) {
       return {
         value: false,
-        reason: new ReasonTranslation(
-          "biometrics.reason.error.signatureMissing",
-        ),
+        reason: Reason.TPath("biometrics.reason.error.signatureMissing"),
       };
     }
 
@@ -89,9 +87,7 @@ class Challenge {
     if (!authorized) {
       return {
         value: false,
-        reason: new ReasonTranslation(
-          "biometrics.reason.error.challengeRejected",
-        ),
+        reason: Reason.TPath("biometrics.reason.error.challengeRejected"),
       };
     }
 
@@ -99,9 +95,7 @@ class Challenge {
 
     return {
       value: true,
-      reason: new ReasonTranslation(
-        "biometrics.reason.success.verificationSuccess",
-      ),
+      reason: Reason.TPath("biometrics.reason.success.verificationSuccess"),
       type: this.auth.type,
     };
   }

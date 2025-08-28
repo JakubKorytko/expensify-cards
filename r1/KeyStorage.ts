@@ -1,13 +1,13 @@
 import * as SecureStore from "expo-secure-store";
 import CONST from "./const";
 import type { AuthReturnValue, KeyType } from "./types";
-import { ReasonPlain, ReasonTranslation } from "./Reason";
+import Reason from "./Reason";
 
 function decodeExpoErrorCode(error: unknown) {
   const errorString = String(error);
   const errorArray = errorString.split(CONST.MISC.EXPO_ERROR_SEPARATOR);
 
-  return new ReasonPlain(
+  return Reason.Message(
     errorArray.length <= 1 ? errorString : errorArray.slice(1).join(";").trim(),
   );
 }
@@ -34,9 +34,7 @@ class KeyStorage {
     try {
       return {
         value: true,
-        reason: new ReasonTranslation(
-          "biometrics.reason.success.keySavedInSecureStore",
-        ),
+        reason: Reason.TPath("biometrics.reason.success.keySavedInSecureStore"),
         type: await SecureStore.setItemAsync(this.key, value, this.options),
       };
     } catch (error) {
@@ -44,7 +42,7 @@ class KeyStorage {
         value: false,
         reason:
           decodeExpoErrorCode(error) ||
-          "biometrics.reason.error.unableToSaveKey",
+          Reason.TPath("biometrics.reason.error.unableToSaveKey"),
       };
     }
   }
@@ -56,7 +54,7 @@ class KeyStorage {
       });
       return {
         value: true,
-        reason: new ReasonTranslation(
+        reason: Reason.TPath(
           "biometrics.reason.success.keyDeletedFromSecureStore",
         ),
       };
@@ -76,12 +74,8 @@ class KeyStorage {
       );
 
       const reason = !!retrievedKey
-        ? new ReasonTranslation(
-            "biometrics.reason.success.keyRetrievedFromSecureStore",
-          )
-        : new ReasonTranslation(
-            "biometrics.reason.success.keyNotInSecureStore",
-          );
+        ? Reason.TPath("biometrics.reason.success.keyRetrievedFromSecureStore")
+        : Reason.TPath("biometrics.reason.success.keyNotInSecureStore");
 
       return {
         value: retrievedKey,
@@ -93,7 +87,7 @@ class KeyStorage {
         value: null,
         reason:
           decodeExpoErrorCode(error) ||
-          new ReasonTranslation("biometrics.reason.error.unableToRetrieve"),
+          Reason.TPath("biometrics.reason.error.unableToRetrieve"),
       };
     }
   }
