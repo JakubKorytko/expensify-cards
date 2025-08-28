@@ -11,6 +11,12 @@ const api = async (
   });
 };
 
+type APIResponse<T = undefined> = {
+  response: T | undefined;
+  status: number;
+  message: string;
+};
+
 const APIRoutes: {
   Read: Record<keyof ReadCommands, `${"POST" | "GET"}:${string}`>;
   Write: Record<keyof WriteCommands, `${"POST" | "GET"}:${string}`>;
@@ -32,7 +38,7 @@ type WriteCommands = {
       publicKey: string;
       validateCode?: number;
     };
-    returns: string | true;
+    returns: APIResponse;
   };
   AuthorizeTransaction: {
     route: typeof APIRoutes.Write.AuthorizeTransaction;
@@ -44,14 +50,14 @@ type WriteCommands = {
       validateCode?: number; // magic code
       otp?: number; // 2FA / SMS OTP
     };
-    returns: string | boolean;
+    returns: APIResponse;
   };
   ResendValidateCode: {
     route: typeof APIRoutes.Write.ResendValidateCode;
     parameters: {
       email: string;
     };
-    returns: boolean;
+    returns: APIResponse;
   };
 };
 
@@ -59,7 +65,7 @@ type ReadCommands = {
   RequestBiometricChallenge: {
     route: typeof APIRoutes.Read.RequestBiometricChallenge;
     parameters?: Record<string, unknown>;
-    returns: ChallengeObject | string;
+    returns: APIResponse<ChallengeObject>;
   };
 };
 

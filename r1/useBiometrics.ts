@@ -37,19 +37,24 @@ function useBiometrics(): Biometrics {
       return setFeedback(publicKeyResult, CONST.FEEDBACK_TYPE.KEY);
     }
 
-    const result = await API.write(WRITE_COMMANDS.REGISTER_BIOMETRICS, {
-      publicKey,
-    });
+    const { status, message } = await API.write(
+      WRITE_COMMANDS.REGISTER_BIOMETRICS,
+      {
+        publicKey,
+      },
+    );
 
-    const isCallSuccessful = result === true;
+    const reasonMessage = message
+      ? new ReasonPlain(message)
+      : new ReasonTranslation("biometrics.reason.generic.apiError");
+
+    const isCallSuccessful = status === 200;
 
     const authReason: AuthReturnValue<boolean> = {
       value: isCallSuccessful,
       reason: isCallSuccessful
         ? new ReasonTranslation("biometrics.reason.success.keyPairGenerated")
-        : result
-          ? new ReasonPlain(result)
-          : new ReasonTranslation("biometrics.reason.generic.apiError"),
+        : reasonMessage,
       type: setResult.type,
     };
 

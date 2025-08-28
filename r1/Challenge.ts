@@ -13,25 +13,22 @@ class Challenge {
   authorized?: boolean;
 
   async request(): Promise<AuthReturnValue<boolean>> {
-    const apiChallenge = await API.read(
+    const { status, response } = await API.read(
       READ_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE,
     );
 
-    if (apiChallenge === "Registration required") {
+    if (status === 401) {
       await PrivateKeyStorage.delete();
       await PublicKeyStorage.delete();
     }
 
-    const isChallengeValid =
-      typeof apiChallenge === "object" && "challenge" in apiChallenge;
-
-    const challenge = isChallengeValid ? apiChallenge.challenge : false;
-    const reason = isChallengeValid
+    const challenge = !!response ? response.challenge : undefined;
+    const reason = challenge
       ? new ReasonTranslation("biometrics.reason.success.tokenReceived")
       : new ReasonTranslation("biometrics.reason.error.badToken");
 
     this.auth = {
-      value: JSON.stringify(challenge),
+      value: challenge ? JSON.stringify(challenge) : challenge,
       reason,
     };
 
@@ -82,11 +79,12 @@ class Challenge {
       };
     }
 
-    const authorized =
-      (await API.write(WRITE_COMMANDS.AUTHORIZE_TRANSACTION, {
-        transactionID,
-        signedChallenge: this.auth.value,
-      })) === true;
+    const { status } = await API.write(WRITE_COMMANDS.AUTHORIZE_TRANSACTION, {
+      transactionID,
+      signedChallenge: this.auth.value,
+    });
+
+    const authorized = status === 200;
 
     if (!authorized) {
       return {

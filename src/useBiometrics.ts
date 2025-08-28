@@ -54,15 +54,17 @@ const signChallenge = async (
 const requestChallenge = async (): Promise<
   AuthReturnValue<string | undefined>
 > => {
-  const apiToken = await API.read(READ_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE);
+  const { response } = await API.read(
+    READ_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE,
+  );
 
-  if (!!apiToken && typeof apiToken === "object" && "challenge" in apiToken) {
+  if (!!response) {
     Logger.mw(CONST.REASON_CODES.SUCCESS.TOKEN_RECEIVED, {
-      token: apiToken.challenge,
+      token: response.challenge,
     });
 
     return {
-      value: JSON.stringify(apiToken.challenge),
+      value: JSON.stringify(response.challenge),
       reason: CONST.REASON_CODES.SUCCESS.TOKEN_RECEIVED,
     };
   }
@@ -89,20 +91,20 @@ const sendSignedChallenge = async (
 
   Logger.m("Sending signed challenge to the API...");
 
-  const val = await API.write(WRITE_COMMANDS.AUTHORIZE_TRANSACTION, {
+  const { status } = await API.write(WRITE_COMMANDS.AUTHORIZE_TRANSACTION, {
     transactionID: randomTransactionID(),
     signedChallenge: signedToken.value,
   });
 
-  const bool = val === true;
-  const reason = bool
+  const success = status === 200;
+  const reason = success
     ? CONST.REASON_CODES.SUCCESS.VERIFICATION_SUCCESS
     : CONST.REASON_CODES.ERROR.CHALLENGE_REJECTED;
 
-  Logger[bool ? "m" : "w"](reason);
+  Logger[success ? "m" : "w"](reason);
 
   return {
-    value: bool,
+    value: success,
     reason,
     type: signedToken.type,
   };
@@ -155,19 +157,22 @@ const requestKey = async (
     };
   }
 
-  const result = await API.write(WRITE_COMMANDS.REGISTER_BIOMETRICS, {
-    publicKey,
-    validateCode,
-  });
+  const { status, message } = await API.write(
+    WRITE_COMMANDS.REGISTER_BIOMETRICS,
+    {
+      publicKey,
+      validateCode,
+    },
+  );
 
-  if (typeof result === "string") {
-    Logger.w(result || "API error");
+  if (status !== 200) {
+    Logger.w(message || "API error");
 
     await revokeKey();
 
     return {
       value: false,
-      reason: result || "API error",
+      reason: message || "API error",
     };
   }
 
