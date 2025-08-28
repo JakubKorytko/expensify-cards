@@ -4,14 +4,10 @@ type ElementType = string | ((...args: any[]) => string);
 const translations: NestedRecord<ElementType> | ElementType = {
   biometrics: {
     feedbackMessage: {
-      success: (authorization?: boolean) =>
-        `You’ve successfully ${authorization ? "authorized challenge" : "authenticated"}.`,
-      successUsing: (authorization?: boolean) =>
-        `You’ve successfully ${authorization ? "authorized challenge" : "authenticated"} using`,
-      failed: (authorization?: boolean) =>
-        `Your ${authorization ? "authorization" : "authentication"} attempt was unsuccessful.`,
-      failedBecause: (authorization?: boolean) =>
-        `Your ${authorization ? "authorization" : "authentication"} attempt failed with error`,
+      success: (authorization?: boolean, using?: string) =>
+        `You’ve successfully ${authorization ? "authorized challenge" : "authenticated"}${using ? ` using ${using}` : ""}`,
+      failed: (authorization?: boolean, because?: string) =>
+        `Your ${authorization ? "authorization" : "authentication"} attempt ${because ? `failed with error: ${because}` : "was unsuccessful."}`,
     },
     reason: {
       success: {

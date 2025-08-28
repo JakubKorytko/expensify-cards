@@ -1,12 +1,13 @@
 import CONST from "./const";
-import { ReasonPlain, ReasonTranslation } from "./Reason";
+import type { ReasonType } from "./Reason";
 
 type TranslationPaths = `biometrics.${string}`;
+type AuthType = (typeof CONST.AUTH_TYPE)[keyof typeof CONST.AUTH_TYPE];
 
 type AuthReturnValue<T> = {
   value: T;
-  reason: ReasonTranslation | ReasonPlain;
-  type?: number;
+  reason: ReasonType;
+  type?: AuthType["CODE"];
   typeName?: string;
   message?: string;
 };
@@ -31,6 +32,11 @@ type Biometrics = {
   status: boolean;
 };
 
+type SetFeedback = (
+  value: AuthReturnValue<boolean>,
+  type: FeedbackKeyType,
+) => AuthReturnValue<boolean>;
+
 export type {
   AuthReturnValue,
   Feedback,
@@ -38,4 +44,6 @@ export type {
   Biometrics,
   FeedbackKeyType,
   TranslationPaths,
+  AuthType,
+  SetFeedback,
 };

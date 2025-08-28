@@ -1,4 +1,11 @@
 import type { TranslationPaths } from "./types";
+import CONST from "@/r1/const";
+
+function decodeExpoErrorCode(error: unknown) {
+  const errorString = String(error);
+  const parts = errorString.split(CONST.MISC.EXPO_ERROR_SEPARATOR);
+  return parts.length > 1 ? parts.slice(1).join(";").trim() : errorString;
+}
 
 class ReasonBase {
   constructor(public value: string | TranslationPaths) {
@@ -6,27 +13,35 @@ class ReasonBase {
   }
 }
 
-class ReasonTranslation extends ReasonBase {
-  constructor(public value: TranslationPaths) {
+class ReasonTPath extends ReasonBase {
+  public params: any[] = [];
+
+  constructor(
+    public value: TranslationPaths,
+    ...params: any[]
+  ) {
     super(value);
+    this.params = params;
   }
 }
 
-class ReasonPlain extends ReasonBase {
+class ReasonMessage extends ReasonBase {
   constructor(public value: string) {
     super(value);
   }
 }
 
 const Reason = {
-  Message: (value: string) => new ReasonPlain(value),
-  TPath: (value: TranslationPaths) => new ReasonTranslation(value),
+  Message: (value: string) => new ReasonMessage(value),
+  TPath: (value: TranslationPaths, ...args: any[]) =>
+    new ReasonTPath(value, ...args),
+  ExpoError: (value: unknown) => new ReasonMessage(decodeExpoErrorCode(value)),
 };
 
-const isReasonTPath = (reason: ReasonBase): reason is ReasonTranslation =>
-  reason instanceof ReasonTranslation;
+const isReasonTPath = (reason: ReasonBase): reason is ReasonTPath =>
+  reason instanceof ReasonTPath;
 
-type ReasonType = ReasonTranslation | ReasonPlain;
+type ReasonType = ReasonTPath | ReasonMessage;
 
 export default Reason;
 export { isReasonTPath };

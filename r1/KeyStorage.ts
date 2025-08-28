@@ -3,27 +3,18 @@ import CONST from "./const";
 import type { AuthReturnValue, KeyType } from "./types";
 import Reason from "./Reason";
 
-function decodeExpoErrorCode(error: unknown) {
-  const errorString = String(error);
-  const errorArray = errorString.split(CONST.MISC.EXPO_ERROR_SEPARATOR);
-
-  return Reason.Message(
-    errorArray.length <= 1 ? errorString : errorArray.slice(1).join(";").trim(),
-  );
-}
-
 class KeyStorage {
-  key: KeyType;
-
-  constructor(type: KeyType) {
-    this.key = type;
+  constructor(private readonly key: KeyType) {
+    this.key = key;
   }
 
-  get options() {
+  private get options(): SecureStore.SecureStoreOptions {
+    const isPrivateKey = this.key === CONST.KEY_ALIASES.PRIVATE_KEY;
+
     return {
-      failOnDuplicate: this.key === CONST.KEY_ALIASES.PRIVATE_KEY,
-      requireAuthentication: this.key === CONST.KEY_ALIASES.PRIVATE_KEY,
-      authOnEveryAction: this.key === CONST.KEY_ALIASES.PRIVATE_KEY,
+      failOnDuplicate: isPrivateKey,
+      requireAuthentication: isPrivateKey,
+      authOnEveryAction: isPrivateKey,
       keychainService: CONST.KEYCHAIN_SERVICE,
       keychainAccessible: SecureStore.WHEN_PASSCODE_SET_THIS_DEVICE_ONLY,
       enableCredentialsAlternative: true,
@@ -41,7 +32,7 @@ class KeyStorage {
       return {
         value: false,
         reason:
-          decodeExpoErrorCode(error) ||
+          Reason.ExpoError(error) ||
           Reason.TPath("biometrics.reason.error.unableToSaveKey"),
       };
     }
@@ -52,6 +43,7 @@ class KeyStorage {
       await SecureStore.deleteItemAsync(this.key, {
         keychainService: CONST.KEYCHAIN_SERVICE,
       });
+
       return {
         value: true,
         reason: Reason.TPath(
@@ -61,7 +53,7 @@ class KeyStorage {
     } catch (error) {
       return {
         value: false,
-        reason: decodeExpoErrorCode(error),
+        reason: Reason.ExpoError(error),
       };
     }
   }
@@ -86,7 +78,7 @@ class KeyStorage {
       return {
         value: null,
         reason:
-          decodeExpoErrorCode(error) ||
+          Reason.ExpoError(error) ||
           Reason.TPath("biometrics.reason.error.unableToRetrieve"),
       };
     }

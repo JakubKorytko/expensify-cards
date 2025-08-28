@@ -1,48 +1,21 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import useLocalize from "@/src/useLocalize";
 import CONST from "./const";
-import { AuthReturnValue, Feedback, FeedbackKeyType } from "./types";
+import {
+  AuthReturnValue,
+  Feedback,
+  FeedbackKeyType,
+  AuthType,
+  SetFeedback,
+} from "./types";
 import Reason, { isReasonTPath } from "./Reason";
-import type { ReasonType } from "./Reason";
 
-type SetFeedback = (
-  value: AuthReturnValue<boolean>,
-  type: FeedbackKeyType,
-  message?: string,
-) => AuthReturnValue<boolean>;
-
-const getReasonMessage = <T>(authData: AuthReturnValue<T>): ReasonType[] => {
-  if (authData.value) {
-    const isAuthMessageIncluded = !!authData.typeName;
-    return isAuthMessageIncluded
-      ? [
-          Reason.TPath("biometrics.feedbackMessage.successUsing"),
-          Reason.Message(authData.typeName ?? ""),
-        ]
-      : [Reason.TPath("biometrics.feedbackMessage.success")];
-  }
-
-  const isReasonIncluded = !!authData.reason;
-  return isReasonIncluded
-    ? [
-        Reason.TPath("biometrics.feedbackMessage.failedBecause"),
-        authData.reason,
-      ]
-    : [Reason.TPath("biometrics.feedbackMessage.failed")];
-};
-
-const wrapAuthReturnWithAuthTypeMessage = <T>(
+const getAuthTypeName = <T>(
   returnValue: AuthReturnValue<T>,
-) => {
-  const typeName = Object.values(CONST.AUTH_TYPE).find(
+): AuthType["NAME"] | undefined =>
+  Object.values(CONST.AUTH_TYPE).find(
     (authType) => authType.CODE === returnValue.type,
   )?.NAME;
-
-  return {
-    ...returnValue,
-    typeName,
-  };
-};
 
 export default function useFeedback(): [Feedback, SetFeedback] {
   const { translate } = useLocalize();
@@ -60,61 +33,58 @@ export default function useFeedback(): [Feedback, SetFeedback] {
   const [key, setKey] = useState(emptyAuth);
   const lastAction = useRef<FeedbackKeyType>(CONST.FEEDBACK_TYPE.NONE);
 
-  const setFeedback: SetFeedback = useCallback(
-    (value, type) => {
-      const wrappedValue = wrapAuthReturnWithAuthTypeMessage(value);
-      const isAuthorization = type === CONST.FEEDBACK_TYPE.CHALLENGE;
+  const createFeedback = useCallback(
+    (authData: AuthReturnValue<boolean>, authorize?: boolean) => {
+      const { reason, value } = authData;
+      const typeName = getAuthTypeName(authData);
 
-      const reasonMessage = getReasonMessage(wrappedValue).map((reason) =>
-        isReasonTPath(reason)
-          ? translate(reason.value, isAuthorization)
-          : reason.value,
-      );
+      const shouldTranslate = isReasonTPath(reason);
+      const message = shouldTranslate ? translate(reason.value) : reason.value;
+      const reasonMessage = value ? typeName : message;
+      const statusMessage = `biometrics.feedbackMessage.${value ? "success" : "failed"}`;
 
-      const finalValue = {
-        ...wrappedValue,
-        message: reasonMessage.join(" "),
+      return {
+        ...authData,
+        message: translate(statusMessage, authorize, reasonMessage),
+        typeName,
       };
-
-      if (type === CONST.FEEDBACK_TYPE.KEY) {
-        setKey(finalValue);
-      } else {
-        setChallenge(finalValue);
-      }
-
-      lastAction.current = type;
-
-      return finalValue;
     },
     [translate],
   );
 
-  const getLastAction = useCallback(() => {
-    if (lastAction.current === CONST.FEEDBACK_TYPE.KEY) {
-      return {
-        type: CONST.FEEDBACK_TYPE.KEY,
-        value: key,
-      };
-    }
+  const setFeedback: SetFeedback = useCallback(
+    (authData, type) => {
+      const isChallengeType = type === CONST.FEEDBACK_TYPE.CHALLENGE;
+      const createdFeedback = createFeedback(authData, isChallengeType);
 
-    if (lastAction.current === CONST.FEEDBACK_TYPE.CHALLENGE) {
-      return {
-        type: CONST.FEEDBACK_TYPE.CHALLENGE,
-        value: challenge,
-      };
-    }
+      if (isChallengeType) {
+        setChallenge(createdFeedback);
+      } else {
+        setKey(createdFeedback);
+      }
+
+      lastAction.current = type;
+      return createdFeedback;
+    },
+    [createFeedback],
+  );
+
+  const feedback = useMemo(() => {
+    const lastActionMap = {
+      [CONST.FEEDBACK_TYPE.KEY]: key,
+      [CONST.FEEDBACK_TYPE.CHALLENGE]: challenge,
+      [CONST.FEEDBACK_TYPE.NONE]: emptyAuth,
+    };
 
     return {
-      type: CONST.FEEDBACK_TYPE.NONE,
-      value: emptyAuth,
+      challenge,
+      key,
+      lastAction: {
+        type: lastAction.current,
+        value: lastActionMap[lastAction.current],
+      },
     };
   }, [challenge, emptyAuth, key]);
-
-  const feedback = {
-    challenge,
-    key,
-    lastAction: getLastAction(),
-  };
 
   return [feedback, setFeedback];
 }

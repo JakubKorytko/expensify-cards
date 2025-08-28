@@ -18,9 +18,7 @@ function useBiometrics(): Biometrics {
     });
   }, []);
 
-  useEffect(() => {
-    refreshStatus();
-  }, [refreshStatus]);
+  useEffect(refreshStatus, [refreshStatus]);
 
   const request = useCallback(async () => {
     const { privateKey, publicKey } = generateKeyPair();
@@ -48,17 +46,20 @@ function useBiometrics(): Biometrics {
       ? Reason.Message(message)
       : Reason.TPath("biometrics.reason.generic.apiError");
 
+    const successMessage = Reason.TPath(
+      "biometrics.reason.success.keyPairGenerated",
+    );
+
     const isCallSuccessful = status === 200;
 
     const authReason: AuthReturnValue<boolean> = {
       value: isCallSuccessful,
-      reason: isCallSuccessful
-        ? Reason.TPath("biometrics.reason.success.keyPairGenerated")
-        : reasonMessage,
+      reason: isCallSuccessful ? successMessage : reasonMessage,
       type: setResult.type,
     };
 
     refreshStatus();
+
     return setFeedback(authReason, CONST.FEEDBACK_TYPE.KEY);
   }, [refreshStatus, setFeedback]);
 
@@ -74,6 +75,7 @@ function useBiometrics(): Biometrics {
       }
 
       const signature = await challenge.sign();
+
       if (!signature.value) {
         refreshStatus();
         return setFeedback(signature, CONST.FEEDBACK_TYPE.CHALLENGE);

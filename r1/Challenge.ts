@@ -1,34 +1,46 @@
 import API, { READ_COMMANDS, WRITE_COMMANDS } from "@/src/api";
-import type { AuthReturnValue } from "./types";
+import type { AuthReturnValue, TranslationPaths } from "./types";
 import { PrivateKeyStorage, PublicKeyStorage } from "./KeyStorage";
 import { signToken as signTokenED25519 } from "./ED25519";
 import Reason from "./Reason";
 
 class Challenge {
-  auth: AuthReturnValue<string | undefined> = {
+  public auth: AuthReturnValue<string | undefined> = {
     value: undefined,
     reason: Reason.TPath("biometrics.reason.generic.notRequested"),
   };
-  signed?: boolean;
-  authorized?: boolean;
+
+  private async resetKeys(): Promise<void> {
+    await PrivateKeyStorage.delete();
+    await PublicKeyStorage.delete();
+  }
+
+  private createErrorReturnValue(
+    reasonKey: TranslationPaths,
+  ): AuthReturnValue<boolean> {
+    return {
+      value: false,
+      reason: Reason.TPath(reasonKey),
+    };
+  }
 
   async request(): Promise<AuthReturnValue<boolean>> {
     const { status, response } = await API.read(
       READ_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE,
     );
 
-    if (status === 401) {
-      await PrivateKeyStorage.delete();
-      await PublicKeyStorage.delete();
-    }
+    if (status === 401) await this.resetKeys();
 
-    const challenge = !!response ? response.challenge : undefined;
+    const challenge = !!response
+      ? JSON.stringify(response.challenge)
+      : undefined;
+
     const reason = challenge
       ? Reason.TPath("biometrics.reason.success.tokenReceived")
       : Reason.TPath("biometrics.reason.error.badToken");
 
     this.auth = {
-      value: challenge ? JSON.stringify(challenge) : challenge,
+      value: challenge,
       reason,
     };
 
@@ -40,28 +52,22 @@ class Challenge {
 
   async sign(): Promise<AuthReturnValue<boolean>> {
     if (!this.auth.value) {
-      return {
-        value: false,
-        reason: Reason.TPath("biometrics.reason.error.tokenMissing"),
-      };
+      return this.createErrorReturnValue(
+        "biometrics.reason.error.tokenMissing",
+      );
     }
 
-    const key = await PrivateKeyStorage.get();
+    const { value, type } = await PrivateKeyStorage.get();
 
-    if (!key.value) {
-      return {
-        value: false,
-        reason: Reason.TPath("biometrics.reason.error.keyMissing"),
-      };
+    if (!value) {
+      return this.createErrorReturnValue("biometrics.reason.error.keyMissing");
     }
 
     this.auth = {
-      value: signTokenED25519(this.auth.value, key.value),
+      value: signTokenED25519(this.auth.value, value),
       reason: Reason.TPath("biometrics.reason.success.tokenSigned"),
-      type: key.type,
+      type,
     };
-
-    this.signed = true;
 
     return {
       ...this.auth,
@@ -70,11 +76,10 @@ class Challenge {
   }
 
   async send(transactionID: string): Promise<AuthReturnValue<boolean>> {
-    if (!this.signed || !this.auth.value) {
-      return {
-        value: false,
-        reason: Reason.TPath("biometrics.reason.error.signatureMissing"),
-      };
+    if (!this.auth.value) {
+      return this.createErrorReturnValue(
+        "biometrics.reason.error.signatureMissing",
+      );
     }
 
     const { status } = await API.write(WRITE_COMMANDS.AUTHORIZE_TRANSACTION, {
@@ -82,16 +87,11 @@ class Challenge {
       signedChallenge: this.auth.value,
     });
 
-    const authorized = status === 200;
-
-    if (!authorized) {
-      return {
-        value: false,
-        reason: Reason.TPath("biometrics.reason.error.challengeRejected"),
-      };
+    if (status !== 200) {
+      return this.createErrorReturnValue(
+        "biometrics.reason.error.challengeRejected",
+      );
     }
-
-    this.authorized = true;
 
     return {
       value: true,
