@@ -20,70 +20,72 @@ function useBiometrics(): Biometrics {
 
   useEffect(refreshStatus, [refreshStatus]);
 
-  const request = useCallback(async () => {
+  const request = useCallback(() => {
     const { privateKey, publicKey } = generateKeyPair();
 
-    const setResult = await PrivateKeyStorage.set(privateKey);
+    return PrivateKeyStorage.set(privateKey)
+      .then((privateKeyResult) => {
+        if (!privateKeyResult.value) throw privateKeyResult;
+        return Promise.all([privateKeyResult, PublicKeyStorage.set(publicKey)]);
+      })
+      .then(([privateKeyResult, publicKeyResult]) => {
+        if (!publicKeyResult.value) throw publicKeyResult;
+        return Promise.all([
+          privateKeyResult,
+          API.write(WRITE_COMMANDS.REGISTER_BIOMETRICS, {
+            publicKey,
+          }),
+        ]);
+      })
+      .then(([privateKeyResult, { status, message }]) => {
+        const reasonMessage = message
+          ? Reason.Message(message)
+          : Reason.TPath("biometrics.reason.generic.apiError");
 
-    if (!setResult.value) {
-      return setFeedback(setResult, CONST.FEEDBACK_TYPE.KEY);
-    }
+        const successMessage = Reason.TPath(
+          "biometrics.reason.success.keyPairGenerated",
+        );
 
-    const publicKeyResult = await PublicKeyStorage.set(publicKey);
+        const isCallSuccessful = status === 200;
 
-    if (!publicKeyResult.value) {
-      return setFeedback(publicKeyResult, CONST.FEEDBACK_TYPE.KEY);
-    }
+        const authReason: AuthReturnValue<boolean> = {
+          value: isCallSuccessful,
+          reason: isCallSuccessful ? successMessage : reasonMessage,
+          type: privateKeyResult.type,
+        };
 
-    const { status, message } = await API.write(
-      WRITE_COMMANDS.REGISTER_BIOMETRICS,
-      {
-        publicKey,
-      },
-    );
+        refreshStatus();
 
-    const reasonMessage = message
-      ? Reason.Message(message)
-      : Reason.TPath("biometrics.reason.generic.apiError");
-
-    const successMessage = Reason.TPath(
-      "biometrics.reason.success.keyPairGenerated",
-    );
-
-    const isCallSuccessful = status === 200;
-
-    const authReason: AuthReturnValue<boolean> = {
-      value: isCallSuccessful,
-      reason: isCallSuccessful ? successMessage : reasonMessage,
-      type: setResult.type,
-    };
-
-    refreshStatus();
-
-    return setFeedback(authReason, CONST.FEEDBACK_TYPE.KEY);
+        return setFeedback(authReason, CONST.FEEDBACK_TYPE.KEY);
+      })
+      .catch((status) => {
+        return setFeedback(status, CONST.FEEDBACK_TYPE.KEY);
+      });
   }, [refreshStatus, setFeedback]);
 
   const challenge = useCallback(
-    async (transactionID: string) => {
-      const challenge = new Challenge();
+    (transactionID: string) => {
+      const challenge = new Challenge(transactionID);
 
-      const status = await challenge.request();
-
-      if (!status.value) {
-        refreshStatus();
-        return setFeedback(status, CONST.FEEDBACK_TYPE.CHALLENGE);
-      }
-
-      const signature = await challenge.sign();
-
-      if (!signature.value) {
-        refreshStatus();
-        return setFeedback(signature, CONST.FEEDBACK_TYPE.CHALLENGE);
-      }
-
-      const result = await challenge.send(transactionID);
-
-      return setFeedback(result, CONST.FEEDBACK_TYPE.CHALLENGE);
+      return challenge
+        .request()
+        .then((status) => {
+          if (!status.value) throw status;
+          return challenge.sign();
+        })
+        .then((signature) => {
+          if (!signature.value) throw signature;
+          return challenge.send();
+        })
+        .then((result) => {
+          return setFeedback(result, CONST.FEEDBACK_TYPE.CHALLENGE);
+        })
+        .catch((status) => {
+          return setFeedback(status, CONST.FEEDBACK_TYPE.CHALLENGE);
+        })
+        .finally(() => {
+          refreshStatus();
+        });
     },
     [refreshStatus, setFeedback],
   );

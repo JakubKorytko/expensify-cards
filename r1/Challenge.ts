@@ -5,14 +5,17 @@ import { signToken as signTokenED25519 } from "./ED25519";
 import Reason from "./Reason";
 
 class Challenge {
-  public auth: AuthReturnValue<string | undefined> = {
+  private auth: AuthReturnValue<string | undefined> = {
     value: undefined,
     reason: Reason.TPath("biometrics.reason.generic.notRequested"),
   };
 
-  private async resetKeys(): Promise<void> {
-    await PrivateKeyStorage.delete();
-    await PublicKeyStorage.delete();
+  constructor(private readonly transactionID: string) {
+    this.transactionID = transactionID;
+  }
+
+  private resetKeys(): Promise<AuthReturnValue<boolean>> {
+    return PrivateKeyStorage.delete().then(PublicKeyStorage.delete);
   }
 
   private createErrorReturnValue(
@@ -24,80 +27,89 @@ class Challenge {
     };
   }
 
-  public async request(): Promise<AuthReturnValue<boolean>> {
-    const { status, response } = await API.read(
-      READ_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE,
-    );
+  public request(): Promise<AuthReturnValue<boolean>> {
+    return API.read(READ_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE)
+      .then(({ status, response }) =>
+        Promise.all([
+          response,
+          status === 401 ? this.resetKeys() : Promise.resolve({}),
+        ]),
+      )
+      .then(([response]) => {
+        const challenge = !!response
+          ? JSON.stringify(response.challenge)
+          : undefined;
 
-    if (status === 401) await this.resetKeys();
+        const reason = challenge
+          ? Reason.TPath("biometrics.reason.success.tokenReceived")
+          : Reason.TPath("biometrics.reason.error.badToken");
 
-    const challenge = !!response
-      ? JSON.stringify(response.challenge)
-      : undefined;
+        this.auth = {
+          value: challenge,
+          reason,
+        };
 
-    const reason = challenge
-      ? Reason.TPath("biometrics.reason.success.tokenReceived")
-      : Reason.TPath("biometrics.reason.error.badToken");
-
-    this.auth = {
-      value: challenge,
-      reason,
-    };
-
-    return {
-      ...this.auth,
-      value: true,
-    };
+        return {
+          ...this.auth,
+          value: true,
+        };
+      });
   }
 
-  public async sign(): Promise<AuthReturnValue<boolean>> {
-    if (!this.auth.value) {
-      return this.createErrorReturnValue(
-        "biometrics.reason.error.tokenMissing",
+  public sign(): Promise<AuthReturnValue<boolean>> {
+    const {
+      auth: { value: authValue },
+    } = this;
+
+    if (!authValue) {
+      return Promise.resolve(
+        this.createErrorReturnValue("biometrics.reason.error.tokenMissing"),
       );
     }
 
-    const { value, type } = await PrivateKeyStorage.get();
+    return PrivateKeyStorage.get().then(({ value, type }) => {
+      if (!value) {
+        return this.createErrorReturnValue(
+          "biometrics.reason.error.keyMissing",
+        );
+      }
 
-    if (!value) {
-      return this.createErrorReturnValue("biometrics.reason.error.keyMissing");
-    }
+      this.auth = {
+        value: signTokenED25519(authValue, value),
+        reason: Reason.TPath("biometrics.reason.success.tokenSigned"),
+        type,
+      };
 
-    this.auth = {
-      value: signTokenED25519(this.auth.value, value),
-      reason: Reason.TPath("biometrics.reason.success.tokenSigned"),
-      type,
-    };
-
-    return {
-      ...this.auth,
-      value: true,
-    };
-  }
-
-  public async send(transactionID: string): Promise<AuthReturnValue<boolean>> {
-    if (!this.auth.value) {
-      return this.createErrorReturnValue(
-        "biometrics.reason.error.signatureMissing",
-      );
-    }
-
-    const { status } = await API.write(WRITE_COMMANDS.AUTHORIZE_TRANSACTION, {
-      transactionID,
-      signedChallenge: this.auth.value,
+      return {
+        ...this.auth,
+        value: true,
+      };
     });
+  }
 
-    if (status !== 200) {
-      return this.createErrorReturnValue(
-        "biometrics.reason.error.challengeRejected",
+  public send(): Promise<AuthReturnValue<boolean>> {
+    if (!this.auth.value) {
+      return Promise.resolve(
+        this.createErrorReturnValue("biometrics.reason.error.signatureMissing"),
       );
     }
 
-    return {
-      value: true,
-      reason: Reason.TPath("biometrics.reason.success.verificationSuccess"),
-      type: this.auth.type,
-    };
+    return API.write(WRITE_COMMANDS.AUTHORIZE_TRANSACTION, {
+      transactionID: this.transactionID,
+      signedChallenge: this.auth.value,
+    }).then(({ status }) => {
+      if (status !== 200) {
+        return this.createErrorReturnValue(
+          "biometrics.reason.error.challengeRejected",
+        );
+      }
+
+      return {
+        value: true,
+        reason: Reason.TPath("biometrics.reason.success.verificationSuccess"),
+        type: this.auth.type,
+      };
+    });
   }
 }
 

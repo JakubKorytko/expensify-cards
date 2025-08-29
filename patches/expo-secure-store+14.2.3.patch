@@ -1449,7 +1449,7 @@ index e493467..a6c0c74 100644
 +  ): Pair<String, BiometricPrompt.AuthenticationResult?>
  }
 diff --git a/node_modules/expo-secure-store/build/SecureStore.d.ts b/node_modules/expo-secure-store/build/SecureStore.d.ts
-index d5cd157..c3fe9ef 100644
+index d5cd157..07dff37 100644
 --- a/node_modules/expo-secure-store/build/SecureStore.d.ts
 +++ b/node_modules/expo-secure-store/build/SecureStore.d.ts
 @@ -1,4 +1,17 @@
@@ -1458,15 +1458,15 @@ index d5cd157..c3fe9ef 100644
 +/**
 + * Authentication type returned by SecureStore after reading item or saving it to the store.
 + */
-+export enum AUTH_TYPE {
-+  UNKNOWN = -1, // Android, haven't encountered it when testing, but according to docs it can be returned
-+  NONE, // Android & iOS, returned when authentication fails
-+  CREDENTIALS, // Android & iOS, generic type (device passcode or pattern)
-+  BIOMETRICS, // Android, generic type (face scan or fingerprint)
-+  FACE_ID, // iOS
-+  TOUCH_ID, // iOS
-+  OPTIC_ID // iOS, reserved type, not used
-+}
++export declare const AUTH_TYPE = {
++  UNKNOWN: -1, // Android, haven't encountered it when testing, but according to docs it can be returned
++  NONE: 0, // Android & iOS, returned when authentication fails
++  CREDENTIALS: 1, // Android & iOS, generic type (device passcode or pattern)
++  BIOMETRICS: 2, // Android, generic type (face scan or fingerprint)
++  FACE_ID: 3, // iOS
++  TOUCH_ID: 4, // iOS
++  OPTIC_ID: 5 // iOS, reserved type, not used
++} as const;
  /**
   * The data in the keychain item cannot be accessed after a restart until the device has been
   * unlocked once by the user. This may be useful if you need to access the item when the phone
@@ -1644,10 +1644,30 @@ index d5cd157..c3fe9ef 100644
   * Checks if the value can be saved with `requireAuthentication` option enabled.
   * @return `true` if the device supports biometric authentication and the enrolled method is sufficiently secure. Otherwise, returns `false`. Always returns false on tvOS.
 diff --git a/node_modules/expo-secure-store/build/SecureStore.js b/node_modules/expo-secure-store/build/SecureStore.js
-index 4d87b38..cc0d320 100644
+index 4d87b38..5352a03 100644
 --- a/node_modules/expo-secure-store/build/SecureStore.js
 +++ b/node_modules/expo-secure-store/build/SecureStore.js
-@@ -102,7 +102,7 @@ export async function setItemAsync(key, value, options = {}) {
+@@ -1,6 +1,19 @@
+ import ExpoSecureStore from './ExpoSecureStore';
+ import { byteCountOverLimit, VALUE_BYTES_LIMIT } from './byteCounter';
+ // @needsAudit
++
++/**
++ * Authentication type returned by SecureStore after reading item or saving it to the store.
++ */
++export const AUTH_TYPE = {
++    UNKNOWN: -1, // Android, haven't encountered it when testing, but according to docs it can be returned
++    NONE: 0, // Android & iOS, returned when authentication fails
++    CREDENTIALS: 1, // Android & iOS, generic type (device passcode or pattern)
++    BIOMETRICS: 2, // Android, generic type (face scan or fingerprint)
++    FACE_ID: 3, // iOS
++    TOUCH_ID: 4, // iOS
++    OPTIC_ID: 5 // iOS, reserved type, not used
++};
+ /**
+  * The data in the keychain item cannot be accessed after a restart until the device has been
+  * unlocked once by the user. This may be useful if you need to access the item when the phone
+@@ -102,7 +115,7 @@ export async function setItemAsync(key, value, options = {}) {
      if (!isValidValue(value)) {
          throw new Error(`Invalid value provided to SecureStore. Values must be strings; consider JSON-encoding your values if they are serializable.`);
      }
@@ -2316,7 +2336,7 @@ index 7e3fa4d..1bda658 100644
 +    var authOnEveryAction: Bool = false
  }
 diff --git a/node_modules/expo-secure-store/src/SecureStore.ts b/node_modules/expo-secure-store/src/SecureStore.ts
-index ee43e04..4206f37 100644
+index ee43e04..2c6aa8f 100644
 --- a/node_modules/expo-secure-store/src/SecureStore.ts
 +++ b/node_modules/expo-secure-store/src/SecureStore.ts
 @@ -1,15 +1,26 @@
@@ -2327,15 +2347,15 @@ index ee43e04..4206f37 100644
  
  export type KeychainAccessibilityConstant = number;
  
-+export enum AUTH_TYPE {
-+  UNKNOWN = -1, // Android, haven't encountered it when testing, but according to docs it can be returned
-+  NONE, // Android & iOS, returned when authentication fails
-+  CREDENTIALS, // Android & iOS, generic type (device passcode or pattern)
-+  BIOMETRICS, // Android, generic type (face scan or fingerprint)
-+  FACE_ID, // iOS
-+  TOUCH_ID, // iOS
-+  OPTIC_ID // iOS, reserved type, not used
-+}
++export const AUTH_TYPE = {
++  UNKNOWN: -1, // Android, haven't encountered it when testing, but according to docs it can be returned
++  NONE: 0, // Android & iOS, returned when authentication fails
++  CREDENTIALS: 1, // Android & iOS, generic type (device passcode or pattern)
++  BIOMETRICS: 2, // Android, generic type (face scan or fingerprint)
++  FACE_ID: 3, // iOS
++  TOUCH_ID: 4, // iOS
++  OPTIC_ID: 5 // iOS, reserved type, not used
++} as const;
 +
  // @needsAudit
  /**

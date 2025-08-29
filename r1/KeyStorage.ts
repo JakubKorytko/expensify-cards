@@ -21,67 +21,52 @@ class KeyStorage {
     };
   }
 
-  public async set(value: string): Promise<AuthReturnValue<boolean>> {
-    try {
-      return {
+  public set(value: string): Promise<AuthReturnValue<boolean>> {
+    return SecureStore.setItemAsync(this.key, value, this.options)
+      .then((type) => ({
         value: true,
         reason: Reason.TPath("biometrics.reason.success.keySavedInSecureStore"),
-        type: await SecureStore.setItemAsync(this.key, value, this.options),
-      };
-    } catch (error) {
-      return {
+        type,
+      }))
+      .catch((error) => ({
         value: false,
         reason:
           Reason.ExpoError(error) ||
           Reason.TPath("biometrics.reason.error.unableToSaveKey"),
-      };
-    }
+      }));
   }
 
-  public async delete(): Promise<AuthReturnValue<boolean>> {
-    try {
-      await SecureStore.deleteItemAsync(this.key, {
-        keychainService: CONST.KEYCHAIN_SERVICE,
-      });
-
-      return {
+  public delete(): Promise<AuthReturnValue<boolean>> {
+    return SecureStore.deleteItemAsync(this.key, {
+      keychainService: CONST.KEYCHAIN_SERVICE,
+    })
+      .then(() => ({
         value: true,
         reason: Reason.TPath(
           "biometrics.reason.success.keyDeletedFromSecureStore",
         ),
-      };
-    } catch (error) {
-      return {
+      }))
+      .catch((error) => ({
         value: false,
         reason: Reason.ExpoError(error),
-      };
-    }
+      }));
   }
 
-  public async get(): Promise<AuthReturnValue<string | null>> {
-    try {
-      const [retrievedKey, authType] = await SecureStore.getItemAsync(
-        this.key,
-        this.options,
-      );
-
-      const reason = !!retrievedKey
-        ? Reason.TPath("biometrics.reason.success.keyRetrievedFromSecureStore")
-        : Reason.TPath("biometrics.reason.success.keyNotInSecureStore");
-
-      return {
-        value: retrievedKey,
-        reason,
-        type: authType,
-      };
-    } catch (error) {
-      return {
+  public get(): Promise<AuthReturnValue<string | null>> {
+    return SecureStore.getItemAsync(this.key, this.options)
+      .then(([key, type]) => ({
+        value: key,
+        reason: Reason.TPath(
+          `biometrics.reason.success.${!!key ? "keyRetrievedFromSecureStore" : "keyNotInSecureStore"}`,
+        ),
+        type,
+      }))
+      .catch((error) => ({
         value: null,
         reason:
           Reason.ExpoError(error) ||
           Reason.TPath("biometrics.reason.error.unableToRetrieve"),
-      };
-    }
+      }));
   }
 }
 

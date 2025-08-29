@@ -5,11 +5,12 @@ import { useCallback } from "react";
 export default function Index() {
   const Biometrics = useBiometrics();
 
-  const onPress = useCallback(async () => {
+  const onPress = useCallback(() => {
     if (Biometrics.status) {
-      return await Biometrics.challenge(String(512_122_950));
+      const transactionID = "162953228";
+      return Biometrics.challenge(transactionID);
     }
-    await Biometrics.request();
+    return Biometrics.request();
   }, [Biometrics]);
 
   const { message } = Biometrics.feedback.lastAction.value;

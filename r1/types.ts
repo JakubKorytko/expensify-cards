@@ -8,7 +8,7 @@ type AuthType = (typeof CONST.AUTH_TYPE)[keyof typeof CONST.AUTH_TYPE];
 type AuthReturnValue<T> = {
   value: T;
   reason: ReasonType;
-  type?: AUTH_TYPE;
+  type?: (typeof AUTH_TYPE)[keyof typeof AUTH_TYPE];
   typeName?: string;
   message?: string;
 };
