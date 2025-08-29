@@ -88,32 +88,89 @@ const READ_COMMANDS = {
   REQUEST_BIOMETRIC_CHALLENGE: "RequestBiometricChallenge",
 } as const;
 
+const SIDE_EFFECT_REQUEST_COMMANDS = {
+  REGISTER_BIOMETRICS: WRITE_COMMANDS.REGISTER_BIOMETRICS,
+  AUTHORIZE_TRANSACTION: WRITE_COMMANDS.AUTHORIZE_TRANSACTION,
+  RESEND_VALIDATE_CODE: WRITE_COMMANDS.RESEND_VALIDATE_CODE,
+  REQUEST_BIOMETRIC_CHALLENGE: READ_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE,
+};
+
 type WriteCommandType = (typeof WRITE_COMMANDS)[keyof typeof WRITE_COMMANDS];
 type ReadCommandType = (typeof READ_COMMANDS)[keyof typeof READ_COMMANDS];
 
-const API = {
-  read: async (
-    route: ReadCommandType,
-    parameters?: ReadCommands[typeof route]["parameters"],
-  ) => {
+type ReadAPI = (
+  route: ReadCommandType,
+  parameters?: ReadCommands[typeof route]["parameters"],
+) => Promise<ReadCommands[typeof route]["returns"]>;
+
+type WriteAPI = (
+  route: WriteCommandType,
+  parameters: WriteCommands[typeof route]["parameters"],
+) => Promise<WriteCommands[typeof route]["returns"]>;
+
+type SideEffectsResponse = {
+  challenge?: Challenge;
+  jsonCode?: number;
+  message?: string;
+};
+
+type APIType = {
+  read: ReadAPI;
+  write: WriteAPI;
+  makeRequestWithSideEffects: {
+    (
+      route: ReadCommandType,
+      parameters: ReadCommands[typeof route]["parameters"],
+      onyxData: object,
+    ): Promise<SideEffectsResponse>;
+    (
+      route: WriteCommandType,
+      parameters: WriteCommands[typeof route]["parameters"],
+      onyxData: object,
+    ): Promise<SideEffectsResponse>;
+  };
+};
+
+const isReadCommandType = (
+  route: ReadCommandType | WriteCommandType,
+): route is ReadCommandType =>
+  route === READ_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE;
+
+const API: APIType = {
+  read: async (route, parameters) => {
     const routePath = APIRoutes.Read[route];
     const [protocol, path] = routePath.split(":") as ["GET" | "POST", string];
     return (await api(path, protocol, parameters)) as Promise<
       ReadCommands[typeof route]["returns"]
     >;
   },
-  write: async (
-    route: WriteCommandType,
-    parameters: WriteCommands[typeof route]["parameters"],
-  ) => {
+  write: async (route, parameters) => {
     const routePath = APIRoutes.Write[route];
     const [protocol, path] = routePath.split(":") as ["GET" | "POST", string];
     return (await api(path, protocol, parameters)) as Promise<
       WriteCommands[typeof route]["returns"]
     >;
   },
+  makeRequestWithSideEffects: async (route, parameters) => {
+    if (isReadCommandType(route)) {
+      const res = await API.read(route, parameters);
+      return {
+        message: res.message,
+        jsonCode: res.status,
+        challenge: res.response?.challenge,
+      };
+    }
+    const res = await API.write(
+      route,
+      parameters as WriteCommands[typeof route]["parameters"],
+    );
+    return {
+      message: res.message,
+      jsonCode: res.status,
+    };
+  },
 };
 
 export default API;
-export { WRITE_COMMANDS, READ_COMMANDS };
+export { WRITE_COMMANDS, READ_COMMANDS, SIDE_EFFECT_REQUEST_COMMANDS };
 export type { WriteCommands, ReadCommands, ChallengeObject, Challenge };

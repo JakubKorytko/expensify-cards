@@ -1,4 +1,4 @@
-import API, { READ_COMMANDS, WRITE_COMMANDS } from "@/src/api";
+import API, { SIDE_EFFECT_REQUEST_COMMANDS } from "@/src/api";
 import type { AuthReturnValue, TranslationPaths } from "./types";
 import { PrivateKeyStorage, PublicKeyStorage } from "./KeyStorage";
 import { signToken as signTokenED25519 } from "./ED25519";
@@ -28,16 +28,20 @@ class Challenge {
   }
 
   public request(): Promise<AuthReturnValue<boolean>> {
-    return API.read(READ_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE)
-      .then(({ status, response }) =>
+    return API.makeRequestWithSideEffects(
+      SIDE_EFFECT_REQUEST_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE,
+      {},
+      {},
+    )
+      .then(({ jsonCode, challenge }) =>
         Promise.all([
-          response,
-          status === 401 ? this.resetKeys() : Promise.resolve({}),
+          challenge,
+          jsonCode === 401 ? this.resetKeys() : Promise.resolve({}),
         ]),
       )
-      .then(([response]) => {
-        const challenge = !!response
-          ? JSON.stringify(response.challenge)
+      .then(([challenge]) => {
+        const challengeString = !!challenge
+          ? JSON.stringify(challenge)
           : undefined;
 
         const reason = challenge
@@ -45,7 +49,7 @@ class Challenge {
           : Reason.TPath("biometrics.reason.error.badToken");
 
         this.auth = {
-          value: challenge,
+          value: challengeString,
           reason,
         };
 
@@ -94,11 +98,15 @@ class Challenge {
       );
     }
 
-    return API.write(WRITE_COMMANDS.AUTHORIZE_TRANSACTION, {
-      transactionID: this.transactionID,
-      signedChallenge: this.auth.value,
-    }).then(({ status }) => {
-      if (status !== 200) {
+    return API.makeRequestWithSideEffects(
+      SIDE_EFFECT_REQUEST_COMMANDS.AUTHORIZE_TRANSACTION,
+      {
+        transactionID: this.transactionID,
+        signedChallenge: this.auth.value,
+      },
+      {},
+    ).then(({ jsonCode }) => {
+      if (jsonCode !== 200) {
         return this.createErrorReturnValue(
           "biometrics.reason.error.challengeRejected",
         );

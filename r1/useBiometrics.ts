@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import API, { WRITE_COMMANDS } from "@/src/api";
+import API, { SIDE_EFFECT_REQUEST_COMMANDS } from "@/src/api";
 import { generateKeyPair } from "./ED25519";
 import { PrivateKeyStorage, PublicKeyStorage } from "./KeyStorage";
 import type { AuthReturnValue, Biometrics } from "./types";
@@ -32,12 +32,16 @@ function useBiometrics(): Biometrics {
         if (!publicKeyResult.value) throw publicKeyResult;
         return Promise.all([
           privateKeyResult,
-          API.write(WRITE_COMMANDS.REGISTER_BIOMETRICS, {
-            publicKey,
-          }),
+          API.makeRequestWithSideEffects(
+            SIDE_EFFECT_REQUEST_COMMANDS.REGISTER_BIOMETRICS,
+            {
+              publicKey,
+            },
+            {},
+          ),
         ]);
       })
-      .then(([privateKeyResult, { status, message }]) => {
+      .then(([privateKeyResult, { jsonCode, message }]) => {
         const reasonMessage = message
           ? Reason.Message(message)
           : Reason.TPath("biometrics.reason.generic.apiError");
@@ -46,7 +50,7 @@ function useBiometrics(): Biometrics {
           "biometrics.reason.success.keyPairGenerated",
         );
 
-        const isCallSuccessful = status === 200;
+        const isCallSuccessful = jsonCode === 200;
 
         const authReason: AuthReturnValue<boolean> = {
           value: isCallSuccessful,
