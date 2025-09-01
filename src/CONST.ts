@@ -42,10 +42,6 @@ const CONST = {
       CHALLENGE: "Challenge",
       KEY: "Key",
     },
-    MESSAGE_SOURCE: {
-      API: "API",
-      SECURE_STORE: "SecureStore",
-    },
     EXPO_ERRORS: {
       SEPARATOR: "Caused by:",
       SEARCH_STRING: {

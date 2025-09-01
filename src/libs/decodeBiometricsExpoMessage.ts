@@ -1,4 +1,4 @@
-import type { MessageSource, TranslationPaths } from "@src/types";
+import type { TranslationPaths } from "@src/types";
 import CONST from "@src/CONST";
 
 function decodeExpoMessage(error: unknown): TranslationPaths {
@@ -32,25 +32,14 @@ function decodeExpoMessage(error: unknown): TranslationPaths {
   return "biometrics.reason.expoErrors.generic";
 }
 
-function decodeServerMessage(message: unknown): TranslationPaths {
-  // TODO: fill this out once server responses are ready
-
-  return "biometrics.reason.generic.apiError";
-}
-
 const isErrorGeneric = (path: TranslationPaths) =>
-  path === "biometrics.reason.expoErrors.generic" ||
-  path === "biometrics.reason.generic.apiError";
+  path === "biometrics.reason.expoErrors.generic";
 
-const decodeBiometricsMessage = (
-  source: MessageSource,
+const decodeBiometricsExpoMessage = (
   message: unknown,
   fallback?: TranslationPaths,
 ): TranslationPaths => {
-  const decodedMessage =
-    source === CONST.BIOMETRICS.MESSAGE_SOURCE.SECURE_STORE
-      ? decodeExpoMessage(message)
-      : decodeServerMessage(message);
+  const decodedMessage = decodeExpoMessage(message);
 
   const isGeneric = isErrorGeneric(decodedMessage);
 
@@ -61,4 +50,4 @@ const decodeBiometricsMessage = (
   return decodedMessage;
 };
 
-export default decodeBiometricsMessage;
+export default decodeBiometricsExpoMessage;

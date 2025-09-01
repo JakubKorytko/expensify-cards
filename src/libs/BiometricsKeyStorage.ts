@@ -1,7 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import CONST from "@src/CONST";
 import type { AuthReturnValue, KeyType, TranslationPaths } from "@src/types";
-import decodeBiometricsMessage from "./decodeBiometricsMessage";
+import decodeBiometricsExpoMessage from "@libs/decodeBiometricsExpoMessage";
 
 class BiometricsKeyStorage {
   constructor(private readonly key: KeyType) {
@@ -31,8 +31,7 @@ class BiometricsKeyStorage {
       }))
       .catch((error) => ({
         value: false,
-        reason: decodeBiometricsMessage(
-          CONST.BIOMETRICS.MESSAGE_SOURCE.SECURE_STORE,
+        reason: decodeBiometricsExpoMessage(
           error,
           "biometrics.reason.error.unableToSaveKey",
         ),
@@ -50,8 +49,7 @@ class BiometricsKeyStorage {
       }))
       .catch((error) => ({
         value: false,
-        reason: decodeBiometricsMessage(
-          CONST.BIOMETRICS.MESSAGE_SOURCE.SECURE_STORE,
+        reason: decodeBiometricsExpoMessage(
           error,
           "biometrics.reason.error.unableToDelete",
         ),
@@ -68,8 +66,7 @@ class BiometricsKeyStorage {
       }))
       .catch((error) => ({
         value: null,
-        reason: decodeBiometricsMessage(
-          CONST.BIOMETRICS.MESSAGE_SOURCE.SECURE_STORE,
+        reason: decodeBiometricsExpoMessage(
           error,
           "biometrics.reason.error.unableToRetrieve",
         ),

@@ -110,7 +110,7 @@ type WriteAPI = (
 
 type SideEffectsResponse = {
   challenge?: Challenge;
-  jsonCode?: number;
+  jsonCode?: number | string;
   message?: string;
 };
 

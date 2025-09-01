@@ -103,7 +103,7 @@ router.get["/request_biometric_challenge"] = async (): Promise<
   return {
     response: { challenge },
     status: 200,
-    message: "BiometricsChallenge generated successfully",
+    message: "Biometrics challenge generated successfully",
   };
 };
 
@@ -137,7 +137,7 @@ router.post["/register_biometrics"] = ({
 
   if (!validateCode && STORAGE.publicKeys[USER_EMAIL]?.length > 0) {
     return {
-      ...MISSING_PARAMETER,
+      ...UNAUTHORIZED,
       message: Logger.w("Validation code required"),
     };
   }
@@ -148,7 +148,7 @@ router.post["/register_biometrics"] = ({
 
     if (!isValidateCodeCorrect) {
       return {
-        ...CONFLICT,
+        ...BAD_REQUEST,
         message: Logger.w("Validation code invalid"),
       };
     }

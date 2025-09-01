@@ -1,5 +1,4 @@
-type NestedRecord<T> = { [key: string]: T | NestedRecord<T> };
-type ElementType = string | ((...args: any[]) => string);
+import { ElementType, NestedRecord } from "@src/types";
 
 const translations: NestedRecord<ElementType> | ElementType = {
   biometrics: {
@@ -43,8 +42,22 @@ const translations: NestedRecord<ElementType> | ElementType = {
         apiError: "API error",
       },
     },
+    apiResponse: {
+      registrationRequired: "Registration required",
+      challengeGenerated: "Challenge generated successfully",
+      noPublicKey: "No public key provided",
+      keyAlreadyRegistered: "Public key is already registered",
+      validationCodeRequired: "Validation code is required",
+      validationCodeInvalid: "Validation code is invalid",
+      biometricsSuccess: "Biometrics registered successfully",
+      noTransactionID: "No transaction ID provided",
+      userNotRegistered: "User is not registered",
+      unableToAuthorize: "Unable to authorize user using provided parameters",
+      userAuthorized: "User authorized successfully",
+      badRequest: "Bad request",
+      unknownResponse: "Unknown response type",
+    },
   },
 };
 
 export default translations;
-export type { NestedRecord, ElementType };

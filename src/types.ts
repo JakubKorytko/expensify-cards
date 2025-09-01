@@ -2,10 +2,10 @@ import { AUTH_TYPE } from "expo-secure-store";
 import CONST from "@src/CONST";
 
 type ValueOf<T> = T[keyof T];
-
 type TranslationPaths = `biometrics.${string}`;
 type AuthType = ValueOf<typeof CONST.BIOMETRICS.AUTH_TYPE>;
-type MessageSource = ValueOf<typeof CONST.BIOMETRICS.MESSAGE_SOURCE>;
+type NestedRecord<T> = { [key: string]: T | NestedRecord<T> };
+type ElementType = string | ((...args: any[]) => string);
 type KeyType = ValueOf<typeof CONST.BIOMETRICS.KEY_ALIASES>;
 type FeedbackKeyType = ValueOf<typeof CONST.BIOMETRICS.FEEDBACK_TYPE>;
 
@@ -36,6 +36,11 @@ type SetFeedback = (
   type: FeedbackKeyType,
 ) => AuthReturnValue<boolean>;
 
+type Challenge = {
+  nonce: string;
+  expires: number;
+};
+
 export type {
   AuthReturnValue,
   Feedback,
@@ -45,5 +50,8 @@ export type {
   TranslationPaths,
   AuthType,
   SetFeedback,
-  MessageSource,
+  Challenge,
+  NestedRecord,
+  ElementType,
+  ValueOf,
 };

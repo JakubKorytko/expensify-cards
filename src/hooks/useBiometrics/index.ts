@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import API, { SIDE_EFFECT_REQUEST_COMMANDS } from "@/base/api";
 import { generateKeyPair } from "@libs/ED25519";
 import {
   PrivateKeyStorage,
@@ -9,7 +8,7 @@ import type { AuthReturnValue, Biometrics } from "@src/types";
 import CONST from "@src/CONST";
 import BiometricsChallenge from "@libs/BiometricsChallenge";
 import useBiometricsFeedback from "./useBiometricsFeedback";
-import decodeBiometricsMessage from "@libs/decodeBiometricsMessage";
+import { registerBiometrics } from "@libs/actions/Biometrics";
 
 function useBiometrics(): Biometrics {
   const [status, setStatus] = useState<boolean>(false);
@@ -33,31 +32,16 @@ function useBiometrics(): Biometrics {
       })
       .then(([privateKeyResult, publicKeyResult]) => {
         if (!publicKeyResult.value) throw publicKeyResult;
-        return Promise.all([
-          privateKeyResult,
-          API.makeRequestWithSideEffects(
-            SIDE_EFFECT_REQUEST_COMMANDS.REGISTER_BIOMETRICS,
-            {
-              publicKey,
-            },
-            {},
-          ),
-        ]);
+        return Promise.all([privateKeyResult, registerBiometrics(publicKey)]);
       })
-      .then(([privateKeyResult, { jsonCode, message }]) => {
-        const reasonMessage = decodeBiometricsMessage(
-          CONST.BIOMETRICS.MESSAGE_SOURCE.API,
-          message,
-          "biometrics.reason.generic.apiError",
-        );
-
+      .then(([privateKeyResult, { httpCode, reason }]) => {
         const successMessage = "biometrics.reason.success.keyPairGenerated";
 
-        const isCallSuccessful = jsonCode === 200;
+        const isCallSuccessful = httpCode === 200;
 
         const authReason: AuthReturnValue<boolean> = {
           value: isCallSuccessful,
-          reason: isCallSuccessful ? successMessage : reasonMessage,
+          reason: isCallSuccessful ? successMessage : reason,
           type: privateKeyResult.type,
         };
 
