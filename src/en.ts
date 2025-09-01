@@ -24,12 +24,19 @@ const translations: NestedRecord<ElementType> | ElementType = {
       },
       error: {
         unableToSaveKey: "Unable to save the key in the SecureStore",
-        unableToRetrieve: "Unable to retrieve key from the SecureStore",
+        unableToRetrieve: "Unable to retrieve the key from the SecureStore",
+        unableToDelete: "Unable to delete the key from the SecureStore",
         badToken: "Requested token is missing or invalid",
         tokenMissing: "Token is missing",
         keyMissing: "Key is missing",
         signatureMissing: "Signature is missing",
         challengeRejected: "API rejected the challenge",
+      },
+      expoErrors: {
+        notInForeground: "App is not in the foreground",
+        alreadyInProgress: "Authentication is already in progress",
+        canceled: "Authentication was canceled",
+        generic: "Something went wrong",
       },
       generic: {
         notRequested: "Not requested yet",

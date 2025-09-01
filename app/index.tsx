@@ -1,24 +1,15 @@
-import useBiometrics from "@/src/hooks/useBiometrics/useBiometrics";
+import useBiometrics from "@/src/hooks/useBiometrics";
 import { Button, Text, View } from "react-native";
-import { useCallback } from "react";
+
+const transactionID = "162953228";
 
 export default function Index() {
   const Biometrics = useBiometrics();
 
-  const onPress = useCallback(() => {
-    if (Biometrics.status) {
-      const transactionID = "162953228";
-      return Biometrics.challenge(transactionID);
-    }
-    return Biometrics.request();
-  }, [Biometrics]);
-
-  const { message } = Biometrics.feedback.lastAction.value;
-
   return (
     <View>
-      <Button title="Test" onPress={onPress} />
-      <Text>{message}</Text>
+      <Button title="Test" onPress={() => Biometrics.prompt(transactionID)} />
+      <Text>{Biometrics.feedback.message}</Text>
     </View>
   );
 }

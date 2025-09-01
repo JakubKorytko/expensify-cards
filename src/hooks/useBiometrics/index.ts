@@ -9,7 +9,7 @@ import type { AuthReturnValue, Biometrics } from "@src/types";
 import CONST from "@src/CONST";
 import BiometricsChallenge from "@libs/BiometricsChallenge";
 import useBiometricsFeedback from "./useBiometricsFeedback";
-import Reason from "@libs/Reason";
+import decodeBiometricsMessage from "@libs/decodeBiometricsMessage";
 
 function useBiometrics(): Biometrics {
   const [status, setStatus] = useState<boolean>(false);
@@ -45,13 +45,13 @@ function useBiometrics(): Biometrics {
         ]);
       })
       .then(([privateKeyResult, { jsonCode, message }]) => {
-        const reasonMessage = message
-          ? Reason.Message(message)
-          : Reason.TPath("biometrics.reason.generic.apiError");
-
-        const successMessage = Reason.TPath(
-          "biometrics.reason.success.keyPairGenerated",
+        const reasonMessage = decodeBiometricsMessage(
+          CONST.BIOMETRICS.MESSAGE_SOURCE.API,
+          message,
+          "biometrics.reason.generic.apiError",
         );
+
+        const successMessage = "biometrics.reason.success.keyPairGenerated";
 
         const isCallSuccessful = jsonCode === 200;
 
@@ -97,11 +97,26 @@ function useBiometrics(): Biometrics {
     [refreshStatus, setFeedback],
   );
 
+  const prompt = useCallback(
+    (transactionID: string) => {
+      if (!status) {
+        return request().then((requestStatus) => {
+          if (!requestStatus.value) return requestStatus;
+          return challenge(transactionID);
+        });
+      }
+
+      return challenge(transactionID);
+    },
+    [challenge, request, status],
+  );
+
   return {
     request,
     challenge,
     feedback,
     status,
+    prompt,
   };
 }
 

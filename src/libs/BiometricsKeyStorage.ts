@@ -1,7 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import CONST from "@src/CONST";
-import type { AuthReturnValue, KeyType } from "@src/types";
-import Reason from "./Reason";
+import type { AuthReturnValue, KeyType, TranslationPaths } from "@src/types";
+import decodeBiometricsMessage from "./decodeBiometricsMessage";
 
 class BiometricsKeyStorage {
   constructor(private readonly key: KeyType) {
@@ -25,14 +25,17 @@ class BiometricsKeyStorage {
     return SecureStore.setItemAsync(this.key, value, this.options)
       .then((type) => ({
         value: true,
-        reason: Reason.TPath("biometrics.reason.success.keySavedInSecureStore"),
+        reason:
+          "biometrics.reason.success.keySavedInSecureStore" as TranslationPaths,
         type,
       }))
       .catch((error) => ({
         value: false,
-        reason:
-          Reason.ExpoError(error) ||
-          Reason.TPath("biometrics.reason.error.unableToSaveKey"),
+        reason: decodeBiometricsMessage(
+          CONST.BIOMETRICS.MESSAGE_SOURCE.SECURE_STORE,
+          error,
+          "biometrics.reason.error.unableToSaveKey",
+        ),
       }));
   }
 
@@ -42,13 +45,16 @@ class BiometricsKeyStorage {
     })
       .then(() => ({
         value: true,
-        reason: Reason.TPath(
-          "biometrics.reason.success.keyDeletedFromSecureStore",
-        ),
+        reason:
+          "biometrics.reason.success.keyDeletedFromSecureStore" as TranslationPaths,
       }))
       .catch((error) => ({
         value: false,
-        reason: Reason.ExpoError(error),
+        reason: decodeBiometricsMessage(
+          CONST.BIOMETRICS.MESSAGE_SOURCE.SECURE_STORE,
+          error,
+          "biometrics.reason.error.unableToDelete",
+        ),
       }));
   }
 
@@ -56,16 +62,17 @@ class BiometricsKeyStorage {
     return SecureStore.getItemAsync(this.key, this.options)
       .then(([key, type]) => ({
         value: key,
-        reason: Reason.TPath(
-          `biometrics.reason.success.${!!key ? "keyRetrievedFromSecureStore" : "keyNotInSecureStore"}`,
-        ),
+        reason:
+          `biometrics.reason.success.${!!key ? "keyRetrievedFromSecureStore" : "keyNotInSecureStore"}` as TranslationPaths,
         type,
       }))
       .catch((error) => ({
         value: null,
-        reason:
-          Reason.ExpoError(error) ||
-          Reason.TPath("biometrics.reason.error.unableToRetrieve"),
+        reason: decodeBiometricsMessage(
+          CONST.BIOMETRICS.MESSAGE_SOURCE.SECURE_STORE,
+          error,
+          "biometrics.reason.error.unableToRetrieve",
+        ),
       }));
   }
 }

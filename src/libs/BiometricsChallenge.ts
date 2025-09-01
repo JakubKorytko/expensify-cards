@@ -2,12 +2,11 @@ import API, { SIDE_EFFECT_REQUEST_COMMANDS } from "@/base/api";
 import type { AuthReturnValue, TranslationPaths } from "@src/types";
 import { PrivateKeyStorage, PublicKeyStorage } from "./BiometricsKeyStorage";
 import { signToken as signTokenED25519 } from "./ED25519";
-import Reason from "./Reason";
 
 class BiometricsChallenge {
   private auth: AuthReturnValue<string | undefined> = {
     value: undefined,
-    reason: Reason.TPath("biometrics.reason.generic.notRequested"),
+    reason: "biometrics.reason.generic.notRequested",
   };
 
   constructor(private readonly transactionID: string) {
@@ -15,7 +14,7 @@ class BiometricsChallenge {
   }
 
   private resetKeys(): Promise<AuthReturnValue<boolean>> {
-    return PrivateKeyStorage.delete().then(PublicKeyStorage.delete);
+    return PrivateKeyStorage.delete().then(() => PublicKeyStorage.delete());
   }
 
   private createErrorReturnValue(
@@ -23,7 +22,7 @@ class BiometricsChallenge {
   ): AuthReturnValue<boolean> {
     return {
       value: false,
-      reason: Reason.TPath(reasonKey),
+      reason: reasonKey,
     };
   }
 
@@ -45,8 +44,8 @@ class BiometricsChallenge {
           : undefined;
 
         const reason = challenge
-          ? Reason.TPath("biometrics.reason.success.tokenReceived")
-          : Reason.TPath("biometrics.reason.error.badToken");
+          ? "biometrics.reason.success.tokenReceived"
+          : "biometrics.reason.error.badToken";
 
         this.auth = {
           value: challengeString,
@@ -71,16 +70,16 @@ class BiometricsChallenge {
       );
     }
 
-    return PrivateKeyStorage.get().then(({ value, type }) => {
+    return PrivateKeyStorage.get().then(({ value, type, reason }) => {
       if (!value) {
         return this.createErrorReturnValue(
-          "biometrics.reason.error.keyMissing",
+          reason || "biometrics.reason.error.keyMissing",
         );
       }
 
       this.auth = {
         value: signTokenED25519(authValue, value),
-        reason: Reason.TPath("biometrics.reason.success.tokenSigned"),
+        reason: "biometrics.reason.success.tokenSigned",
         type,
       };
 
@@ -114,7 +113,7 @@ class BiometricsChallenge {
 
       return {
         value: true,
-        reason: Reason.TPath("biometrics.reason.success.verificationSuccess"),
+        reason: "biometrics.reason.success.verificationSuccess",
         type: this.auth.type,
       };
     });

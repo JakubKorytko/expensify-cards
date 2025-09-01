@@ -41,11 +41,20 @@ const CONST = {
       NONE: "None",
       CHALLENGE: "Challenge",
       KEY: "Key",
-    } as const,
-    MISC: {
-      EXPO_ERROR_SEPARATOR: "Caused by:",
+    },
+    MESSAGE_SOURCE: {
+      API: "API",
+      SECURE_STORE: "SecureStore",
+    },
+    EXPO_ERRORS: {
+      SEPARATOR: "Caused by:",
+      SEARCH_STRING: {
+        NOT_IN_FOREGROUND: "not in the foreground",
+        IN_PROGRESS: "in progress",
+        CANCELED: "canceled",
+      },
     },
   },
-};
+} as const;
 
 export default CONST;

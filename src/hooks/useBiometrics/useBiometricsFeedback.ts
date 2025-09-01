@@ -1,14 +1,13 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import useLocalize from "@/base/useLocalize";
-import CONST from "../../CONST";
+import CONST from "@src/CONST";
 import {
   AuthReturnValue,
   Feedback,
   FeedbackKeyType,
   AuthType,
   SetFeedback,
-} from "../../types";
-import Reason, { isReasonTPath } from "../../libs/Reason";
+} from "@src/types";
 
 const getAuthTypeName = <T>(
   returnValue: AuthReturnValue<T>,
@@ -22,7 +21,7 @@ export default function useBiometricsFeedback(): [Feedback, SetFeedback] {
 
   const emptyAuth: AuthReturnValue<boolean> = useMemo(
     () => ({
-      reason: Reason.TPath("biometrics.reason.generic.notRequested"),
+      reason: "biometrics.reason.generic.notRequested",
       message: translate("biometrics.reason.generic.notRequested"),
       value: false,
     }),
@@ -40,8 +39,7 @@ export default function useBiometricsFeedback(): [Feedback, SetFeedback] {
       const { reason, value } = authData;
       const typeName = getAuthTypeName(authData);
 
-      const shouldTranslate = isReasonTPath(reason);
-      const message = shouldTranslate ? translate(reason.value) : reason.value;
+      const message = translate(reason);
       const reasonMessage = value ? typeName : message;
       const statusMessage = `biometrics.feedbackMessage.${value ? "success" : "failed"}`;
 
@@ -78,13 +76,12 @@ export default function useBiometricsFeedback(): [Feedback, SetFeedback] {
       [CONST.BIOMETRICS.FEEDBACK_TYPE.NONE]: emptyAuth,
     };
 
+    const { message } = lastActionMap[lastAction.current];
+
     return {
       challenge,
       key,
-      lastAction: {
-        type: lastAction.current,
-        value: lastActionMap[lastAction.current],
-      },
+      message: message ?? "biometrics.reason.generic.notRequested",
     };
   }, [challenge, emptyAuth, key]);
 
