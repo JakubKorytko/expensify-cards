@@ -1,10 +1,10 @@
-import API, { SIDE_EFFECT_REQUEST_COMMANDS } from "@/src/api";
-import type { AuthReturnValue, TranslationPaths } from "./types";
-import { PrivateKeyStorage, PublicKeyStorage } from "./KeyStorage";
+import API, { SIDE_EFFECT_REQUEST_COMMANDS } from "@/base/api";
+import type { AuthReturnValue, TranslationPaths } from "@src/types";
+import { PrivateKeyStorage, PublicKeyStorage } from "./BiometricsKeyStorage";
 import { signToken as signTokenED25519 } from "./ED25519";
 import Reason from "./Reason";
 
-class Challenge {
+class BiometricsChallenge {
   private auth: AuthReturnValue<string | undefined> = {
     value: undefined,
     reason: Reason.TPath("biometrics.reason.generic.notRequested"),
@@ -121,4 +121,4 @@ class Challenge {
   }
 }
 
-export default Challenge;
+export default BiometricsChallenge;

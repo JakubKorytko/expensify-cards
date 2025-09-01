@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import useBiometrics, { Biometrics } from "@/src/useBiometrics";
+import useBiometrics, { Biometrics } from "@/base/useBiometrics";
 
 const Context = React.createContext<Biometrics | null>(null);
 

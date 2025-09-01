@@ -1,23 +1,23 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import useLocalize from "@/src/useLocalize";
-import CONST from "./const";
+import useLocalize from "@/base/useLocalize";
+import CONST from "../../CONST";
 import {
   AuthReturnValue,
   Feedback,
   FeedbackKeyType,
   AuthType,
   SetFeedback,
-} from "./types";
-import Reason, { isReasonTPath } from "./Reason";
+} from "../../types";
+import Reason, { isReasonTPath } from "../../libs/Reason";
 
 const getAuthTypeName = <T>(
   returnValue: AuthReturnValue<T>,
 ): AuthType["NAME"] | undefined =>
-  Object.values(CONST.AUTH_TYPE).find(
+  Object.values(CONST.BIOMETRICS.AUTH_TYPE).find(
     (authType) => authType.CODE === returnValue.type,
   )?.NAME;
 
-export default function useFeedback(): [Feedback, SetFeedback] {
+export default function useBiometricsFeedback(): [Feedback, SetFeedback] {
   const { translate } = useLocalize();
 
   const emptyAuth: AuthReturnValue<boolean> = useMemo(
@@ -31,7 +31,9 @@ export default function useFeedback(): [Feedback, SetFeedback] {
 
   const [challenge, setChallenge] = useState(emptyAuth);
   const [key, setKey] = useState(emptyAuth);
-  const lastAction = useRef<FeedbackKeyType>(CONST.FEEDBACK_TYPE.NONE);
+  const lastAction = useRef<FeedbackKeyType>(
+    CONST.BIOMETRICS.FEEDBACK_TYPE.NONE,
+  );
 
   const createFeedback = useCallback(
     (authData: AuthReturnValue<boolean>, authorize?: boolean) => {
@@ -54,7 +56,7 @@ export default function useFeedback(): [Feedback, SetFeedback] {
 
   const setFeedback: SetFeedback = useCallback(
     (authData, type) => {
-      const isChallengeType = type === CONST.FEEDBACK_TYPE.CHALLENGE;
+      const isChallengeType = type === CONST.BIOMETRICS.FEEDBACK_TYPE.CHALLENGE;
       const createdFeedback = createFeedback(authData, isChallengeType);
 
       if (isChallengeType) {
@@ -71,9 +73,9 @@ export default function useFeedback(): [Feedback, SetFeedback] {
 
   const feedback = useMemo(() => {
     const lastActionMap = {
-      [CONST.FEEDBACK_TYPE.KEY]: key,
-      [CONST.FEEDBACK_TYPE.CHALLENGE]: challenge,
-      [CONST.FEEDBACK_TYPE.NONE]: emptyAuth,
+      [CONST.BIOMETRICS.FEEDBACK_TYPE.KEY]: key,
+      [CONST.BIOMETRICS.FEEDBACK_TYPE.CHALLENGE]: challenge,
+      [CONST.BIOMETRICS.FEEDBACK_TYPE.NONE]: emptyAuth,
     };
 
     return {

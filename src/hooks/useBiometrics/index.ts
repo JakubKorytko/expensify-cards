@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
-import API, { SIDE_EFFECT_REQUEST_COMMANDS } from "@/src/api";
-import { generateKeyPair } from "./ED25519";
-import { PrivateKeyStorage, PublicKeyStorage } from "./KeyStorage";
-import type { AuthReturnValue, Biometrics } from "./types";
-import CONST from "./const";
-import Challenge from "./Challenge";
-import useFeedback from "./useFeedback";
-import Reason from "./Reason";
+import API, { SIDE_EFFECT_REQUEST_COMMANDS } from "@/base/api";
+import { generateKeyPair } from "@libs/ED25519";
+import {
+  PrivateKeyStorage,
+  PublicKeyStorage,
+} from "@libs/BiometricsKeyStorage";
+import type { AuthReturnValue, Biometrics } from "@src/types";
+import CONST from "@src/CONST";
+import BiometricsChallenge from "@libs/BiometricsChallenge";
+import useBiometricsFeedback from "./useBiometricsFeedback";
+import Reason from "@libs/Reason";
 
 function useBiometrics(): Biometrics {
   const [status, setStatus] = useState<boolean>(false);
-  const [feedback, setFeedback] = useFeedback();
+  const [feedback, setFeedback] = useBiometricsFeedback();
 
   const refreshStatus = useCallback(() => {
     PublicKeyStorage.get().then((key) => {
@@ -60,16 +63,16 @@ function useBiometrics(): Biometrics {
 
         refreshStatus();
 
-        return setFeedback(authReason, CONST.FEEDBACK_TYPE.KEY);
+        return setFeedback(authReason, CONST.BIOMETRICS.FEEDBACK_TYPE.KEY);
       })
       .catch((status) => {
-        return setFeedback(status, CONST.FEEDBACK_TYPE.KEY);
+        return setFeedback(status, CONST.BIOMETRICS.FEEDBACK_TYPE.KEY);
       });
   }, [refreshStatus, setFeedback]);
 
   const challenge = useCallback(
     (transactionID: string) => {
-      const challenge = new Challenge(transactionID);
+      const challenge = new BiometricsChallenge(transactionID);
 
       return challenge
         .request()
@@ -82,10 +85,10 @@ function useBiometrics(): Biometrics {
           return challenge.send();
         })
         .then((result) => {
-          return setFeedback(result, CONST.FEEDBACK_TYPE.CHALLENGE);
+          return setFeedback(result, CONST.BIOMETRICS.FEEDBACK_TYPE.CHALLENGE);
         })
         .catch((status) => {
-          return setFeedback(status, CONST.FEEDBACK_TYPE.CHALLENGE);
+          return setFeedback(status, CONST.BIOMETRICS.FEEDBACK_TYPE.CHALLENGE);
         })
         .finally(() => {
           refreshStatus();

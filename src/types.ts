@@ -1,49 +1,52 @@
-import CONST from "@/src/const";
+import { AUTH_TYPE } from "expo-secure-store";
+import CONST from "@src/CONST";
+import type { ReasonType } from "@libs/Reason";
 
-type Biometrics = {
-  request: (code?: number) => Promise<AuthReturnValue<boolean>>;
-  revoke: () => Promise<AuthReturnValue<boolean>>;
-  challenge: () => Promise<AuthReturnValue<boolean>>;
-  feedback: Feedback;
-  status: boolean;
-  validateCodeRequired: boolean;
-};
+type TranslationPaths = `biometrics.${string}`;
+type AuthType =
+  (typeof CONST.BIOMETRICS.AUTH_TYPE)[keyof typeof CONST.BIOMETRICS.AUTH_TYPE];
 
 type AuthReturnValue<T> = {
   value: T;
-  reason: string;
-  type?: number;
+  reason: ReasonType;
+  type?: (typeof AUTH_TYPE)[keyof typeof AUTH_TYPE];
   typeName?: string;
   message?: string;
 };
 
-type AuthType = (typeof CONST.AUTH_TYPE)[keyof typeof CONST.AUTH_TYPE];
-type KeyType = (typeof CONST.KEY_ALIASES)[keyof typeof CONST.KEY_ALIASES];
+type KeyType =
+  (typeof CONST.BIOMETRICS.KEY_ALIASES)[keyof typeof CONST.BIOMETRICS.KEY_ALIASES];
+type FeedbackKeyType =
+  (typeof CONST.BIOMETRICS.FEEDBACK_TYPE)[keyof typeof CONST.BIOMETRICS.FEEDBACK_TYPE];
 
 type Feedback = {
   challenge: AuthReturnValue<boolean>;
   key: AuthReturnValue<boolean>;
   lastAction: {
-    type: (typeof CONST.FEEDBACK_TYPE)[keyof typeof CONST.FEEDBACK_TYPE];
+    type: (typeof CONST.BIOMETRICS.FEEDBACK_TYPE)[keyof typeof CONST.BIOMETRICS.FEEDBACK_TYPE];
     value: AuthReturnValue<boolean>;
   };
 };
 
-type CallbackProps = {
-  onClose?: () => void;
-  authData: AuthReturnValue<boolean>;
+type Biometrics = {
+  request: () => Promise<AuthReturnValue<boolean>>;
+  challenge: (transactionID: string) => Promise<AuthReturnValue<boolean>>;
+  feedback: Feedback;
+  status: boolean;
 };
 
-type MagicCodeProps = {
-  onSubmit: (validateCode: number) => void;
-};
+type SetFeedback = (
+  value: AuthReturnValue<boolean>,
+  type: FeedbackKeyType,
+) => AuthReturnValue<boolean>;
 
 export type {
-  Biometrics,
   AuthReturnValue,
-  KeyType,
-  AuthType,
   Feedback,
-  MagicCodeProps,
-  CallbackProps,
+  KeyType,
+  Biometrics,
+  FeedbackKeyType,
+  TranslationPaths,
+  AuthType,
+  SetFeedback,
 };

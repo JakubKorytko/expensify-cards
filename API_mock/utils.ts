@@ -2,8 +2,8 @@ import * as ed from "@noble/ed25519";
 import "react-native-get-random-values";
 import { sha512 } from "@noble/hashes/sha2";
 import { Bytes } from "@noble/ed25519";
-import { Logger } from "@/src/helpers";
-import CONST from "@/src/const";
+import { Logger } from "@/base/helpers";
+import CONST from "@/base/const";
 
 ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
 ed.etc.sha512Async = (...m) =>

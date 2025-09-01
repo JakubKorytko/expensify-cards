@@ -1,4 +1,4 @@
-import useBiometrics from "@/r1/useBiometrics";
+import useBiometrics from "@/src/hooks/useBiometrics/useBiometrics";
 import { Button, Text, View } from "react-native";
 import { useCallback } from "react";
 

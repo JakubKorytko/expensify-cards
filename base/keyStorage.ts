@@ -1,8 +1,8 @@
 import * as SecureStore from "expo-secure-store";
-import CONST from "@/src/const";
-import type { AuthReturnValue, KeyType } from "@/src/types";
+import CONST from "@/base/const";
+import type { AuthReturnValue, KeyType } from "@/base/types";
 
-import { Logger, decodeExpoErrorCode } from "@/src/helpers";
+import { Logger, decodeExpoErrorCode } from "@/base/helpers";
 
 async function setKey(
   key: KeyType,

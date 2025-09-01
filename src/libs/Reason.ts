@@ -1,9 +1,9 @@
-import type { TranslationPaths } from "./types";
-import CONST from "@/r1/const";
+import type { TranslationPaths } from "@src/types";
+import CONST from "@src/CONST";
 
 function decodeExpoErrorCode(error: unknown) {
   const errorString = String(error);
-  const parts = errorString.split(CONST.MISC.EXPO_ERROR_SEPARATOR);
+  const parts = errorString.split(CONST.BIOMETRICS.MISC.EXPO_ERROR_SEPARATOR);
   return parts.length > 1 ? parts.slice(1).join(";").trim() : errorString;
 }
 

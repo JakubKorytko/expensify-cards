@@ -1,5 +1,5 @@
-import { Logger } from "@/src/helpers";
-import { ChallengeObject, ReadCommands, WriteCommands } from "@/src/api";
+import { Logger } from "@/base/helpers";
+import { ChallengeObject, ReadCommands, WriteCommands } from "@/base/api";
 import {
   ed,
   generateSixDigitNumber,
@@ -103,7 +103,7 @@ router.get["/request_biometric_challenge"] = async (): Promise<
   return {
     response: { challenge },
     status: 200,
-    message: "Challenge generated successfully",
+    message: "BiometricsChallenge generated successfully",
   };
 };
 

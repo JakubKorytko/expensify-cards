@@ -7,8 +7,8 @@ import {
 } from "react-native";
 import styles from "@/styles";
 import { useState } from "react";
-import { CallbackProps, MagicCodeProps } from "@/src/types";
-import useBiometrics from "@/src/useBiometrics";
+import { CallbackProps, MagicCodeProps } from "@/base/types";
+import useBiometrics from "@/base/useBiometrics";
 
 function Callback({ authData: { value, message }, onClose }: CallbackProps) {
   return (
