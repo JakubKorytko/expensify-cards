@@ -1,7 +1,10 @@
 import * as SecureStore from "expo-secure-store";
 import CONST from "@src/CONST";
-import type { AuthReturnValue, KeyType, TranslationPaths } from "@src/types";
+import type { BiometricsStatus } from "@src/hooks/useBiometrics/types";
+import { TranslationPaths, ValueOf } from "@/base/mockTypes";
 import decodeBiometricsExpoMessage from "@libs/decodeBiometricsExpoMessage";
+
+type KeyType = ValueOf<typeof CONST.BIOMETRICS.KEY_ALIASES>;
 
 class BiometricsKeyStorage {
   constructor(private readonly key: KeyType) {
@@ -21,7 +24,7 @@ class BiometricsKeyStorage {
     };
   }
 
-  public set(value: string): Promise<AuthReturnValue<boolean>> {
+  public set(value: string): Promise<BiometricsStatus<boolean>> {
     return SecureStore.setItemAsync(this.key, value, this.options)
       .then((type) => ({
         value: true,
@@ -38,7 +41,7 @@ class BiometricsKeyStorage {
       }));
   }
 
-  public delete(): Promise<AuthReturnValue<boolean>> {
+  public delete(): Promise<BiometricsStatus<boolean>> {
     return SecureStore.deleteItemAsync(this.key, {
       keychainService: CONST.BIOMETRICS.KEYCHAIN_SERVICE,
     })
@@ -56,7 +59,7 @@ class BiometricsKeyStorage {
       }));
   }
 
-  public get(): Promise<AuthReturnValue<string | null>> {
+  public get(): Promise<BiometricsStatus<string | null>> {
     return SecureStore.getItemAsync(this.key, this.options)
       .then(([key, type]) => ({
         value: key,

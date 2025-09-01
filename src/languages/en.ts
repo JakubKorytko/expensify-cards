@@ -1,4 +1,4 @@
-import { ElementType, NestedRecord } from "@src/types";
+import { ElementType, NestedRecord } from "@/base/mockTypes";
 
 const translations: NestedRecord<ElementType> | ElementType = {
   biometrics: {

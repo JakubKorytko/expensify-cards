@@ -1,4 +1,5 @@
-import type { AuthReturnValue, TranslationPaths } from "@src/types";
+import type { BiometricsStatus } from "@src/hooks/useBiometrics/types";
+import type { TranslationPaths } from "@/base/mockTypes";
 import {
   PrivateKeyStorage,
   PublicKeyStorage,
@@ -10,7 +11,7 @@ import {
 } from "@libs/actions/Biometrics";
 
 class BiometricsChallenge {
-  private auth: AuthReturnValue<string | undefined> = {
+  private auth: BiometricsStatus<string | undefined> = {
     value: undefined,
     reason: "biometrics.reason.generic.notRequested",
   };
@@ -19,20 +20,20 @@ class BiometricsChallenge {
     this.transactionID = transactionID;
   }
 
-  private resetKeys(): Promise<AuthReturnValue<boolean>> {
+  private resetKeys(): Promise<BiometricsStatus<boolean>> {
     return PrivateKeyStorage.delete().then(() => PublicKeyStorage.delete());
   }
 
   private createErrorReturnValue(
     reasonKey: TranslationPaths,
-  ): AuthReturnValue<boolean> {
+  ): BiometricsStatus<boolean> {
     return {
       value: false,
       reason: reasonKey,
     };
   }
 
-  public request(): Promise<AuthReturnValue<boolean>> {
+  public request(): Promise<BiometricsStatus<boolean>> {
     return requestBiometricsChallenge()
       .then(({ httpCode, challenge, reason }) =>
         Promise.all([
@@ -66,7 +67,7 @@ class BiometricsChallenge {
       });
   }
 
-  public sign(): Promise<AuthReturnValue<boolean>> {
+  public sign(): Promise<BiometricsStatus<boolean>> {
     const {
       auth: { value: authValue },
     } = this;
@@ -97,7 +98,7 @@ class BiometricsChallenge {
     });
   }
 
-  public send(): Promise<AuthReturnValue<boolean>> {
+  public send(): Promise<BiometricsStatus<boolean>> {
     if (!this.auth.value) {
       return Promise.resolve(
         this.createErrorReturnValue("biometrics.reason.error.signatureMissing"),

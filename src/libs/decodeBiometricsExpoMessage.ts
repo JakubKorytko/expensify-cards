@@ -1,4 +1,4 @@
-import type { TranslationPaths } from "@src/types";
+import type { TranslationPaths } from "@/base/mockTypes";
 import CONST from "@src/CONST";
 
 function decodeExpoMessage(error: unknown): TranslationPaths {

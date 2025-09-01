@@ -4,11 +4,11 @@ import {
   PrivateKeyStorage,
   PublicKeyStorage,
 } from "@libs/BiometricsKeyStorage";
-import type { AuthReturnValue, Biometrics } from "@src/types";
 import CONST from "@src/CONST";
 import BiometricsChallenge from "@libs/BiometricsChallenge";
 import useBiometricsFeedback from "./useBiometricsFeedback";
 import { registerBiometrics } from "@libs/actions/Biometrics";
+import { Biometrics, BiometricsStatus } from "./types";
 
 function useBiometrics(): Biometrics {
   const [status, setStatus] = useState<boolean>(false);
@@ -39,7 +39,7 @@ function useBiometrics(): Biometrics {
 
         const isCallSuccessful = httpCode === 200;
 
-        const authReason: AuthReturnValue<boolean> = {
+        const authReason: BiometricsStatus<boolean> = {
           value: isCallSuccessful,
           reason: isCallSuccessful ? successMessage : reason,
           type: privateKeyResult.type,

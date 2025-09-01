@@ -1,5 +1,5 @@
 import API, { SIDE_EFFECT_REQUEST_COMMANDS } from "@/base/api";
-import { TranslationPaths, ValueOf } from "@src/types";
+import { ValueOf, TranslationPaths } from "@/base/mockTypes";
 
 const RESPONSE_TRANSLATION_PATH = {
   UNKNOWN: "unknownResponse",

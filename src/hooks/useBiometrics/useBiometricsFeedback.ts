@@ -2,15 +2,15 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import useLocalize from "@/base/useLocalize";
 import CONST from "@src/CONST";
 import {
-  AuthReturnValue,
   Feedback,
   FeedbackKeyType,
-  AuthType,
   SetFeedback,
-} from "@src/types";
+  AuthType,
+  BiometricsStatus,
+} from "./types";
 
 const getAuthTypeName = <T>(
-  returnValue: AuthReturnValue<T>,
+  returnValue: BiometricsStatus<T>,
 ): AuthType["NAME"] | undefined =>
   Object.values(CONST.BIOMETRICS.AUTH_TYPE).find(
     (authType) => authType.CODE === returnValue.type,
@@ -19,7 +19,7 @@ const getAuthTypeName = <T>(
 export default function useBiometricsFeedback(): [Feedback, SetFeedback] {
   const { translate } = useLocalize();
 
-  const emptyAuth: AuthReturnValue<boolean> = useMemo(
+  const emptyAuth: BiometricsStatus<boolean> = useMemo(
     () => ({
       reason: "biometrics.reason.generic.notRequested",
       message: translate("biometrics.reason.generic.notRequested"),
@@ -35,7 +35,7 @@ export default function useBiometricsFeedback(): [Feedback, SetFeedback] {
   );
 
   const createFeedback = useCallback(
-    (authData: AuthReturnValue<boolean>, authorize?: boolean) => {
+    (authData: BiometricsStatus<boolean>, authorize?: boolean) => {
       const { reason, value } = authData;
       const typeName = getAuthTypeName(authData);
 
