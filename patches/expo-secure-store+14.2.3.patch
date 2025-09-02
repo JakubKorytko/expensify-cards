@@ -819,28 +819,61 @@ index e493467..bbea69e 100644
 +  ): Pair<String, BiometricPrompt.AuthenticationResult?>
  }
 diff --git a/node_modules/expo-secure-store/build/SecureStore.d.ts b/node_modules/expo-secure-store/build/SecureStore.d.ts
-index d5cd157..07dff37 100644
+index d5cd157..e3e5c74 100644
 --- a/node_modules/expo-secure-store/build/SecureStore.d.ts
 +++ b/node_modules/expo-secure-store/build/SecureStore.d.ts
-@@ -1,4 +1,17 @@
+@@ -1,4 +1,50 @@
  export type KeychainAccessibilityConstant = number;
 +
 +/**
-+ * Authentication type returned by SecureStore after reading item or saving it to the store.
++ * Authentication type returned by the SecureStore after reading item or saving it to the store.
 + */
 +export declare const AUTH_TYPE = {
-+  UNKNOWN: -1, // Android, haven't encountered it when testing, but according to docs it can be returned
-+  NONE: 0, // Android & iOS, returned when authentication fails
-+  CREDENTIALS: 1, // Android & iOS, generic type (device passcode or pattern)
-+  BIOMETRICS: 2, // Android, generic type (face scan or fingerprint)
-+  FACE_ID: 3, // iOS
-+  TOUCH_ID: 4, // iOS
-+  OPTIC_ID: 5 // iOS, reserved type, not used
++  /**
++   * This is purely for backwards compatibility.
++   * Although it is not listed as a return value of the getAuthenticationType() method,
++   * it is still present in the Android code.
++   * @see https://developer.android.com/reference/android/hardware/biometrics/BiometricPrompt.AuthenticationResult#getAuthenticationType()
++   * @see https://developer.android.com/reference/androidx/biometric/BiometricPrompt#AUTHENTICATION_RESULT_TYPE_UNKNOWN()
++   * @platform android
++   */
++  UNKNOWN: -1,
++  /**
++   * Returned when the authentication fails
++   * @platform android
++   * @platform ios
++   */
++  NONE: 0,
++  /**
++   * Generic type, not specified whether it was a passcode or pattern.
++   * @platform android
++   * @platform ios
++   */
++  CREDENTIALS: 1,
++  /**
++   * Generic type, not specified whether it was a face scan or a fingerprint
++   * @platform android
++   */
++  BIOMETRICS: 2,
++  /**
++   * FaceID was used to authenticate
++   * @platform ios
++   */
++  FACE_ID: 3,
++  /**
++   * TouchID was used to authenticate
++   * @platform ios
++   */
++  TOUCH_ID: 4,
++  /**
++   * OpticID was used to authenticate (reserved by apple, used on Apple Vision Pro, not iOS)
++   */
++  OPTIC_ID: 5
 +} as const;
  /**
   * The data in the keychain item cannot be accessed after a restart until the device has been
   * unlocked once by the user. This may be useful if you need to access the item when the phone
-@@ -38,46 +51,70 @@ export declare const WHEN_UNLOCKED: KeychainAccessibilityConstant;
+@@ -38,46 +84,70 @@ export declare const WHEN_UNLOCKED: KeychainAccessibilityConstant;
   */
  export declare const WHEN_UNLOCKED_THIS_DEVICE_ONLY: KeychainAccessibilityConstant;
  export type SecureStoreOptions = {
@@ -951,7 +984,7 @@ index d5cd157..07dff37 100644
  };
  /**
   * Returns whether the SecureStore API is enabled on the current device. This does not check the app
-@@ -95,7 +132,10 @@ export declare function isAvailableAsync(): Promise<boolean>;
+@@ -95,7 +165,10 @@ export declare function isAvailableAsync(): Promise<boolean>;
   *
   * @return A promise that rejects if the value can't be deleted.
   */
@@ -963,7 +996,7 @@ index d5cd157..07dff37 100644
  /**
   * Reads the stored value associated with the provided key.
   *
-@@ -109,7 +149,10 @@ export declare function deleteItemAsync(key: string, options?: SecureStoreOption
+@@ -109,7 +182,10 @@ export declare function deleteItemAsync(key: string, options?: SecureStoreOption
   * > After a key has been invalidated, it becomes impossible to read its value.
   * > This only applies to values stored with `requireAuthentication` set to `true`.
   */
@@ -975,7 +1008,7 @@ index d5cd157..07dff37 100644
  /**
   * Stores a key–value pair.
   *
-@@ -119,7 +162,11 @@ export declare function getItemAsync(key: string, options?: SecureStoreOptions):
+@@ -119,7 +195,11 @@ export declare function getItemAsync(key: string, options?: SecureStoreOptions):
   *
   * @return A promise that rejects if value cannot be stored on the device.
   */
@@ -988,7 +1021,7 @@ index d5cd157..07dff37 100644
  /**
   * Stores a key–value pair synchronously.
   * > **Note:** This function blocks the JavaScript thread, so the application may not be interactive when the `requireAuthentication` option is set to `true` until the user authenticates.
-@@ -129,7 +176,11 @@ export declare function setItemAsync(key: string, value: string, options?: Secur
+@@ -129,7 +209,11 @@ export declare function setItemAsync(key: string, value: string, options?: Secur
   * @param options An [`SecureStoreOptions`](#securestoreoptions) object.
   *
   */
@@ -1001,7 +1034,7 @@ index d5cd157..07dff37 100644
  /**
   * Synchronously reads the stored value associated with the provided key.
   * > **Note:** This function blocks the JavaScript thread, so the application may not be interactive when reading a value with `requireAuthentication`
-@@ -140,7 +191,10 @@ export declare function setItem(key: string, value: string, options?: SecureStor
+@@ -140,7 +224,10 @@ export declare function setItem(key: string, value: string, options?: SecureStor
   * @return Previously stored value. It resolves with `null` if there is no entry
   * for the given key or if the key has been invalidated.
   */
@@ -1014,30 +1047,63 @@ index d5cd157..07dff37 100644
   * Checks if the value can be saved with `requireAuthentication` option enabled.
   * @return `true` if the device supports biometric authentication and the enrolled method is sufficiently secure. Otherwise, returns `false`. Always returns false on tvOS.
 diff --git a/node_modules/expo-secure-store/build/SecureStore.js b/node_modules/expo-secure-store/build/SecureStore.js
-index 4d87b38..5352a03 100644
+index 4d87b38..4399e5e 100644
 --- a/node_modules/expo-secure-store/build/SecureStore.js
 +++ b/node_modules/expo-secure-store/build/SecureStore.js
-@@ -1,6 +1,19 @@
+@@ -1,6 +1,52 @@
  import ExpoSecureStore from './ExpoSecureStore';
  import { byteCountOverLimit, VALUE_BYTES_LIMIT } from './byteCounter';
  // @needsAudit
 +
 +/**
-+ * Authentication type returned by SecureStore after reading item or saving it to the store.
++ * Authentication type returned by the SecureStore after reading item or saving it to the store.
 + */
 +export const AUTH_TYPE = {
-+    UNKNOWN: -1, // Android, haven't encountered it when testing, but according to docs it can be returned
-+    NONE: 0, // Android & iOS, returned when authentication fails
-+    CREDENTIALS: 1, // Android & iOS, generic type (device passcode or pattern)
-+    BIOMETRICS: 2, // Android, generic type (face scan or fingerprint)
-+    FACE_ID: 3, // iOS
-+    TOUCH_ID: 4, // iOS
-+    OPTIC_ID: 5 // iOS, reserved type, not used
++    /**
++     * This is purely for backwards compatibility.
++     * Although it is not listed as a return value of the getAuthenticationType() method,
++     * it is still present in the Android code.
++     * @see https://developer.android.com/reference/android/hardware/biometrics/BiometricPrompt.AuthenticationResult#getAuthenticationType()
++     * @see https://developer.android.com/reference/androidx/biometric/BiometricPrompt#AUTHENTICATION_RESULT_TYPE_UNKNOWN()
++     * @platform android
++     */
++    UNKNOWN: -1,
++    /**
++     * Returned when the authentication fails
++     * @platform android
++     * @platform ios
++     */
++    NONE: 0,
++    /**
++     * Generic type, not specified whether it was a passcode or pattern.
++     * @platform android
++     * @platform ios
++     */
++    CREDENTIALS: 1,
++    /**
++     * Generic type, not specified whether it was a face scan or a fingerprint
++     * @platform android
++     */
++    BIOMETRICS: 2,
++    /**
++     * FaceID was used to authenticate
++     * @platform ios
++     */
++    FACE_ID: 3,
++    /**
++     * TouchID was used to authenticate
++     * @platform ios
++     */
++    TOUCH_ID: 4,
++    /**
++     * OpticID was used to authenticate (reserved by apple, used on Apple Vision Pro, not iOS)
++     */
++    OPTIC_ID: 5
 +};
  /**
   * The data in the keychain item cannot be accessed after a restart until the device has been
   * unlocked once by the user. This may be useful if you need to access the item when the phone
-@@ -102,7 +115,7 @@ export async function setItemAsync(key, value, options = {}) {
+@@ -102,7 +148,7 @@ export async function setItemAsync(key, value, options = {}) {
      if (!isValidValue(value)) {
          throw new Error(`Invalid value provided to SecureStore. Values must be strings; consider JSON-encoding your values if they are serializable.`);
      }
@@ -1520,10 +1586,10 @@ index 7e3fa4d..27d859d 100644
 +  var authOnEveryAction: Bool = false
  }
 diff --git a/node_modules/expo-secure-store/src/SecureStore.ts b/node_modules/expo-secure-store/src/SecureStore.ts
-index ee43e04..2c6aa8f 100644
+index ee43e04..1e25b70 100644
 --- a/node_modules/expo-secure-store/src/SecureStore.ts
 +++ b/node_modules/expo-secure-store/src/SecureStore.ts
-@@ -1,15 +1,26 @@
+@@ -1,15 +1,62 @@
 -import ExpoSecureStore from './ExpoSecureStore';
 -import { byteCountOverLimit, VALUE_BYTES_LIMIT } from './byteCounter';
 +import ExpoSecureStore from "./ExpoSecureStore";
@@ -1531,14 +1597,50 @@ index ee43e04..2c6aa8f 100644
  
  export type KeychainAccessibilityConstant = number;
  
++/**
++ * Authentication type returned by the SecureStore after reading item or saving it to the store.
++ */
 +export const AUTH_TYPE = {
-+  UNKNOWN: -1, // Android, haven't encountered it when testing, but according to docs it can be returned
-+  NONE: 0, // Android & iOS, returned when authentication fails
-+  CREDENTIALS: 1, // Android & iOS, generic type (device passcode or pattern)
-+  BIOMETRICS: 2, // Android, generic type (face scan or fingerprint)
-+  FACE_ID: 3, // iOS
-+  TOUCH_ID: 4, // iOS
-+  OPTIC_ID: 5 // iOS, reserved type, not used
++  /**
++   * This is purely for backwards compatibility.
++   * Although it is not listed as a return value of the getAuthenticationType() method,
++   * it is still present in the Android code.
++   * @see https://developer.android.com/reference/android/hardware/biometrics/BiometricPrompt.AuthenticationResult#getAuthenticationType()
++   * @see https://developer.android.com/reference/androidx/biometric/BiometricPrompt#AUTHENTICATION_RESULT_TYPE_UNKNOWN()
++   * @platform android
++   */
++  UNKNOWN: -1,
++  /**
++   * Returned when the authentication fails
++   * @platform android
++   * @platform ios
++   */
++  NONE: 0,
++  /**
++   * Generic type, not specified whether it was a passcode or pattern.
++   * @platform android
++   * @platform ios
++   */
++  CREDENTIALS: 1,
++  /**
++   * Generic type, not specified whether it was a face scan or a fingerprint
++   * @platform android
++   */
++  BIOMETRICS: 2,
++  /**
++   * FaceID was used to authenticate
++   * @platform ios
++   */
++  FACE_ID: 3,
++  /**
++   * TouchID was used to authenticate
++   * @platform ios
++   */
++  TOUCH_ID: 4,
++  /**
++   * OpticID was used to authenticate (reserved by apple, used on Apple Vision Pro, not iOS)
++   */
++  OPTIC_ID: 5
 +} as const;
 +
  // @needsAudit
@@ -1553,7 +1655,7 @@ index ee43e04..2c6aa8f 100644
  
  // @needsAudit
  /**
-@@ -49,7 +60,8 @@ export const ALWAYS_THIS_DEVICE_ONLY: KeychainAccessibilityConstant =
+@@ -49,7 +96,8 @@ export const ALWAYS_THIS_DEVICE_ONLY: KeychainAccessibilityConstant =
  /**
   * The data in the keychain item can be accessed only while the device is unlocked by the user.
   */
@@ -1563,7 +1665,7 @@ index ee43e04..2c6aa8f 100644
  
  // @needsAudit
  /**
-@@ -102,6 +114,31 @@ export type SecureStoreOptions = {
+@@ -102,6 +150,31 @@ export type SecureStoreOptions = {
     * @platform ios
     */
    accessGroup?: string;
@@ -1595,7 +1697,7 @@ index ee43e04..2c6aa8f 100644
  };
  
  // @needsAudit
-@@ -127,7 +164,7 @@ export async function isAvailableAsync(): Promise<boolean> {
+@@ -127,7 +200,7 @@ export async function isAvailableAsync(): Promise<boolean> {
   */
  export async function deleteItemAsync(
    key: string,
@@ -1604,7 +1706,7 @@ index ee43e04..2c6aa8f 100644
  ): Promise<void> {
    ensureValidKey(key);
  
-@@ -150,8 +187,8 @@ export async function deleteItemAsync(
+@@ -150,8 +223,8 @@ export async function deleteItemAsync(
   */
  export async function getItemAsync(
    key: string,
@@ -1615,7 +1717,7 @@ index ee43e04..2c6aa8f 100644
    ensureValidKey(key);
    return await ExpoSecureStore.getValueWithKeyAsync(key, options);
  }
-@@ -169,16 +206,16 @@ export async function getItemAsync(
+@@ -169,16 +242,16 @@ export async function getItemAsync(
  export async function setItemAsync(
    key: string,
    value: string,
@@ -1636,7 +1738,7 @@ index ee43e04..2c6aa8f 100644
  }
  
  /**
-@@ -190,11 +227,15 @@ export async function setItemAsync(
+@@ -190,11 +263,15 @@ export async function setItemAsync(
   * @param options An [`SecureStoreOptions`](#securestoreoptions) object.
   *
   */
@@ -1654,7 +1756,7 @@ index ee43e04..2c6aa8f 100644
      );
    }
  
-@@ -211,7 +252,10 @@ export function setItem(key: string, value: string, options: SecureStoreOptions
+@@ -211,7 +288,10 @@ export function setItem(key: string, value: string, options: SecureStoreOptions
   * @return Previously stored value. It resolves with `null` if there is no entry
   * for the given key or if the key has been invalidated.
   */
@@ -1666,7 +1768,7 @@ index ee43e04..2c6aa8f 100644
    ensureValidKey(key);
    return ExpoSecureStore.getValueWithKeySync(key, options);
  }
-@@ -229,22 +273,22 @@ export function canUseBiometricAuthentication(): boolean {
+@@ -229,22 +309,22 @@ export function canUseBiometricAuthentication(): boolean {
  function ensureValidKey(key: string) {
    if (!isValidKey(key)) {
      throw new Error(
