@@ -4,13 +4,22 @@ import type { BiometricsStatus } from "@src/hooks/useBiometrics/types";
 import { TranslationPaths, ValueOf } from "@/base/mockTypes";
 import decodeBiometricsExpoMessage from "@libs/decodeBiometricsExpoMessage";
 
-type KeyType = ValueOf<typeof CONST.BIOMETRICS.KEY_ALIASES>;
-
-class BiometricsKeyStorage {
-  constructor(private readonly key: KeyType) {
+/**
+ * Proxy-like class with CRUD methods to access the SecureStore
+ * Every method handles thrown errors and wraps the return value with translation path reason.
+ * It also has pre-defined options passed as an argument when accessing the store.
+ *
+ * This class is not exported, instead 2 objects are created & exported (BiometricsPrivateKeyStore and BiometricsPublicKeyStore).
+ * This way we can skip authentication if we access the public key and require it for the private one.
+ */
+class BiometricsKeyStore {
+  constructor(
+    private readonly key: ValueOf<typeof CONST.BIOMETRICS.KEY_ALIASES>,
+  ) {
     this.key = key;
   }
 
+  /** Pre-defined options for setter and getter with a check whether it should require authentication */
   private get options(): SecureStore.SecureStoreOptions {
     const isPrivateKey = this.key === CONST.BIOMETRICS.KEY_ALIASES.PRIVATE_KEY;
 
@@ -24,6 +33,7 @@ class BiometricsKeyStorage {
     };
   }
 
+  /** IMPORTANT: Using this method on BiometricsPrivateKeyStore object will display authentication prompt */
   public set(value: string): Promise<BiometricsStatus<boolean>> {
     return SecureStore.setItemAsync(this.key, value, this.options)
       .then((type) => ({
@@ -59,6 +69,7 @@ class BiometricsKeyStorage {
       }));
   }
 
+  /** IMPORTANT: Using this method on BiometricsPrivateKeyStore object will display authentication prompt */
   public get(): Promise<BiometricsStatus<string | null>> {
     return SecureStore.getItemAsync(this.key, this.options)
       .then(([key, type]) => ({
@@ -77,11 +88,21 @@ class BiometricsKeyStorage {
   }
 }
 
-const PrivateKeyStorage = new BiometricsKeyStorage(
+/**
+ * Store for the biometrics private key.
+ *
+ * IMPORTANT: Setting or getting a value will display authentication prompt
+ */
+const BiometricsPrivateKeyStore = new BiometricsKeyStore(
   CONST.BIOMETRICS.KEY_ALIASES.PRIVATE_KEY,
 );
-const PublicKeyStorage = new BiometricsKeyStorage(
+
+/**
+ * Store for the biometrics public key.
+ * Using any of its methods do not require authentication.
+ */
+const BiometricsPublicKeyStore = new BiometricsKeyStore(
   CONST.BIOMETRICS.KEY_ALIASES.PUBLIC_KEY,
 );
 
-export { PrivateKeyStorage, PublicKeyStorage };
+export { BiometricsPrivateKeyStore, BiometricsPublicKeyStore };

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { generateKeyPair } from "@libs/ED25519";
 import {
-  PrivateKeyStorage,
-  PublicKeyStorage,
+  BiometricsPrivateKeyStore,
+  BiometricsPublicKeyStore,
 } from "@libs/BiometricsKeyStorage";
 import CONST from "@src/CONST";
 import BiometricsChallenge from "@libs/BiometricsChallenge";
@@ -10,12 +10,16 @@ import useBiometricsFeedback from "./useBiometricsFeedback";
 import { registerBiometrics } from "@libs/actions/Biometrics";
 import { Biometrics, BiometricsStatus } from "./types";
 
+/**
+ * Hook used to run the biometrics process and receive feedback.
+ * For detailed documentation on the methods and properties see types file.
+ */
 function useBiometrics(): Biometrics {
   const [status, setStatus] = useState<boolean>(false);
   const [feedback, setFeedback] = useBiometricsFeedback();
 
   const refreshStatus = useCallback(() => {
-    PublicKeyStorage.get().then((key) => {
+    BiometricsPublicKeyStore.get().then((key) => {
       setStatus(!!key.value);
     });
   }, []);
@@ -25,10 +29,13 @@ function useBiometrics(): Biometrics {
   const request = useCallback(() => {
     const { privateKey, publicKey } = generateKeyPair();
 
-    return PrivateKeyStorage.set(privateKey)
+    return BiometricsPrivateKeyStore.set(privateKey)
       .then((privateKeyResult) => {
         if (!privateKeyResult.value) throw privateKeyResult;
-        return Promise.all([privateKeyResult, PublicKeyStorage.set(publicKey)]);
+        return Promise.all([
+          privateKeyResult,
+          BiometricsPublicKeyStore.set(publicKey),
+        ]);
       })
       .then(([privateKeyResult, publicKeyResult]) => {
         if (!publicKeyResult.value) throw publicKeyResult;

@@ -1,8 +1,8 @@
 import type { BiometricsStatus } from "@src/hooks/useBiometrics/types";
 import type { TranslationPaths } from "@/base/mockTypes";
 import {
-  PrivateKeyStorage,
-  PublicKeyStorage,
+  BiometricsPrivateKeyStore,
+  BiometricsPublicKeyStore,
 } from "@libs/BiometricsKeyStorage";
 import { signToken as signTokenED25519 } from "@libs/ED25519";
 import {
@@ -10,7 +10,17 @@ import {
   requestBiometricsChallenge,
 } from "@libs/actions/Biometrics";
 
+/**
+ * This class can be used to create an object associated with a transaction.
+ * Methods of the created object are called without any arguments or parameters.
+ * The standard flow is request -> sign -> send.
+ *
+ * This logic ensures that the transaction on which we are operating will not change between steps,
+ * thereby preventing unexpected errors.
+ * It also facilitates obtaining the current status and feedback of each step in the challenge process.
+ */
 class BiometricsChallenge {
+  /** Current status of the auth process */
   private auth: BiometricsStatus<string | undefined> = {
     value: undefined,
     reason: "biometrics.reason.generic.notRequested",
@@ -20,10 +30,17 @@ class BiometricsChallenge {
     this.transactionID = transactionID;
   }
 
+  /**
+   * Internal helper method to remove both keys from SecureStore
+   * Called when the keys are stored on the device but not on the backend.
+   */
   private resetKeys(): Promise<BiometricsStatus<boolean>> {
-    return PrivateKeyStorage.delete().then(() => PublicKeyStorage.delete());
+    return BiometricsPrivateKeyStore.delete().then(() =>
+      BiometricsPublicKeyStore.delete(),
+    );
   }
 
+  /** Internal helper method to create an error value object */
   private createErrorReturnValue(
     reasonKey: TranslationPaths,
   ): BiometricsStatus<boolean> {
@@ -33,6 +50,7 @@ class BiometricsChallenge {
     };
   }
 
+  /** Request challenge from the API */
   public request(): Promise<BiometricsStatus<boolean>> {
     return requestBiometricsChallenge()
       .then(({ httpCode, challenge, reason }) =>
@@ -67,6 +85,11 @@ class BiometricsChallenge {
       });
   }
 
+  /**
+   * Sign requested challenge with the private key.
+   *
+   * IMPORTANT: Using this method will display authentication prompt
+   */
   public sign(): Promise<BiometricsStatus<boolean>> {
     const {
       auth: { value: authValue },
@@ -78,7 +101,7 @@ class BiometricsChallenge {
       );
     }
 
-    return PrivateKeyStorage.get().then(({ value, type, reason }) => {
+    return BiometricsPrivateKeyStore.get().then(({ value, type, reason }) => {
       if (!value) {
         return this.createErrorReturnValue(
           reason || "biometrics.reason.error.keyMissing",
@@ -98,6 +121,7 @@ class BiometricsChallenge {
     });
   }
 
+  /** Send signed challenge to the API to verify it */
   public send(): Promise<BiometricsStatus<boolean>> {
     if (!this.auth.value) {
       return Promise.resolve(

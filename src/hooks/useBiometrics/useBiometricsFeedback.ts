@@ -1,22 +1,36 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import useLocalize from "@/base/useLocalize";
 import CONST from "@src/CONST";
-import {
-  Feedback,
-  FeedbackKeyType,
-  SetFeedback,
-  AuthType,
-  BiometricsStatus,
-} from "./types";
+import { BiometricsStatus, Feedback } from "./types";
+import { ValueOf } from "@/base/mockTypes";
 
+type FeedbackKeyType = ValueOf<typeof CONST.BIOMETRICS.FEEDBACK_TYPE>;
+type AuthTypeName = ValueOf<typeof CONST.BIOMETRICS.AUTH_TYPE>["NAME"];
+
+/**
+ * This method retrieves used authentication type numeric value returned by the SecureStore
+ * and converts it to a readable string value.
+ */
 const getAuthTypeName = <T>(
   returnValue: BiometricsStatus<T>,
-): AuthType["NAME"] | undefined =>
+): AuthTypeName | undefined =>
   Object.values(CONST.BIOMETRICS.AUTH_TYPE).find(
     (authType) => authType.CODE === returnValue.type,
   )?.NAME;
 
-export default function useBiometricsFeedback(): [Feedback, SetFeedback] {
+/**
+ * This is a middleware to tidy up all messages from biometrics-related functions into a one readable object.
+ * By doing so, useBiometrics focuses only on the biometrics operations.
+ * This could be a function but since we are translating the messages,
+ * this needs to be a hook (although used only in useBiometrics).
+ *
+ * It returns latest biometrics feedback for both challenge and key related actions.
+ * It also returns the last action message if we just want to display latest action result
+ * and do not need to specify whether it was challenge or key related.
+ *
+ * For detailed documentation on Feedback object it returns, see types file.
+ */
+export default function useBiometricsFeedback() {
   const { translate } = useLocalize();
 
   const emptyAuth: BiometricsStatus<boolean> = useMemo(
@@ -52,8 +66,16 @@ export default function useBiometricsFeedback(): [Feedback, SetFeedback] {
     [translate],
   );
 
-  const setFeedback: SetFeedback = useCallback(
-    (authData, type) => {
+  /**
+   * This method works like setting a value in JavaScript,
+   * meaning it will return the value that was set if we want to use it immediately.
+   * Otherwise, we can fully depend on the feedback value returned by the hook as it is reactive.
+   */
+  const setFeedback = useCallback(
+    (
+      authData: BiometricsStatus<boolean>,
+      type: FeedbackKeyType,
+    ): BiometricsStatus<boolean> => {
       const isChallengeType = type === CONST.BIOMETRICS.FEEDBACK_TYPE.CHALLENGE;
       const createdFeedback = createFeedback(authData, isChallengeType);
 
@@ -69,7 +91,7 @@ export default function useBiometricsFeedback(): [Feedback, SetFeedback] {
     [createFeedback],
   );
 
-  const feedback = useMemo(() => {
+  const feedback: Feedback = useMemo(() => {
     const lastActionMap = {
       [CONST.BIOMETRICS.FEEDBACK_TYPE.KEY]: key,
       [CONST.BIOMETRICS.FEEDBACK_TYPE.CHALLENGE]: challenge,
@@ -85,5 +107,5 @@ export default function useBiometricsFeedback(): [Feedback, SetFeedback] {
     };
   }, [challenge, emptyAuth, key]);
 
-  return [feedback, setFeedback];
+  return [feedback, setFeedback] as const;
 }
