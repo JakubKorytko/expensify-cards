@@ -1,12 +1,12 @@
-import { Logger } from "@/src/helpers";
-import { ChallengeObject, ReadCommands, WriteCommands } from "@/src/api";
+import Logger from "./Logger";
+import { ReadCommands, WriteCommands } from "@/mocks/api";
 import {
   ed,
   generateSixDigitNumber,
   isChallengeValid,
   STORAGE,
   USER_EMAIL,
-} from "@/API_mock/utils";
+} from "@/mocks/api/utils";
 
 const router: {
   post: Record<string, Function>;
@@ -16,32 +16,67 @@ const router: {
   get: {},
 };
 
+const MISSING_PARAMETER = {
+  status: 422,
+  response: undefined,
+};
+
+const REQUEST_SUCCESSFUL = {
+  status: 200,
+  response: undefined,
+};
+
+const UNAUTHORIZED = {
+  status: 401,
+  response: undefined,
+};
+
+const BAD_REQUEST = {
+  status: 400,
+  response: undefined,
+};
+
+const CONFLICT = {
+  status: 409,
+  response: undefined,
+};
+
 router.post["/resend_validate_code"] = ({
   email,
-}: Partial<ReadCommands["ResendValidateCode"]["parameters"]>): boolean => {
+}: Partial<
+  WriteCommands["ResendValidateCode"]["parameters"]
+>): WriteCommands["ResendValidateCode"]["returns"] => {
   Logger.m("Generating new validation code");
 
   if (!email) {
-    return false;
+    return {
+      ...MISSING_PARAMETER,
+      message: Logger.w("Email parameter is missing in the request"),
+    };
   }
 
   const randomCode = generateSixDigitNumber();
 
   STORAGE.validateCodes[email] ??= [];
   STORAGE.validateCodes[email].push(randomCode);
-
   Logger.m("Generated new validation code:", randomCode, "for email", email);
 
-  return true;
+  return {
+    ...REQUEST_SUCCESSFUL,
+    message: `Validate code sent to email ${email}`,
+  };
 };
 
 router.get["/request_biometric_challenge"] = async (): Promise<
-  ChallengeObject | string
+  ReadCommands["RequestBiometricChallenge"]["returns"]
 > => {
   Logger.m("Requested biometric challenge");
 
   if (!STORAGE.publicKeys[USER_EMAIL]) {
-    return Logger.w("Registration required");
+    return {
+      ...UNAUTHORIZED,
+      message: Logger.w("Registration required"),
+    };
   }
 
   const nonce = ed.etc.bytesToHex(ed.etc.randomBytes(16));
@@ -66,16 +101,18 @@ router.get["/request_biometric_challenge"] = async (): Promise<
   Logger.m("Challenge", challengeString, "sent to the client");
 
   return {
-    challenge,
+    response: { challenge },
+    status: 200,
+    message: "Biometrics challenge generated successfully",
   };
 };
 
 router.post["/register_biometrics"] = ({
   publicKey,
   validateCode,
-}: Partial<WriteCommands["RegisterBiometrics"]["parameters"]>):
-  | string
-  | true => {
+}: Partial<
+  WriteCommands["RegisterBiometrics"]["parameters"]
+>): WriteCommands["RegisterBiometrics"]["returns"] => {
   const validateCodes = STORAGE.validateCodes[USER_EMAIL] ?? [];
 
   Logger.m(
@@ -85,15 +122,24 @@ router.post["/register_biometrics"] = ({
   );
 
   if (!publicKey) {
-    return Logger.w("No public key provided");
+    return {
+      ...MISSING_PARAMETER,
+      message: Logger.w("No public key provided"),
+    };
   }
 
   if (!!STORAGE.publicKeys[USER_EMAIL]?.includes(publicKey)) {
-    return Logger.w("Public key is already registered");
+    return {
+      ...CONFLICT,
+      message: Logger.w("Public key is already registered"),
+    };
   }
 
   if (!validateCode && STORAGE.publicKeys[USER_EMAIL]?.length > 0) {
-    return Logger.w("Validate code required");
+    return {
+      ...UNAUTHORIZED,
+      message: Logger.w("Validation code required"),
+    };
   }
 
   if (validateCode && STORAGE.publicKeys[USER_EMAIL]?.length > 0) {
@@ -101,7 +147,10 @@ router.post["/register_biometrics"] = ({
       !!validateCodes.at(-1) && validateCodes.at(-1) === validateCode;
 
     if (!isValidateCodeCorrect) {
-      return Logger.w("Validate code invalid");
+      return {
+        ...BAD_REQUEST,
+        message: Logger.w("Validation code invalid"),
+      };
     }
 
     validateCodes.pop();
@@ -112,26 +161,35 @@ router.post["/register_biometrics"] = ({
 
   Logger.m("Registered biometrics for public key", publicKey);
 
-  return true;
+  return {
+    ...REQUEST_SUCCESSFUL,
+    message: "Biometrics registered successfully",
+  };
 };
 
 router.post["/authorize_transaction"] = ({
   transactionID,
   validateCode,
   signedChallenge,
-}: Partial<WriteCommands["AuthorizeTransaction"]["parameters"]>):
-  | string
-  | boolean => {
+}: Partial<
+  WriteCommands["AuthorizeTransaction"]["parameters"]
+>): WriteCommands["AuthorizeTransaction"]["returns"] => {
   const validateCodes = STORAGE.validateCodes[USER_EMAIL] ?? [];
 
   if (!transactionID) {
-    return Logger.w("No transaction ID provided");
+    return {
+      ...MISSING_PARAMETER,
+      message: Logger.w("No transaction ID provided"),
+    };
   }
 
   const userPublicKeys = STORAGE.publicKeys[USER_EMAIL];
 
   if (!userPublicKeys || !userPublicKeys.length) {
-    return Logger.w("User is not registered");
+    return {
+      ...UNAUTHORIZED,
+      message: Logger.w("User is not registered"),
+    };
   }
 
   if (signedChallenge) {
@@ -145,13 +203,16 @@ router.post["/authorize_transaction"] = ({
     const authorized = userPublicKeys.some((publicKey) =>
       isChallengeValid(signedChallenge, publicKey),
     );
-    Logger[authorized ? "m" : "w"](
-      authorized
-        ? "User authorized successfully using challenge"
-        : "Unable to authorize user using challenge",
-    );
 
-    return authorized;
+    return authorized
+      ? {
+          ...REQUEST_SUCCESSFUL,
+          message: Logger.m("User authorized successfully using challenge"),
+        }
+      : {
+          ...CONFLICT,
+          message: Logger.w("Unable to authorize user using challenge"),
+        };
   }
 
   if (validateCode && !!validateCodes.at(-1)) {
@@ -167,16 +228,21 @@ router.post["/authorize_transaction"] = ({
       validateCodes.pop();
     }
 
-    Logger[isValidateCodeCorrect ? "m" : "w"](
-      isValidateCodeCorrect
-        ? "User authorized successfully using validate code"
-        : "Unable to authorize user using validate code",
-    );
-
-    return isValidateCodeCorrect;
+    return isValidateCodeCorrect
+      ? {
+          ...REQUEST_SUCCESSFUL,
+          message: Logger.m("User authorized successfully using validate code"),
+        }
+      : {
+          ...CONFLICT,
+          message: Logger.w("Unable to authorize user using validate code"),
+        };
   }
 
-  return Logger.w("Bad request");
+  return {
+    ...BAD_REQUEST,
+    message: Logger.w("Bad request"),
+  };
 };
 
 const fetch = async (
