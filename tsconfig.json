@@ -6,7 +6,8 @@
       "@/*": ["./*"],
       "@src/*": ["./src/*"],
       "@libs/*": ["./src/libs/*"],
-      "type-fest": ["./base/typeFest.ts"]
+      "@hooks/*": ["./src/hooks/*"],
+      "type-fest": ["./mocks/typeFest.ts"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]

@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import CONST from "@src/CONST";
-import type { BiometricsStatus } from "@src/hooks/useBiometrics/types";
+import type { BiometricsStatus } from "@hooks/useBiometrics/types";
 import type { TranslationPaths } from "@src/languages/types";
 import type { ValueOf } from "type-fest";
 import decodeBiometricsExpoMessage from "@libs/decodeBiometricsExpoMessage";

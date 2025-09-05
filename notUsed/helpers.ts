@@ -1,5 +1,5 @@
-import CONST from "@/base/const";
-import { AuthReturnValue } from "@/base/types";
+import CONST from "./const";
+import { AuthReturnValue } from "./types";
 
 const DISABLE_LOGGER = false;
 

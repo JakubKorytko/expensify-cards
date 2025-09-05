@@ -1,4 +1,4 @@
-import CONST from "@/base/const";
+import CONST from "./const";
 
 type Biometrics = {
   request: (code?: number) => Promise<AuthReturnValue<boolean>>;

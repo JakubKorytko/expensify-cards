@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import useLocalize from "@/base/useLocalize";
+import useLocalize from "@hooks/useLocalize";
 import CONST from "@src/CONST";
 import type { BiometricsStatus, Feedback } from "./types";
 import type { ValueOf } from "type-fest";

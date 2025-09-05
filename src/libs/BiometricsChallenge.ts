@@ -1,4 +1,4 @@
-import type { BiometricsStatus } from "@src/hooks/useBiometrics/types";
+import type { BiometricsStatus } from "@hooks/useBiometrics/types";
 import type { TranslationPaths } from "@src/languages/types";
 import {
   BiometricsPrivateKeyStore,

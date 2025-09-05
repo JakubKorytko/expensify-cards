@@ -1,15 +1,10 @@
-import { generateKeyPair, signToken as signTokenED25519 } from "@/base/ed25519";
-import { PrivateKeyStorage, PublicKeyStorage } from "@/base/keyStorage";
+import { generateKeyPair, signToken as signTokenED25519 } from "./ed25519";
+import { PrivateKeyStorage, PublicKeyStorage } from "./keyStorage";
 import { useCallback, useEffect, useState } from "react";
-import type {
-  AuthReturnValue,
-  AuthType,
-  Biometrics,
-  Feedback,
-} from "@/base/types";
-import { getReasonMessage, Logger, randomTransactionID } from "@/base/helpers";
-import API, { READ_COMMANDS, WRITE_COMMANDS } from "@/base/api";
-import CONST from "@/base/const";
+import type { AuthReturnValue, AuthType, Biometrics, Feedback } from "./types";
+import { getReasonMessage, Logger, randomTransactionID } from "./helpers";
+import API, { READ_COMMANDS, WRITE_COMMANDS } from "@/mocks/api";
+import CONST from "./const";
 
 const getAuthType = (authCode: number): AuthType | undefined =>
   Object.values(CONST.AUTH_TYPE).find((authType) => authType.CODE === authCode);

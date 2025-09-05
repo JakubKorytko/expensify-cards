@@ -1,12 +1,12 @@
-import { Logger } from "@/base/helpers";
-import { ChallengeObject, ReadCommands, WriteCommands } from "@/base/api";
+import Logger from "./Logger";
+import { ReadCommands, WriteCommands } from "@/mocks/api";
 import {
   ed,
   generateSixDigitNumber,
   isChallengeValid,
   STORAGE,
   USER_EMAIL,
-} from "@/API_mock/utils";
+} from "@/mocks/api/utils";
 
 const router: {
   post: Record<string, Function>;

@@ -1,4 +1,4 @@
-import fetch from "@/API_mock/router";
+import fetch from "@/mocks/api/router";
 
 const api = async (
   path: string,

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import useBiometrics from "@src/hooks/useBiometrics";
+import useBiometrics from "@hooks/useBiometrics";
 import {
   Text,
   TouchableOpacity,

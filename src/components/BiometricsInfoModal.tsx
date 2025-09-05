@@ -1,6 +1,6 @@
 import { Text, TouchableOpacity, View } from "react-native";
 import styles from "@/styles";
-import { Feedback } from "@src/hooks/useBiometrics/types";
+import { Feedback } from "@hooks/useBiometrics/types";
 
 type BiometricsInfoModalProps = {
   onClose?: () => void;
