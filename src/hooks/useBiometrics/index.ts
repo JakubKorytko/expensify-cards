@@ -89,10 +89,10 @@ function useBiometrics(): Biometrics {
   );
 
   const prompt = useCallback(
-    (transactionID: string) => {
+    (transactionID: string, disableAutoRun: boolean = false) => {
       if (!status) {
         return request().then((requestStatus) => {
-          if (!requestStatus.value) return requestStatus;
+          if (!requestStatus.value || disableAutoRun) return requestStatus;
           return challenge(transactionID);
         });
       }

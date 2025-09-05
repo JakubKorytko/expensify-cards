@@ -22,9 +22,15 @@ type Biometrics = {
    * If the biometrics are configured, it runs the challenge.
    * If not, it runs the setup and after that (if successful) it runs the challenge process.
    *
+   * If you prefer not to run the challenge process immediately after biometrics setup,
+   * you can set the second parameter to true.
+   *
    * IMPORTANT: Using this method will display authentication prompt twice if the biometrics is not configured.
    */
-  prompt: (transactionID: string) => Promise<BiometricsStatus<boolean>>;
+  prompt: (
+    transactionID: string,
+    disableAutoRun?: boolean,
+  ) => Promise<BiometricsStatus<boolean>>;
 
   /** Feedback on the performed actions. */
   feedback: Feedback;
