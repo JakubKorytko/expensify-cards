@@ -1,6 +1,7 @@
 import { AUTH_TYPE } from "expo-secure-store";
 
 const CONST = {
+  // ...
   BIOMETRICS: {
     /** Name of the service associated with the keys in SecureStore */
     KEYCHAIN_SERVICE: "Expensify",
@@ -59,6 +60,7 @@ const CONST = {
       },
     },
   },
+  // ...
 } as const;
 
 export default CONST;

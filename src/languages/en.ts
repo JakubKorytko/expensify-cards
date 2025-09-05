@@ -1,6 +1,5 @@
-import { ElementType, NestedRecord } from "@/base/mockTypes";
-
-const translations: NestedRecord<ElementType> | ElementType = {
+const translations = {
+  // ...
   biometrics: {
     feedbackMessage: {
       success: (authorization?: boolean, using?: string) =>
@@ -58,6 +57,7 @@ const translations: NestedRecord<ElementType> | ElementType = {
       unknownResponse: "Unknown response type",
     },
   },
+  // ...
 };
 
 export default translations;
