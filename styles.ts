@@ -8,16 +8,6 @@ const styles = {
     backgroundColor: "#F8F4F0",
     borderRadius: 5,
   },
-  textInput: {
-    backgroundColor: "#FFF",
-    borderWidth: 1,
-    borderColor: "#E6E1DA",
-    width: 150,
-    borderRadius: 10,
-    textAlign: "center",
-    letterSpacing: 5,
-    fontSize: 20,
-  },
   callbackContainer: {
     width: "100%",
     gap: 10,
@@ -34,20 +24,6 @@ const styles = {
   },
   gap15: {
     gap: 15,
-  },
-  magicCodeContainer: {
-    width: "100%",
-    height: 250,
-    gap: 10,
-    position: "absolute",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    bottom: 0,
-    flexDirection: "column",
-    justifyContent: "space-between",
-    padding: 30,
-    alignItems: "center",
-    backgroundColor: "#FCFBF9",
   },
   layoutContainerMagicCode: {
     backgroundColor: "#EBE6DF",
@@ -66,9 +42,6 @@ const styles = {
     alignItems: "center",
     justifyContent: "space-between",
     padding: 20,
-  },
-  magicCodeText: {
-    fontSize: 17,
   },
   button: {
     backgroundColor: "#E6E1DA",
@@ -116,13 +89,6 @@ const styles = {
   hugeText: {
     fontSize: 17,
     fontWeight: "bold",
-  },
-  titleWithInput: {
-    width: "100%",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 20,
   },
   buttonContainer: {
     flexDirection: "row",

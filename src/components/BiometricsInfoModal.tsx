@@ -21,7 +21,11 @@ function BiometricsInfoModal({
         style={value ? styles.greenButton : styles.buttonNegative}
         onPress={onClose}
       >
-        <Text style={styles.greenButtonText}>Got it</Text>
+        <Text
+          style={value ? styles.greenButtonText : styles.buttonTextNegative}
+        >
+          Got it
+        </Text>
       </TouchableOpacity>
     </View>
   );
