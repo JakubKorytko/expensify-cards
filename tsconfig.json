@@ -5,7 +5,8 @@
     "paths": {
       "@/*": ["./*"],
       "@src/*": ["./src/*"],
-      "@libs/*": ["./src/libs/*"]
+      "@libs/*": ["./src/libs/*"],
+      "type-fest": ["./base/typeFest.ts"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]

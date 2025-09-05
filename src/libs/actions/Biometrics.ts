@@ -1,5 +1,7 @@
-import API, { SIDE_EFFECT_REQUEST_COMMANDS } from "@/base/api";
-import { ValueOf, TranslationPaths } from "@/base/mockTypes";
+import * as API from "@libs/API";
+import { SIDE_EFFECT_REQUEST_COMMANDS } from "@libs/API/types";
+import type { TranslationPaths } from "@src/languages/types";
+import type { ValueOf } from "type-fest";
 
 /** HTTP codes returned by the API, mapped to the biometrics translation paths */
 const RESPONSE_TRANSLATION_PATH = {

@@ -1,4 +1,4 @@
-import type { TranslationPaths } from "@/base/mockTypes";
+import type { TranslationPaths } from "@src/languages/types";
 import CONST from "@src/CONST";
 
 /** Convert error returned by SecureStore to translation path */

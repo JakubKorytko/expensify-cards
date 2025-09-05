@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import useLocalize from "@/base/useLocalize";
 import CONST from "@src/CONST";
-import { BiometricsStatus, Feedback } from "./types";
-import { ValueOf } from "@/base/mockTypes";
+import type { BiometricsStatus, Feedback } from "./types";
+import type { ValueOf } from "type-fest";
 
 type FeedbackKeyType = ValueOf<typeof CONST.BIOMETRICS.FEEDBACK_TYPE>;
 type AuthTypeName = ValueOf<typeof CONST.BIOMETRICS.AUTH_TYPE>["NAME"];
@@ -33,6 +33,7 @@ const getAuthTypeName = <T>(
 export default function useBiometricsFeedback() {
   const { translate } = useLocalize();
 
+  /** Used when the feedback type is 'none' */
   const emptyAuth: BiometricsStatus<boolean> = useMemo(
     () => ({
       reason: "biometrics.reason.generic.notRequested",
@@ -48,6 +49,7 @@ export default function useBiometricsFeedback() {
     CONST.BIOMETRICS.FEEDBACK_TYPE.NONE,
   );
 
+  /** Internal helper method to create a feedback based on its type (either challenge or key)  */
   const createFeedback = useCallback(
     (authData: BiometricsStatus<boolean>, authorize?: boolean) => {
       const { reason, value } = authData;
@@ -91,6 +93,7 @@ export default function useBiometricsFeedback() {
     [createFeedback],
   );
 
+  /** Feedback object, for detailed documentation see type in the types file */
   const feedback: Feedback = useMemo(() => {
     const lastActionMap = {
       [CONST.BIOMETRICS.FEEDBACK_TYPE.KEY]: key,

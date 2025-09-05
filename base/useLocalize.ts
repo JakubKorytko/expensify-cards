@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { ElementType, NestedRecord } from "@/base/mockTypes";
+import { ElementType, NestedRecord } from "type-fest";
 import translations from "@src/languages/en";
 
 export default function useLocalize() {

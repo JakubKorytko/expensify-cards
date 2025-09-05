@@ -1,4 +1,6 @@
-import { TranslationPaths, ValueOf } from "@/base/mockTypes";
+import type { TranslationPaths } from "@src/languages/types";
+import type { ValueOf } from "type-fest";
+
 import { AUTH_TYPE } from "expo-secure-store";
 
 /** Value returned by the useBiometrics hook. */
