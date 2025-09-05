@@ -2,10 +2,14 @@ const translations = {
   // ...
   biometrics: {
     feedbackMessage: {
-      success: (authorization?: boolean, using?: string) =>
+      successMessage: (authorization?: boolean, using?: string) =>
         `You’ve successfully ${authorization ? "authorized challenge" : "authenticated"}${using ? ` using ${using}` : ""}`,
-      failed: (authorization?: boolean, because?: string) =>
+      failedMessage: (authorization?: boolean, because?: string) =>
         `Your ${authorization ? "authorization" : "authentication"} attempt ${because ? `failed with error: ${because}` : "was unsuccessful."}`,
+      successTitle: (authorization?: boolean) =>
+        `${authorization ? "Authorization" : "Authentication"} successful`,
+      failedTitle: (authorization?: boolean) =>
+        `${authorization ? "Authorization" : "Authentication"} failed`,
     },
     reason: {
       success: {

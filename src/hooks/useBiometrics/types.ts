@@ -43,7 +43,7 @@ type Biometrics = {
 
 /**
  * Latest status for both challenge and key related actions.
- * The message prop is useful if we just want to display latest action result
+ * The message, value and title props are useful if we just want to display latest action result
  * and do not need to specify whether it was challenge or key related.
  */
 type Feedback = {
@@ -55,6 +55,12 @@ type Feedback = {
 
   /** Latest action status message */
   message: string;
+
+  /** Latest action status title */
+  title: string;
+
+  /** Was the latest action successful? */
+  value: boolean;
 };
 
 /**
@@ -78,6 +84,9 @@ type BiometricsStatus<T> = {
 
   /** Final message to display, combination of pre-defined text, translated reason and/or auth type name */
   message?: string;
+
+  /** Same as message, but in a form of a simple title i.e. Authorization/authentication successful/failed */
+  title?: string;
 };
 
 export type { Feedback, Biometrics, BiometricsStatus };

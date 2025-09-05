@@ -25,7 +25,7 @@ const getAuthTypeName = <T>(
  * this needs to be a hook (although used only in useBiometrics).
  *
  * It returns latest biometrics feedback for both challenge and key related actions.
- * It also returns the last action message if we just want to display latest action result
+ * It also returns the last action value, message and title if we just want to display latest action result
  * and do not need to specify whether it was challenge or key related.
  *
  * For detailed documentation on Feedback object it returns, see types file.
@@ -33,14 +33,20 @@ const getAuthTypeName = <T>(
 export default function useBiometricsFeedback() {
   const { translate } = useLocalize();
 
+  const notRequestedText = useMemo(
+    () => translate("biometrics.reason.generic.notRequested"),
+    [translate],
+  );
+
   /** Used when the feedback type is 'none' */
   const emptyAuth: BiometricsStatus<boolean> = useMemo(
     () => ({
       reason: "biometrics.reason.generic.notRequested",
-      message: translate("biometrics.reason.generic.notRequested"),
+      message: notRequestedText,
+      title: notRequestedText,
       value: false,
     }),
-    [translate],
+    [notRequestedText],
   );
 
   const [challenge, setChallenge] = useState(emptyAuth);
@@ -57,11 +63,14 @@ export default function useBiometricsFeedback() {
 
       const message = translate(reason);
       const reasonMessage = value ? typeName : message;
-      const statusMessage = `biometrics.feedbackMessage.${value ? "success" : "failed"}`;
+      const statusMessage = `biometrics.feedbackMessage.${value ? "successMessage" : "failedMessage"}`;
+      const statusTitle = `biometrics.feedbackMessage.${value ? "successTitle" : "failedTitle"}`;
 
       return {
         ...authData,
         message: translate(statusMessage, authorize, reasonMessage),
+        title: translate(statusTitle, authorize),
+        value,
         typeName,
       };
     },
@@ -101,14 +110,16 @@ export default function useBiometricsFeedback() {
       [CONST.BIOMETRICS.FEEDBACK_TYPE.NONE]: emptyAuth,
     };
 
-    const { message } = lastActionMap[lastAction.current];
+    const { message, title, value } = lastActionMap[lastAction.current];
 
     return {
       challenge,
       key,
-      message: message ?? "biometrics.reason.generic.notRequested",
+      message: message ?? notRequestedText,
+      title: title ?? notRequestedText,
+      value,
     };
-  }, [challenge, emptyAuth, key]);
+  }, [challenge, emptyAuth, key, notRequestedText]);
 
   return [feedback, setFeedback] as const;
 }

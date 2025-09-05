@@ -99,10 +99,11 @@ const styles = {
   buttonNegative: {
     borderRadius: 20,
     paddingHorizontal: 14,
-    paddingVertical: 9,
-    backgroundColor: "#F25730",
     alignItems: "center",
     justifyContent: "center",
+    width: "100%",
+    paddingVertical: 10,
+    backgroundColor: "#F25730",
   },
   buttonTextNegative: {
     color: "#fff",
