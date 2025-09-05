@@ -3,7 +3,7 @@ import type { TranslationPaths } from "@/base/mockTypes";
 import {
   BiometricsPrivateKeyStore,
   BiometricsPublicKeyStore,
-} from "@libs/BiometricsKeyStorage";
+} from "@libs/BiometricsKeyStore";
 import { signToken as signTokenED25519 } from "@libs/ED25519";
 import {
   authorizeTransaction,

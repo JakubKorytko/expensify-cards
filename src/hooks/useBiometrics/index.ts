@@ -3,7 +3,7 @@ import { generateKeyPair } from "@libs/ED25519";
 import {
   BiometricsPrivateKeyStore,
   BiometricsPublicKeyStore,
-} from "@libs/BiometricsKeyStorage";
+} from "@libs/BiometricsKeyStore";
 import CONST from "@src/CONST";
 import BiometricsChallenge from "@libs/BiometricsChallenge";
 import useBiometricsFeedback from "./useBiometricsFeedback";

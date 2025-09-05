@@ -1,4 +1,4 @@
-import useBiometrics from "@/src/hooks/useBiometrics";
+import useBiometrics from "@src/hooks/useBiometrics";
 import { Button, Text, View } from "react-native";
 
 type BiometricsAuthenticationProps = {
