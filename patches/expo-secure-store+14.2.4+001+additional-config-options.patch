@@ -97,10 +97,15 @@ index e5729cc..0fd4242 100644
 
    suspend fun authenticate(cipher: Cipher): BiometricPrompt.AuthenticationResult? =
 diff --git a/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/SecureStoreModule.kt b/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/SecureStoreModule.kt
-index 0fef884..2659672 100644
+index 0fef884..822caa5 100644
 --- a/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/SecureStoreModule.kt
 +++ b/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/SecureStoreModule.kt
-@@ -40,7 +40,7 @@ open class SecureStoreModule : Module() {
+@@ -36,23 +36,23 @@ open class SecureStoreModule : Module() {
+
+     AsyncFunction("setValueWithKeyAsync") Coroutine { value: String?, key: String?, options: SecureStoreOptions ->
+       key ?: throw NullKeyException()
+-      return@Coroutine setItemImpl(key, value, options, false)
++      return@Coroutine setItemImpl(key, value, options, false).ordinal
      }
 
      AsyncFunction("getValueWithKeyAsync") Coroutine { key: String, options: SecureStoreOptions ->
@@ -109,7 +114,12 @@ index 0fef884..2659672 100644
      }
 
      Function("setValueWithKeySync") { value: String?, key: String?, options: SecureStoreOptions ->
-@@ -52,7 +52,7 @@ open class SecureStoreModule : Module() {
+       key ?: throw NullKeyException()
+       return@Function runBlocking {
+-        return@runBlocking setItemImpl(key, value, options, keyIsInvalidated = false)
++        return@runBlocking setItemImpl(key, value, options, keyIsInvalidated = false).ordinal
+       }
+     }
 
      Function("getValueWithKeySync") { key: String, options: SecureStoreOptions ->
        return@Function runBlocking {
@@ -248,7 +258,7 @@ index 0fef884..2659672 100644
        encryptor.initializeKeyStoreEntry(keyStore, options)
      }
 diff --git a/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/SecureStoreOptions.kt b/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/SecureStoreOptions.kt
-index 79a600f..558ff36 100644
+index 79a600f..ad78439 100644
 --- a/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/SecureStoreOptions.kt
 +++ b/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/SecureStoreOptions.kt
 @@ -1,5 +1,6 @@
@@ -258,7 +268,7 @@ index 79a600f..558ff36 100644
  import expo.modules.kotlin.records.Field
  import expo.modules.kotlin.records.Record
  import java.io.Serializable
-@@ -8,5 +9,34 @@ class SecureStoreOptions(
+@@ -8,5 +9,39 @@ class SecureStoreOptions(
    // Prompt can't be an empty string
    @Field var authenticationPrompt: String = " ",
    @Field var keychainService: String = SecureStoreModule.DEFAULT_KEYSTORE_ALIAS,
@@ -281,18 +291,23 @@ index 79a600f..558ff36 100644
 +  val value: T,
 +  val authenticationResult: BiometricPrompt.AuthenticationResult? = null
 +) {
-+  @Field var authType: SecureStoreAuthType = SecureStoreAuthType.NONE
-+  @Field var values: Pair<T?, SecureStoreAuthType> = Pair(null, authType)
-+
-+  init {
-+    if (authenticationResult?.authenticationType == BiometricPrompt.AUTHENTICATION_RESULT_TYPE_UNKNOWN) {
-+      authType = SecureStoreAuthType.UNKNOWN
-+    } else if (authenticationResult?.authenticationType == BiometricPrompt.AUTHENTICATION_RESULT_TYPE_DEVICE_CREDENTIAL) {
-+      authType = SecureStoreAuthType.CREDENTIAL
-+    } else if (authenticationResult?.authenticationType == BiometricPrompt.AUTHENTICATION_RESULT_TYPE_BIOMETRIC) {
-+      authType = SecureStoreAuthType.BIOMETRIC
++  @Field var authType: SecureStoreAuthType = when (authenticationResult?.authenticationType) {
++    BiometricPrompt.AUTHENTICATION_RESULT_TYPE_UNKNOWN -> {
++      SecureStoreAuthType.UNKNOWN
++    }
++    BiometricPrompt.AUTHENTICATION_RESULT_TYPE_DEVICE_CREDENTIAL -> {
++      SecureStoreAuthType.CREDENTIAL
++    }
++    BiometricPrompt.AUTHENTICATION_RESULT_TYPE_BIOMETRIC -> {
++      SecureStoreAuthType.BIOMETRIC
++    }
++    else -> {
++      SecureStoreAuthType.NONE
 +    }
 +  }
++
++  /** Used to return easily convertible values to JS code */
++  @Field var values: Pair<T, Int> = Pair(value, authType.ordinal)
 +}
 \ No newline at end of file
 diff --git a/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/encryptors/AESEncryptor.kt b/node_modules/expo-secure-store/android/src/main/java/expo/modules/securestore/encryptors/AESEncryptor.kt
