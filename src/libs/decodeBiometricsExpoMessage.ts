@@ -17,6 +17,15 @@ function decodeExpoMessage(error: unknown): TranslationPaths {
   const isAppNotInTheForeground = searchString.includes(
     CONST.BIOMETRICS.EXPO_ERRORS.SEARCH_STRING.NOT_IN_FOREGROUND,
   );
+  const keyAlreadyExists = searchString.includes(
+    CONST.BIOMETRICS.EXPO_ERRORS.SEARCH_STRING.EXISTS,
+  );
+  const noAuthenticationMethodAvailable = searchString.includes(
+    CONST.BIOMETRICS.EXPO_ERRORS.SEARCH_STRING.NO_AUTHENTICATION,
+  );
+  const oldAndroid = searchString.includes(
+    CONST.BIOMETRICS.EXPO_ERRORS.SEARCH_STRING.OLD_ANDROID,
+  );
 
   if (wasAuthCanceled) {
     return "biometrics.reason.expoErrors.canceled";
@@ -28,6 +37,18 @@ function decodeExpoMessage(error: unknown): TranslationPaths {
 
   if (isAppNotInTheForeground) {
     return "biometrics.reason.expoErrors.notInForeground";
+  }
+
+  if (keyAlreadyExists) {
+    return "biometrics.reason.expoErrors.keyExists";
+  }
+
+  if (noAuthenticationMethodAvailable) {
+    return "biometrics.reason.expoErrors.noAuthentication";
+  }
+
+  if (oldAndroid) {
+    return "biometrics.reason.expoErrors.oldAndroid";
   }
 
   return "biometrics.reason.expoErrors.generic";

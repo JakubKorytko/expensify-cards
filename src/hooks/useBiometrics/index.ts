@@ -36,7 +36,24 @@ function useBiometrics(): Biometrics {
     /** Save generated key to the store */
     return BiometricsPrivateKeyStore.set(privateKey)
       .then((privateKeyResult) => {
-        if (!privateKeyResult.value) throw privateKeyResult;
+        const privateKeyExists =
+          privateKeyResult.reason === "biometrics.reason.expoErrors.keyExists";
+
+        if (!privateKeyResult.value) {
+          if (privateKeyExists && !status) {
+            /**
+             * If the private key exists, but the public one does not, we end up having the interaction blocked.
+             * We remove the private key and stop the execution to unblock the auth process.
+             *
+             * This may be handled by getting the public key from BE,
+             * but it is not worth doing as this should never actually happen in the real app.
+             */
+            BiometricsPrivateKeyStore.delete().then(() => {
+              throw privateKeyResult;
+            });
+          }
+          throw privateKeyResult;
+        }
         /** If it was saved successfully, save public one as well */
         return Promise.all([
           privateKeyResult,
@@ -68,7 +85,7 @@ function useBiometrics(): Biometrics {
         /** Oops, there was a problem, let the user know why */
         return setFeedback(status, CONST.BIOMETRICS.FEEDBACK_TYPE.KEY);
       });
-  }, [refreshStatus, setFeedback]);
+  }, [refreshStatus, setFeedback, status]);
 
   const challenge = useCallback(
     (transactionID: string) => {

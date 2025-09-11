@@ -39,6 +39,9 @@ const translations = {
         alreadyInProgress: "Authentication is already in progress",
         canceled: "Authentication was canceled",
         generic: "Something went wrong",
+        keyExists: "Key already exists",
+        noAuthentication: "No authentication method available",
+        oldAndroid: "This functionality is not available on your device",
       },
       generic: {
         notRequested: "Not requested yet",
