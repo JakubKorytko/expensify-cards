@@ -27,7 +27,7 @@ class BiometricsKeyStore {
     return {
       failOnDuplicate: isPrivateKey,
       requireAuthentication: isPrivateKey,
-      authOnEveryAction: isPrivateKey,
+      askForAuthOnSave: isPrivateKey,
       keychainService: CONST.BIOMETRICS.KEYCHAIN_SERVICE,
       keychainAccessible: SecureStore.WHEN_PASSCODE_SET_THIS_DEVICE_ONLY,
       enableCredentialsAlternative: true,
