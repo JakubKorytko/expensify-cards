@@ -34,6 +34,13 @@ class BiometricsKeyStore {
     };
   }
 
+  public get supportedAuthentication() {
+    return {
+      biometrics: SecureStore.canUseBiometricAuthentication(),
+      credentials: SecureStore.canUseDeviceCredentialsAuthentication(),
+    };
+  }
+
   /** IMPORTANT: Using this method on BiometricsPrivateKeyStore object will display authentication prompt */
   public set(value: string): Promise<BiometricsStatus<boolean>> {
     return SecureStore.setItemAsync(this.key, value, this.options)

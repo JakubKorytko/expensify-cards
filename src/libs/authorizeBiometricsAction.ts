@@ -1,6 +1,8 @@
 import { BiometricsStatus } from "@hooks/useBiometrics/types";
 import CONST from "@src/CONST";
 import { authorizeTransaction } from "./actions/Biometrics";
+import { BiometricsPublicKeyStore } from "@libs/BiometricsKeyStore";
+import { ValueOf } from "type-fest";
 
 const Factors = {
   SIGNED_CHALLENGE: {
@@ -40,6 +42,24 @@ type Option = keyof typeof Options;
 type OptionParameters<T extends Option> = {
   [K in (typeof Options)[T][number] as K["parameter"]]: K["type"];
 };
+
+function getAuthorizationOption(): Promise<
+  ValueOf<typeof CONST.BIOMETRICS.AUTH_OPTIONS>
+> {
+  const { biometrics, credentials } =
+    BiometricsPublicKeyStore.supportedAuthentication;
+
+  if (!biometrics && !credentials) {
+    return Promise.resolve(CONST.BIOMETRICS.AUTH_OPTIONS.NO_BIOMETRICS);
+  }
+
+  return BiometricsPublicKeyStore.get().then((key) => {
+    const isConfigured = !!key.value;
+    return isConfigured
+      ? CONST.BIOMETRICS.AUTH_OPTIONS.BIOMETRICS_ONLY
+      : CONST.BIOMETRICS.AUTH_OPTIONS.BIOMETRICS_CONFIGURATION;
+  });
+}
 
 function isAuthorizationSufficient<T extends Option>(
   option: T,
@@ -105,3 +125,4 @@ function authorizeBiometricsAction<T extends keyof typeof Options>(
 }
 
 export default authorizeBiometricsAction;
+export { getAuthorizationOption };
