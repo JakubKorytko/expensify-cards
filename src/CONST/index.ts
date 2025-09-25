@@ -62,6 +62,11 @@ const CONST = {
         OLD_ANDROID: "NoSuchMethodError",
       },
     },
+    AUTH_OPTIONS: {
+      NO_BIOMETRICS: "NO_BIOMETRICS",
+      BIOMETRICS_CONFIGURATION: "BIOMETRICS_CONFIGURATION",
+      BIOMETRICS_ONLY: "BIOMETRICS_ONLY",
+    },
   },
   // ...
 } as const;

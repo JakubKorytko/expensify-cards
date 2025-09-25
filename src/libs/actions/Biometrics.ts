@@ -102,12 +102,24 @@ function requestBiometricsChallenge() {
 }
 
 /** Authorize transaction using signed challenge. */
-function authorizeTransaction(transactionID: string, signedChallenge: string) {
+function authorizeTransaction({
+  transactionID,
+  signedChallenge,
+  validateCode,
+  otp,
+}: {
+  transactionID: string;
+  signedChallenge?: string;
+  validateCode?: number;
+  otp?: number;
+}) {
   return API.makeRequestWithSideEffects(
     SIDE_EFFECT_REQUEST_COMMANDS.AUTHORIZE_TRANSACTION,
     {
       transactionID,
       signedChallenge,
+      validateCode,
+      otp,
     },
     {},
   ).then(({ jsonCode }) =>

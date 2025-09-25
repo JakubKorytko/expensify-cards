@@ -46,6 +46,8 @@ const translations = {
       generic: {
         notRequested: "Not requested yet",
         apiError: "API error",
+        authParametersError: "Auth parameters error",
+        authParametersSufficient: "Auth parameters are sufficient",
       },
     },
     apiResponse: {

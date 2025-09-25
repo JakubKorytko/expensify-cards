@@ -129,25 +129,26 @@ class BiometricsChallenge {
       );
     }
 
-    return authorizeTransaction(this.transactionID, this.auth.value).then(
-      ({ httpCode, reason }) => {
-        if (httpCode !== 200) {
-          const isReasonIncluded = !reason.endsWith("unknownResponse");
+    return authorizeTransaction({
+      transactionID: this.transactionID,
+      signedChallenge: this.auth.value,
+    }).then(({ httpCode, reason }) => {
+      if (httpCode !== 200) {
+        const isReasonIncluded = !reason.endsWith("unknownResponse");
 
-          return this.createErrorReturnValue(
-            isReasonIncluded
-              ? reason
-              : "biometrics.reason.error.challengeRejected",
-          );
-        }
+        return this.createErrorReturnValue(
+          isReasonIncluded
+            ? reason
+            : "biometrics.reason.error.challengeRejected",
+        );
+      }
 
-        return {
-          value: true,
-          reason: "biometrics.reason.success.verificationSuccess",
-          type: this.auth.type,
-        };
-      },
-    );
+      return {
+        value: true,
+        reason: "biometrics.reason.success.verificationSuccess",
+        type: this.auth.type,
+      };
+    });
   }
 }
 
