@@ -3,12 +3,11 @@ import type { TranslationPaths } from "@src/languages/types";
 import {
   BiometricsPrivateKeyStore,
   BiometricsPublicKeyStore,
-} from "@libs/BiometricsKeyStore";
+} from "@libs/Biometrics/BiometricsKeyStore";
 import { signToken as signTokenED25519 } from "@libs/ED25519";
-import {
-  authorizeTransaction,
-  requestBiometricsChallenge,
-} from "@libs/actions/Biometrics";
+import { requestBiometricsChallenge } from "@libs/actions/Biometrics";
+import authorizeBiometricsAction from "@libs/Biometrics/authorizeBiometricsAction";
+import CONST from "@src/CONST";
 
 /**
  * This class can be used to create an object associated with a transaction.
@@ -87,10 +86,13 @@ class BiometricsChallenge {
 
   /**
    * Sign requested challenge with the private key.
+   * Chained private key status can be provided to avoid fetching the private key again if it was already obtained.
    *
    * IMPORTANT: Using this method will display authentication prompt
    */
-  public sign(): Promise<BiometricsStatus<boolean>> {
+  public sign(
+    chainedPrivateKeyStatus?: BiometricsStatus<string | null>,
+  ): Promise<BiometricsStatus<boolean>> {
     const {
       auth: { value: authValue },
     } = this;
@@ -101,7 +103,11 @@ class BiometricsChallenge {
       );
     }
 
-    return BiometricsPrivateKeyStore.get().then(({ value, type, reason }) => {
+    const privateKeyPromise = !!chainedPrivateKeyStatus?.value
+      ? Promise.resolve(chainedPrivateKeyStatus)
+      : BiometricsPrivateKeyStore.get();
+
+    return privateKeyPromise.then(({ value, type, reason }) => {
       if (!value) {
         return this.createErrorReturnValue(
           reason || "biometrics.reason.error.keyMissing",
@@ -121,19 +127,41 @@ class BiometricsChallenge {
     });
   }
 
-  /** Send signed challenge to the API to verify it */
-  public send(): Promise<BiometricsStatus<boolean>> {
+  /**
+   * Send signed challenge to the API to verify it
+   * If the device is not configured for biometrics, or it is re-registering, a validation code must be provided.
+   * This function assumes that if the validation code is provided, the device is not configured for biometrics.
+   */
+  public send(validateCode?: number): Promise<BiometricsStatus<boolean>> {
     if (!this.auth.value) {
       return Promise.resolve(
         this.createErrorReturnValue("biometrics.reason.error.signatureMissing"),
       );
     }
 
-    return authorizeTransaction({
-      transactionID: this.transactionID,
-      signedChallenge: this.auth.value,
-    }).then(({ httpCode, reason }) => {
-      if (httpCode !== 200) {
+    let authorizationResult;
+
+    if (validateCode) {
+      authorizationResult = authorizeBiometricsAction(
+        CONST.BIOMETRICS.DEVICE_BIOMETRICS_STATUS.NOT_CONFIGURED,
+        this.transactionID,
+        {
+          signedChallenge: this.auth.value,
+          validateCode,
+        },
+      );
+    } else {
+      authorizationResult = authorizeBiometricsAction(
+        CONST.BIOMETRICS.DEVICE_BIOMETRICS_STATUS.CONFIGURED,
+        this.transactionID,
+        {
+          signedChallenge: this.auth.value,
+        },
+      );
+    }
+
+    return authorizationResult.then(({ reason, value }) => {
+      if (!value) {
         const isReasonIncluded = !reason.endsWith("unknownResponse");
 
         return this.createErrorReturnValue(
@@ -142,7 +170,6 @@ class BiometricsChallenge {
             : "biometrics.reason.error.challengeRejected",
         );
       }
-
       return {
         value: true,
         reason: "biometrics.reason.success.verificationSuccess",

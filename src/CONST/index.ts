@@ -1,5 +1,34 @@
 import { AUTH_TYPE } from "expo-secure-store";
 
+/**
+ * Defines the requirements for each authentication factor used in the biometrics process.
+ * These requirements include an identifier, a user-friendly name, the parameter name expected by the API,
+ */
+const BIOMETRICS_AUTH_FACTORS_REQUIREMENTS = {
+  SIGNED_CHALLENGE: {
+    id: "SIGNED_CHALLENGE",
+    name: "Signed Challenge",
+    parameter: "signedChallenge",
+    type: String(),
+    length: undefined,
+  },
+  OTP: {
+    id: "OTP",
+    name: "Two-Factor Authentication or SMS One-Time Password",
+    parameter: "otp",
+    type: Number(),
+    length: 6,
+    optional: true,
+  },
+  VALIDATE_CODE: {
+    id: "VALIDATE_CODE",
+    name: "Email One-Time Password",
+    parameter: "validateCode",
+    type: Number(),
+    length: 6,
+  },
+} as const;
+
 const CONST = {
   // ...
   BIOMETRICS: {
@@ -62,10 +91,31 @@ const CONST = {
         OLD_ANDROID: "NoSuchMethodError",
       },
     },
-    AUTH_OPTIONS: {
-      NO_BIOMETRICS: "NO_BIOMETRICS",
-      BIOMETRICS_CONFIGURATION: "BIOMETRICS_CONFIGURATION",
-      BIOMETRICS_ONLY: "BIOMETRICS_ONLY",
+    /** All possible requirements for biometric authentication */
+    AUTH_FACTORS_REQUIREMENTS: BIOMETRICS_AUTH_FACTORS_REQUIREMENTS,
+    /** Status of the device regarding biometric capabilities and configuration */
+    DEVICE_BIOMETRICS_STATUS: {
+      NOT_SUPPORTED: "NOT_SUPPORTED",
+      NOT_CONFIGURED: "NOT_CONFIGURED",
+      CONFIGURED: "CONFIGURED",
+    },
+    /** All possible authentication factors that can be used in the biometrics process */
+    AUTH_FACTORS: {
+      SIGNED_CHALLENGE: "SIGNED_CHALLENGE",
+      VALIDATE_CODE: "VALIDATE_CODE",
+      OTP: "OTP",
+    },
+    /** Mapping of device biometric status to the required authentication factors */
+    DEVICE_STATUS_FACTORS_MAP: {
+      NOT_SUPPORTED: [
+        BIOMETRICS_AUTH_FACTORS_REQUIREMENTS.VALIDATE_CODE,
+        BIOMETRICS_AUTH_FACTORS_REQUIREMENTS.OTP,
+      ],
+      NOT_CONFIGURED: [
+        BIOMETRICS_AUTH_FACTORS_REQUIREMENTS.SIGNED_CHALLENGE,
+        BIOMETRICS_AUTH_FACTORS_REQUIREMENTS.VALIDATE_CODE,
+      ],
+      CONFIGURED: [BIOMETRICS_AUTH_FACTORS_REQUIREMENTS.SIGNED_CHALLENGE],
     },
   },
   // ...

@@ -2,37 +2,50 @@ import type { TranslationPaths } from "@src/languages/types";
 import type { ValueOf } from "type-fest";
 
 import { AUTH_TYPE } from "expo-secure-store";
+import CONST from "@src/CONST";
 
 /** Value returned by the useBiometrics hook. */
 type Biometrics = {
   /**
    * Runs the biometrics process setup.
    *
-   * IMPORTANT: Using this method will display authentication prompt
-   */
-  request: () => Promise<BiometricsStatus<boolean>>;
-
-  /**
-   * Method to request, sign and verify biometrics challenge
+   * If the biometrics are configured for the first time or get re-configured, a validateCode should be provided.
+   *
+   * The second parameter indicates whether the registration is chained with the authorization process.
+   * Setting it to true will return private key saving status with the key value instead of the registration status.
    *
    * IMPORTANT: Using this method will display authentication prompt
    */
-  challenge: (transactionID: string) => Promise<BiometricsStatus<boolean>>;
+  register: (
+    validateCode?: number,
+    chainedWithAuthorization?: boolean,
+  ) => Promise<BiometricsStatus<boolean | string>>;
 
   /**
-   * Method to run the appropriate process.
-   * If the biometrics are configured, it runs the challenge.
-   * If not, it runs the setup and after that (if successful) it runs the challenge process.
-   *
-   * If you prefer not to run the challenge process immediately after biometrics setup,
-   * you can set the second parameter to true.
-   *
-   * IMPORTANT: Using this method will display authentication prompt twice if the biometrics is not configured.
+   * Required authorization factors based on the current device biometrics status.
+   * These needs to be provided when calling the authorize method.
+   * If the factors include validateCode, it also applies to the register method.
    */
-  prompt: (
-    transactionID: string,
-    disableAutoRun?: boolean,
-  ) => Promise<BiometricsStatus<boolean>>;
+  requiredFactors: ValueOf<typeof CONST.BIOMETRICS.AUTH_FACTORS>[];
+
+  /**
+   * Main method to authorize a transaction using biometrics if available and configured,
+   * or falling back to otp and magic code if not.
+   * If biometrics is not configured, it will attempt to register it first.
+   * If the registration is successful, it will attempt to authorize the transaction using biometrics right away.
+   * You can check which factors are required by checking the requiredFactors property before calling this method.
+   *
+   * Note: If the device does not support biometrics, both validateCode and otp must be provided.
+   * If the device supports biometrics, but it is not configured, validateCode must be provided.
+   * If the device supports and is configured for biometrics, neither validateCode nor otp are needed.
+   *
+   * IMPORTANT: Using this method will display authentication prompt.
+   */
+  authorize: (config: {
+    transactionID: string;
+    validateCode?: number;
+    otp?: number;
+  }) => Promise<BiometricsStatus<boolean>>;
 
   /** Feedback on the performed actions. */
   feedback: Feedback;

@@ -23,7 +23,7 @@ function BiometricsAuthentication({
   const statusText = `Biometrics (${Biometrics.status ? "Registered" : "Not registered"})`;
 
   const onPress = () =>
-    Biometrics.prompt(transactionID, true).then(() => setShowCallback(true));
+    Biometrics.authorize({ transactionID }).then(() => setShowCallback(true));
 
   return (
     <>

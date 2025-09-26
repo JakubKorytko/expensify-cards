@@ -33,6 +33,8 @@ const translations = {
         keyMissing: "Key is missing",
         signatureMissing: "Signature is missing",
         challengeRejected: "API rejected the challenge",
+        validateCodeMissing: "Validation code is missing",
+        otpMissing: "OTP code is missing",
       },
       expoErrors: {
         notInForeground: "App is not in the foreground",
@@ -46,8 +48,8 @@ const translations = {
       generic: {
         notRequested: "Not requested yet",
         apiError: "API error",
-        authParametersError: "Auth parameters error",
-        authParametersSufficient: "Auth parameters are sufficient",
+        authFactorsError: "Auth factors error",
+        authFactorsSufficient: "Auth factors are sufficient",
       },
     },
     apiResponse: {

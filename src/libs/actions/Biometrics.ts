@@ -73,12 +73,13 @@ function parseHttpCode(
  * Please consult before using this pattern.
  */
 
-/** Send biometrics public key to the API. */
-function registerBiometrics(publicKey: string) {
+/** Send biometrics public key to the API along with the validation code if required. */
+function registerBiometrics(publicKey: string, validateCode?: number) {
   return API.makeRequestWithSideEffects(
     SIDE_EFFECT_REQUEST_COMMANDS.REGISTER_BIOMETRICS,
     {
       publicKey,
+      validateCode,
     },
     {},
   ).then(({ jsonCode }) =>
@@ -101,7 +102,18 @@ function requestBiometricsChallenge() {
   }));
 }
 
-/** Authorize transaction using signed challenge. */
+/**
+ * Authorize transaction using:
+ * - signedChallenge when biometrics is available and configured
+ * - signedChallenge and validateCode when biometrics is available but not configured
+ * - or validateCode and otp when biometrics is not available or not configured
+ * All parameters except transactionID are optional,
+ * but at least one of the combinations listed above must be provided.
+ *
+ * Note: If the transaction should be authorized using otp + validateCode,
+ * we actually need to make one call with validateCode only,
+ * and then another one with otp + validateCode.
+ */
 function authorizeTransaction({
   transactionID,
   signedChallenge,

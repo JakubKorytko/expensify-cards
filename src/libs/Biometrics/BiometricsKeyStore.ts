@@ -3,7 +3,7 @@ import CONST from "@src/CONST";
 import type { BiometricsStatus } from "@hooks/useBiometrics/types";
 import type { TranslationPaths } from "@src/languages/types";
 import type { ValueOf } from "type-fest";
-import decodeBiometricsExpoMessage from "@libs/decodeBiometricsExpoMessage";
+import decodeBiometricsExpoMessage from "@libs/Biometrics/decodeBiometricsExpoMessage";
 
 /**
  * Proxy-like class with CRUD methods to access the SecureStore
@@ -34,6 +34,7 @@ class BiometricsKeyStore {
     };
   }
 
+  /** Check what authentication types are supported on the current device */
   public get supportedAuthentication() {
     return {
       biometrics: SecureStore.canUseBiometricAuthentication(),
