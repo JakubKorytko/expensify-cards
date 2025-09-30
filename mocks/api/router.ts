@@ -4,6 +4,7 @@ import {
   ed,
   generateSixDigitNumber,
   isChallengeValid,
+  PHONE_NUMBER,
   STORAGE,
   USER_EMAIL,
 } from "@/mocks/api/utils";
@@ -41,6 +42,11 @@ const CONFLICT = {
   response: undefined,
 };
 
+const OTP_REQUIRED = {
+  status: 202,
+  response: undefined,
+};
+
 router.post["/resend_validate_code"] = ({
   email,
 }: Partial<
@@ -64,6 +70,37 @@ router.post["/resend_validate_code"] = ({
   return {
     ...REQUEST_SUCCESSFUL,
     message: `Validate code sent to email ${email}`,
+  };
+};
+
+router.post["/send_otp"] = ({
+  phoneNumber,
+}: Partial<
+  WriteCommands["SendOTP"]["parameters"]
+>): WriteCommands["SendOTP"]["returns"] => {
+  Logger.m("Generating new validation code");
+
+  if (!phoneNumber) {
+    return {
+      ...MISSING_PARAMETER,
+      message: Logger.w("Phone parameter is missing in the request"),
+    };
+  }
+
+  const randomCode = generateSixDigitNumber();
+
+  STORAGE.OTPs[phoneNumber] ??= [];
+  STORAGE.OTPs[phoneNumber].push(randomCode);
+  Logger.m(
+    "Generated new OTP code:",
+    randomCode,
+    "for phone number",
+    phoneNumber,
+  );
+
+  return {
+    ...REQUEST_SUCCESSFUL,
+    message: `Validate code sent to phone number ${phoneNumber}`,
   };
 };
 
@@ -128,6 +165,13 @@ router.post["/register_biometrics"] = ({
     };
   }
 
+  if (!validateCode) {
+    return {
+      ...MISSING_PARAMETER,
+      message: Logger.w("Validation code required"),
+    };
+  }
+
   if (!!STORAGE.publicKeys[USER_EMAIL]?.includes(publicKey)) {
     return {
       ...CONFLICT,
@@ -135,26 +179,17 @@ router.post["/register_biometrics"] = ({
     };
   }
 
-  if (!validateCode && STORAGE.publicKeys[USER_EMAIL]?.length > 0) {
+  const isValidateCodeCorrect =
+    !!validateCodes.at(-1) && validateCodes.at(-1) === validateCode;
+
+  if (!isValidateCodeCorrect) {
     return {
-      ...UNAUTHORIZED,
-      message: Logger.w("Validation code required"),
+      ...BAD_REQUEST,
+      message: Logger.w("Validation code invalid"),
     };
   }
 
-  if (validateCode && STORAGE.publicKeys[USER_EMAIL]?.length > 0) {
-    const isValidateCodeCorrect =
-      !!validateCodes.at(-1) && validateCodes.at(-1) === validateCode;
-
-    if (!isValidateCodeCorrect) {
-      return {
-        ...BAD_REQUEST,
-        message: Logger.w("Validation code invalid"),
-      };
-    }
-
-    validateCodes.pop();
-  }
+  validateCodes.pop();
 
   STORAGE.publicKeys[USER_EMAIL] ??= [];
   STORAGE.publicKeys[USER_EMAIL].push(publicKey);
@@ -170,11 +205,13 @@ router.post["/register_biometrics"] = ({
 router.post["/authorize_transaction"] = ({
   transactionID,
   validateCode,
+  otp,
   signedChallenge,
 }: Partial<
   WriteCommands["AuthorizeTransaction"]["parameters"]
 >): WriteCommands["AuthorizeTransaction"]["returns"] => {
   const validateCodes = STORAGE.validateCodes[USER_EMAIL] ?? [];
+  const OTPs = STORAGE.OTPs[PHONE_NUMBER] ?? [];
 
   if (!transactionID) {
     return {
@@ -185,7 +222,10 @@ router.post["/authorize_transaction"] = ({
 
   const userPublicKeys = STORAGE.publicKeys[USER_EMAIL];
 
-  if (!userPublicKeys || !userPublicKeys.length) {
+  if (
+    (!userPublicKeys || !userPublicKeys.length) &&
+    (!validateCode || signedChallenge)
+  ) {
     return {
       ...UNAUTHORIZED,
       message: Logger.w("User is not registered"),
@@ -224,18 +264,38 @@ router.post["/authorize_transaction"] = ({
     );
 
     const isValidateCodeCorrect = validateCodes.at(-1) === validateCode;
-    if (isValidateCodeCorrect) {
-      validateCodes.pop();
+
+    if (isValidateCodeCorrect && !otp) {
+      router.post["/send_otp"]({ phoneNumber: PHONE_NUMBER });
+
+      return {
+        ...OTP_REQUIRED,
+        message: Logger.w("OTP required to authorize transaction"),
+      };
     }
 
-    return isValidateCodeCorrect
+    const areOTPsNotNull = !!OTPs.at(-1) && !!otp;
+    const isOTPCorrect = areOTPsNotNull && OTPs.at(-1) === otp;
+
+    const isEverythingOK = isValidateCodeCorrect && isOTPCorrect;
+
+    if (isEverythingOK) {
+      validateCodes.pop();
+      OTPs.pop();
+    }
+
+    return isEverythingOK
       ? {
           ...REQUEST_SUCCESSFUL,
-          message: Logger.m("User authorized successfully using validate code"),
+          message: Logger.m(
+            "User authorized successfully using validate code and OTP",
+          ),
         }
       : {
           ...CONFLICT,
-          message: Logger.w("Unable to authorize user using validate code"),
+          message: Logger.w(
+            "Unable to authorize user using validate code and OTP",
+          ),
         };
   }
 

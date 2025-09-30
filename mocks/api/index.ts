@@ -28,6 +28,7 @@ const APIRoutes: {
     ResendValidateCode: "POST:/resend_validate_code",
     RegisterBiometrics: "POST:/register_biometrics",
     AuthorizeTransaction: "POST:/authorize_transaction",
+    SendOTP: "POST:/send_otp",
   },
 };
 
@@ -36,7 +37,7 @@ type WriteCommands = {
     route: typeof APIRoutes.Write.RegisterBiometrics;
     parameters: {
       publicKey: string;
-      validateCode?: number;
+      validateCode: number;
     };
     returns: APIResponse;
   };
@@ -47,7 +48,7 @@ type WriteCommands = {
       // this one:
       signedChallenge?: string; // JWT
       // or these two together:
-      validateCode?: number; // magic code
+      validateCode?: number; // validate code
       otp?: number; // 2FA / SMS OTP
     };
     returns: APIResponse;
@@ -56,6 +57,13 @@ type WriteCommands = {
     route: typeof APIRoutes.Write.ResendValidateCode;
     parameters: {
       email: string;
+    };
+    returns: APIResponse;
+  };
+  SendOTP: {
+    route: typeof APIRoutes.Write.SendOTP;
+    parameters: {
+      phoneNumber: string;
     };
     returns: APIResponse;
   };
@@ -82,6 +90,7 @@ const WRITE_COMMANDS = {
   REGISTER_BIOMETRICS: "RegisterBiometrics",
   AUTHORIZE_TRANSACTION: "AuthorizeTransaction",
   RESEND_VALIDATE_CODE: "ResendValidateCode",
+  SEND_OTP: "SendOTP",
 } as const;
 
 const READ_COMMANDS = {

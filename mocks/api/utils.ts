@@ -14,14 +14,17 @@ type Challenge = {
 };
 
 const USER_EMAIL = "user@example.com";
+const PHONE_NUMBER = "+48512332053";
 
 const STORAGE: {
   publicKeys: Record<string, string[]>;
   validateCodes: Record<string, number[]>;
+  OTPs: Record<string, number[]>;
   challenges: Record<string, Challenge>;
 } = {
   publicKeys: {},
   validateCodes: {},
+  OTPs: {},
   challenges: {},
 };
 
@@ -101,6 +104,7 @@ export {
   generateSixDigitNumber,
   STORAGE,
   USER_EMAIL,
+  PHONE_NUMBER,
   Logger,
   ed,
 };
