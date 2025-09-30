@@ -8,7 +8,6 @@ import {
   DeviceBiometricsStatus,
   BiometricsDeviceStatusMapKey,
 } from "@libs/Biometrics/types";
-import { useCallback } from "react";
 
 /**
  * Determines the current biometrics device status.
@@ -43,21 +42,26 @@ function verifyRequiredFactors({
   otp,
   validateCode,
   requiredFactors,
-  isMagicCodeVerified,
+  isValidateCodeVerified,
 }: {
   otp?: number;
   validateCode?: number;
   requiredFactors: BiometricsAuthFactor[];
-  isMagicCodeVerified: boolean;
+  isValidateCodeVerified: boolean;
 }): BiometricsStatus<boolean> {
   const isValidateCodeRequired = requiredFactors.includes(
     CONST.BIOMETRICS.AUTH_FACTORS.VALIDATE_CODE,
   );
-  const isOtpRequired = requiredFactors.includes(
+  const isOtpIncludedAsFactor = requiredFactors.includes(
     CONST.BIOMETRICS.AUTH_FACTORS.OTP,
   );
 
-  const areBothRequired = isOtpRequired && isValidateCodeRequired;
+  const areBothRequired = isOtpIncludedAsFactor && isValidateCodeRequired;
+
+  /** If both are required, and the validate code hasn't been verified yet, only validateCode is needed */
+  const isOtpRequired = areBothRequired
+    ? isValidateCodeVerified
+    : isOtpIncludedAsFactor;
 
   /** Check that we have everything we need to proceed */
   if (isValidateCodeRequired && !validateCode) {
@@ -67,8 +71,7 @@ function verifyRequiredFactors({
     };
   }
 
-  /** If both are required, and the magic code hasn't been verified yet, only validateCode is needed */
-  if (isOtpRequired && !otp && (!areBothRequired || isMagicCodeVerified)) {
+  if (isOtpRequired && !otp) {
     return {
       value: false,
       reason: "biometrics.reason.error.otpMissing",
@@ -98,6 +101,7 @@ function getBiometricsAuthorizationFactors(): Promise<BiometricsAuthFactor[]> {
 function areBiometricsFactorsSufficient<T extends DeviceBiometricsStatus>(
   deviceStatus: T,
   factors: BiometricsAuthFactors<T>,
+  isValidateCodeVerified: boolean,
 ): BiometricsStatus<boolean> {
   const requiredFactors =
     CONST.BIOMETRICS.DEVICE_STATUS_FACTORS_MAP[deviceStatus];
@@ -105,6 +109,14 @@ function areBiometricsFactorsSufficient<T extends DeviceBiometricsStatus>(
   for (const factor of requiredFactors) {
     const param = factor.parameter;
     let message = "";
+
+    /** We should skip OTP check if the validate code was not verified before */
+    if (
+      factor.id === CONST.BIOMETRICS.AUTH_FACTORS.OTP &&
+      !isValidateCodeVerified
+    ) {
+      continue;
+    }
 
     if (!(param in factors)) {
       message = `Missing required factor: ${factor.name} (${factor.parameter})`;
@@ -147,21 +159,37 @@ function authorizeBiometricsAction<T extends BiometricsDeviceStatusMapKey>(
   deviceStatus: T,
   transactionID: string,
   factors: BiometricsAuthFactors<T>,
-) {
+  isValidateCodeVerified: boolean = true,
+): Promise<
+  BiometricsStatus<{
+    successful: boolean;
+    isOTPRequired: boolean;
+  }>
+> {
   const factorsCheckResult = areBiometricsFactorsSufficient(
     deviceStatus,
     factors,
+    isValidateCodeVerified,
   );
 
   if (!factorsCheckResult.value) {
-    return Promise.resolve(factorsCheckResult);
+    return Promise.resolve({
+      ...factorsCheckResult,
+      value: {
+        successful: false,
+        isOTPRequired: false,
+      },
+    });
   }
 
   return authorizeTransaction({
     ...factors,
     transactionID,
   }).then(({ httpCode, reason }) => ({
-    value: httpCode === 200,
+    value: {
+      successful: String(httpCode).startsWith("2"),
+      isOTPRequired: httpCode === 202,
+    },
     reason,
   }));
 }

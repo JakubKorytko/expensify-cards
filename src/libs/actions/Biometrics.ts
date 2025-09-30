@@ -74,7 +74,7 @@ function parseHttpCode(
  */
 
 /** Send biometrics public key to the API along with the validation code if required. */
-function registerBiometrics(publicKey: string, validateCode?: number) {
+function registerBiometrics(publicKey: string, validateCode: number) {
   return API.makeRequestWithSideEffects(
     SIDE_EFFECT_REQUEST_COMMANDS.REGISTER_BIOMETRICS,
     {
