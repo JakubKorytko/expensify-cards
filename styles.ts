@@ -25,7 +25,19 @@ const styles = {
   gap15: {
     gap: 15,
   },
-  layoutContainerMagicCode: {
+  textInput: {
+    backgroundColor: "#FFF",
+    borderWidth: 1,
+    borderColor: "#E6E1DA",
+    width: 250,
+    borderRadius: 10,
+    textAlign: "center",
+    letterSpacing: 5,
+    alignSelf: "center",
+    fontSize: 20,
+    marginBottom: 5,
+  },
+  layoutContainerWithModal: {
     backgroundColor: "#EBE6DF",
     filter: "blur(3px)",
   },

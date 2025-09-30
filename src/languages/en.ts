@@ -67,6 +67,8 @@ const translations = {
       badRequest: "Bad request",
       unknownResponse: "Unknown response type",
     },
+    provideValidateCode: "You need to provide the validate code to proceed",
+    provideOTPCode: "You need to provide the OTP code to proceed",
   },
   // ...
 };
