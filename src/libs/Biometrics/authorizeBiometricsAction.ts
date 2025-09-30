@@ -7,6 +7,7 @@ import {
   BiometricsAuthFactors,
   DeviceBiometricsStatus,
   BiometricsDeviceStatusMapKey,
+  BiometricsStatusWithOTP,
 } from "@libs/Biometrics/types";
 
 /**
@@ -86,6 +87,8 @@ function verifyRequiredFactors({
 
 /**
  * Returns a list of required authorization factors based on the current device biometrics status.
+ * This mostly applies to authorization process,
+ * but if the factors include validateCode, it also applies to the authentication.
  */
 function getBiometricsAuthorizationFactors(): Promise<BiometricsAuthFactor[]> {
   return getDeviceBiometricsStatus().then((deviceStatus) =>
@@ -160,12 +163,7 @@ function authorizeBiometricsAction<T extends BiometricsDeviceStatusMapKey>(
   transactionID: string,
   factors: BiometricsAuthFactors<T>,
   isValidateCodeVerified: boolean = true,
-): Promise<
-  BiometricsStatus<{
-    successful: boolean;
-    isOTPRequired: boolean;
-  }>
-> {
+): Promise<BiometricsStatusWithOTP> {
   const factorsCheckResult = areBiometricsFactorsSufficient(
     deviceStatus,
     factors,

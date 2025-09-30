@@ -1,5 +1,6 @@
 import { ValueOf } from "type-fest";
 import CONST from "@src/CONST";
+import { BiometricsStatus } from "@hooks/useBiometrics/types";
 
 type DeviceBiometricsStatus = ValueOf<
   typeof CONST.BIOMETRICS.DEVICE_BIOMETRICS_STATUS
@@ -29,8 +30,14 @@ type BiometricsAuthFactors<T extends DeviceBiometricsStatus> = {
     : K["type"];
 };
 
+type BiometricsStatusWithOTP = BiometricsStatus<{
+  successful: boolean;
+  isOTPRequired: boolean;
+}>;
+
 export type {
   DeviceBiometricsStatus,
+  BiometricsStatusWithOTP,
   BiometricsAuthFactors,
   BiometricsAuthFactor,
   BiometricsDeviceStatusMapKey,

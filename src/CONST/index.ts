@@ -71,7 +71,7 @@ const CONST = {
       },
     },
     /** What does action's feedback refer to? Which part of biometrics is impacted by it? */
-    FEEDBACK_TYPE: {
+    ACTION_TYPE: {
       NONE: "None",
       CHALLENGE: "Challenge",
       KEY: "Key",

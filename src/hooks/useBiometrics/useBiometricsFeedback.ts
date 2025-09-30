@@ -4,7 +4,7 @@ import CONST from "@src/CONST";
 import type { BiometricsStatus, Feedback } from "./types";
 import type { ValueOf } from "type-fest";
 
-type FeedbackKeyType = ValueOf<typeof CONST.BIOMETRICS.FEEDBACK_TYPE>;
+type FeedbackKeyType = ValueOf<typeof CONST.BIOMETRICS.ACTION_TYPE>;
 type AuthTypeName = ValueOf<typeof CONST.BIOMETRICS.AUTH_TYPE>["NAME"];
 
 /**
@@ -51,9 +51,7 @@ export default function useBiometricsFeedback() {
 
   const [challenge, setChallenge] = useState(emptyAuth);
   const [key, setKey] = useState(emptyAuth);
-  const lastAction = useRef<FeedbackKeyType>(
-    CONST.BIOMETRICS.FEEDBACK_TYPE.NONE,
-  );
+  const lastAction = useRef<FeedbackKeyType>(CONST.BIOMETRICS.ACTION_TYPE.NONE);
 
   /** Internal helper method to create a feedback based on its type (either challenge or key)  */
   const createFeedback = useCallback(
@@ -87,7 +85,7 @@ export default function useBiometricsFeedback() {
       authData: BiometricsStatus<boolean>,
       type: FeedbackKeyType,
     ): BiometricsStatus<boolean> => {
-      const isChallengeType = type === CONST.BIOMETRICS.FEEDBACK_TYPE.CHALLENGE;
+      const isChallengeType = type === CONST.BIOMETRICS.ACTION_TYPE.CHALLENGE;
       const createdFeedback = createFeedback(authData, isChallengeType);
 
       if (isChallengeType) {
@@ -105,9 +103,9 @@ export default function useBiometricsFeedback() {
   /** Feedback object, for detailed documentation see type in the types file */
   const feedback: Feedback = useMemo(() => {
     const lastActionMap = {
-      [CONST.BIOMETRICS.FEEDBACK_TYPE.KEY]: key,
-      [CONST.BIOMETRICS.FEEDBACK_TYPE.CHALLENGE]: challenge,
-      [CONST.BIOMETRICS.FEEDBACK_TYPE.NONE]: emptyAuth,
+      [CONST.BIOMETRICS.ACTION_TYPE.KEY]: key,
+      [CONST.BIOMETRICS.ACTION_TYPE.CHALLENGE]: challenge,
+      [CONST.BIOMETRICS.ACTION_TYPE.NONE]: emptyAuth,
     };
 
     const { message, title, value } = lastActionMap[lastAction.current];
