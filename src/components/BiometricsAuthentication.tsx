@@ -1,5 +1,4 @@
 import { useState } from "react";
-import useBiometrics from "@hooks/useBiometrics";
 import {
   Text,
   TouchableOpacity,
@@ -11,6 +10,7 @@ import BiometricsInfoModal from "@src/components/BiometricsInfoModal";
 import CONST from "@src/CONST";
 import BiometricsInputModal from "@src/components/BiometricsInputModal";
 import useLocalize from "@hooks/useLocalize";
+import useBiometricsAuthentication from "../hooks/useBiometricsAuthentication";
 
 type BiometricsAuthenticationProps = {
   transactionID: string;
@@ -25,32 +25,40 @@ function BiometricsAuthentication({
   transactionID,
 }: BiometricsAuthenticationProps) {
   const { translate } = useLocalize();
-  const [biometrics, authorize] = useBiometrics();
+  const [status, methods] = useBiometricsAuthentication();
   const [showModal, setShowModal] = useState<boolean>(false);
 
   const authorizeWithModal = async (props: AuthorizeWithModal = {}) => {
     setShowModal(false);
-    await authorize({
+
+    await methods.register({
       ...props,
-      transactionID,
     });
+
     setShowModal(true);
   };
 
+  console.log(status);
+
   return (
     <>
-      <TouchableWithoutFeedback onPress={() => setShowModal(false)}>
+      <TouchableWithoutFeedback
+        onPress={() => {
+          methods.fulfill();
+        }}
+      >
         <View
           style={[
             styles.layoutContainer,
-            showModal && styles.layoutContainerWithModal,
+            showModal &&
+              (status.isRequestFulfilled || status.requiredFactorForNextStep) &&
+              styles.layoutContainerWithModal,
           ]}
         >
           <View style={styles.container}>
             <View style={styles.content}>
               <Text style={styles.title}>
-                Biometrics (
-                {biometrics.configured ? "Registered" : "Not registered"})
+                {translate("biometrics.title", status.isBiometryConfigured)}
               </Text>
               <View style={styles.buttonContainer}>
                 <TouchableOpacity
@@ -59,25 +67,37 @@ function BiometricsAuthentication({
                 >
                   <Text style={styles.buttonText}>Test</Text>
                 </TouchableOpacity>
+
+                {status.isBiometryConfigured && (
+                  <TouchableOpacity
+                    style={styles.buttonNegativeSmall}
+                    onPress={() => methods.resetSetup()}
+                  >
+                    <Text style={styles.buttonTextNegative}>Remove</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           </View>
         </View>
       </TouchableWithoutFeedback>
-      {showModal && (
+      {showModal && status.isRequestFulfilled && (
         <BiometricsInfoModal
-          feedback={biometrics.feedback}
+          message={status.message}
+          title={status.title}
+          success={status.wasRecentStepSuccessful}
           onClose={() => setShowModal(false)}
         />
       )}
-      {biometrics.requiredFactor ===
+      {status.requiredFactorForNextStep ===
         CONST.BIOMETRICS.AUTH_FACTORS.VALIDATE_CODE && (
         <BiometricsInputModal
           onSubmit={(validateCode) => authorizeWithModal({ validateCode })}
           title={translate("biometrics.provideValidateCode")}
         />
       )}
-      {biometrics.requiredFactor === CONST.BIOMETRICS.AUTH_FACTORS.OTP && (
+      {status.requiredFactorForNextStep ===
+        CONST.BIOMETRICS.AUTH_FACTORS.OTP && (
         <BiometricsInputModal
           onSubmit={(otp) => authorizeWithModal({ otp })}
           title={translate("biometrics.provideOTPCode")}
