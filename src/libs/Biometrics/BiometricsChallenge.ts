@@ -1,9 +1,6 @@
 import type { BiometricsStatus } from "@hooks/useBiometrics/types";
 import type { TranslationPaths } from "@src/languages/types";
-import {
-  BiometricsPrivateKeyStore,
-  BiometricsPublicKeyStore,
-} from "@libs/Biometrics/BiometricsKeyStore";
+import { BiometricsPrivateKeyStore } from "@libs/Biometrics/BiometricsKeyStore";
 import { signToken as signTokenED25519 } from "@libs/ED25519";
 import { requestBiometricsChallenge } from "@libs/actions/Biometrics";
 import authorizeBiometricsAction from "@libs/Biometrics/authorizeBiometricsAction";
@@ -29,16 +26,6 @@ class BiometricsChallenge {
     this.transactionID = transactionID;
   }
 
-  /**
-   * Internal helper method to remove both keys from SecureStore
-   * Called when the keys are stored on the device but not on the backend.
-   */
-  private resetKeys(): Promise<BiometricsStatus<boolean>> {
-    return BiometricsPrivateKeyStore.delete().then(() =>
-      BiometricsPublicKeyStore.delete(),
-    );
-  }
-
   /** Internal helper method to create an error value object */
   private createErrorReturnValue(
     reasonKey: TranslationPaths,
@@ -56,10 +43,17 @@ class BiometricsChallenge {
         Promise.all([
           challenge,
           reason,
-          httpCode === 401 ? this.resetKeys() : Promise.resolve({}),
+          httpCode === 401 ? Promise.resolve(false) : Promise.resolve(true),
         ]),
       )
-      .then(([challenge, apiReason]) => {
+      .then(([challenge, apiReason, syncedBE]) => {
+        if (!syncedBE) {
+          return {
+            value: false,
+            reason: "biometrics.reason.error.keyMissingOnTheBE",
+          };
+        }
+
         const challengeString = !!challenge
           ? JSON.stringify(challenge)
           : undefined;

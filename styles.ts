@@ -90,6 +90,15 @@ const styles = {
     paddingVertical: 10,
     backgroundColor: "#F25730",
   },
+  buttonNegativeSmall: {
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    width: 80,
+    paddingVertical: 10,
+    backgroundColor: "#F25730",
+  },
   buttonTextNegative: {
     color: "#fff",
     fontWeight: "bold",

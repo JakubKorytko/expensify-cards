@@ -28,6 +28,7 @@ class BiometricsKeyStore {
       failOnDuplicate: isPrivateKey,
       requireAuthentication: isPrivateKey,
       askForAuthOnSave: isPrivateKey,
+      authenticationPrompt: "We can add our custom message here!",
       keychainService: CONST.BIOMETRICS.KEYCHAIN_SERVICE,
       keychainAccessible: SecureStore.WHEN_PASSCODE_SET_THIS_DEVICE_ONLY,
       enableCredentialsAlternative: true,

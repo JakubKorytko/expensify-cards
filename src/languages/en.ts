@@ -35,6 +35,9 @@ const translations = {
         challengeRejected: "API rejected the challenge",
         validateCodeMissing: "Validation code is missing",
         otpMissing: "OTP code is missing",
+        keyMissingOnTheBE:
+          "Key is stored locally but is missing on the backend",
+        biometricsNotSupported: "Biometrics are not supported on this device",
       },
       expoErrors: {
         notInForeground: "App is not in the foreground",
@@ -59,6 +62,8 @@ const translations = {
       keyAlreadyRegistered: "Public key is already registered",
       validationCodeRequired: "Validation code is required",
       validationCodeInvalid: "Validation code is invalid",
+      otpCodeInvalid: "OTP code is invalid",
+      otpCodeRequired: "OTP code is required",
       biometricsSuccess: "Biometrics registered successfully",
       noTransactionID: "No transaction ID provided",
       userNotRegistered: "User is not registered",

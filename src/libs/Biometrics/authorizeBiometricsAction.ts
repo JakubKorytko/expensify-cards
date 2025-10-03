@@ -1,4 +1,4 @@
-import { BiometricsStatus } from "@hooks/useBiometrics/types";
+import { BiometricsStatus, BiometricsStep } from "@hooks/useBiometrics/types";
 import CONST from "@src/CONST";
 import { authorizeTransaction } from "../actions/Biometrics";
 import { BiometricsPublicKeyStore } from "@libs/Biometrics/BiometricsKeyStore";
@@ -49,7 +49,7 @@ function verifyRequiredFactors({
   validateCode?: number;
   requiredFactors: BiometricsAuthFactor[];
   isValidateCodeVerified: boolean;
-}): BiometricsStatus<boolean> {
+}): BiometricsStatus<BiometricsAuthFactor | true> {
   const isValidateCodeRequired = requiredFactors.includes(
     CONST.BIOMETRICS.AUTH_FACTORS.VALIDATE_CODE,
   );
@@ -67,14 +67,14 @@ function verifyRequiredFactors({
   /** Check that we have everything we need to proceed */
   if (isValidateCodeRequired && !validateCode) {
     return {
-      value: false,
+      value: CONST.BIOMETRICS.AUTH_FACTORS.VALIDATE_CODE,
       reason: "biometrics.reason.error.validateCodeMissing",
     };
   }
 
   if (isOtpRequired && !otp) {
     return {
-      value: false,
+      value: CONST.BIOMETRICS.AUTH_FACTORS.OTP,
       reason: "biometrics.reason.error.otpMissing",
     };
   }

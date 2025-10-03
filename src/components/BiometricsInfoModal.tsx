@@ -1,14 +1,18 @@
 import { Text, TouchableOpacity, View } from "react-native";
 import styles from "@/styles";
-import { Feedback } from "@hooks/useBiometrics/types";
+import { BiometricsStep, SingleFeedback } from "@hooks/useBiometrics/types";
 
 type BiometricsInfoModalProps = {
   onClose?: () => void;
-  feedback: Feedback;
+  title?: string;
+  message?: string;
+  error?: boolean;
 };
 
 function BiometricsInfoModal({
-  feedback: { title, message, value },
+  error = false,
+  title,
+  message,
   onClose,
 }: BiometricsInfoModalProps) {
   return (
@@ -18,11 +22,11 @@ function BiometricsInfoModal({
         <Text>{message}</Text>
       </View>
       <TouchableOpacity
-        style={value ? styles.greenButton : styles.buttonNegative}
+        style={!error ? styles.greenButton : styles.buttonNegative}
         onPress={onClose}
       >
         <Text
-          style={value ? styles.greenButtonText : styles.buttonTextNegative}
+          style={!error ? styles.greenButtonText : styles.buttonTextNegative}
         >
           Got it
         </Text>

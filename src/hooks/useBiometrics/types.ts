@@ -2,9 +2,9 @@ import type { TranslationPaths } from "@src/languages/types";
 import type { ValueOf } from "type-fest";
 import { AUTH_TYPE } from "expo-secure-store";
 import CONST from "@src/CONST";
+import { BiometricsAuthFactor } from "@libs/Biometrics/types";
 
 type BiometricsAuthenticationParams = {
-  type?: ValueOf<typeof CONST.BIOMETRICS.ACTION_TYPE>;
   validateCode?: number;
   transactionID?: string;
   otp?: number;
@@ -12,26 +12,28 @@ type BiometricsAuthenticationParams = {
 
 type BiometricsAuthorizationParams = {
   otp?: number;
-  validateCode: number;
+  validateCode?: number;
   transactionID: string;
-  isValidateCodeVerified: boolean;
 };
 
 type BiometricsStep = {
-  requiredFactor: string | undefined;
-  done: boolean;
+  wasRecentStepSuccessful: boolean | undefined;
+  requiredFactorForNextStep: BiometricsAuthFactor | undefined;
+  isRequestFulfilled: boolean;
 };
 
 type BiometricsStepWithStatus = BiometricsStep & {
-  configured: boolean;
+  isBiometryConfigured: boolean;
 };
 
 /** Value returned by the useBiometrics hook. */
 type Biometrics = [
-  BiometricsStepWithStatus & {
-    feedback: Feedback;
-  },
-  (params?: BiometricsAuthenticationParams) => Promise<BiometricsStep>,
+  BiometricsStepWithStatus & BiometricsStatus<BiometricsStep>,
+  (
+    params: BiometricsAuthorizationParams,
+  ) => Promise<BiometricsStatus<BiometricsStep>>,
+  () => void,
+  () => void,
 ];
 
 /**
@@ -39,12 +41,12 @@ type Biometrics = [
  * The message, value and title props are useful if we just want to display latest action result
  * and do not need to specify whether it was challenge or key related.
  */
-type Feedback = {
+type Feedback<T> = {
   /** Latest challenge-related action status */
-  challenge: BiometricsStatus<boolean>;
+  challenge: BiometricsStatus<T>;
 
   /** Latest key-related action status */
-  key: BiometricsStatus<boolean>;
+  key: BiometricsStatus<T>;
 
   /** Latest action status message */
   message: string;
@@ -53,7 +55,12 @@ type Feedback = {
   title: string;
 
   /** Was the latest action successful? */
-  value: boolean;
+  value: T;
+};
+
+type SingleFeedback<T> = BiometricsStatus<T> & {
+  message: string;
+  title: string;
 };
 
 /**
@@ -82,8 +89,26 @@ type BiometricsStatus<T> = {
   title?: string;
 };
 
+type FeedbackKeyType = ValueOf<typeof CONST.BIOMETRICS.ACTION_TYPE>;
+
+type SetFeedback<T> = (
+  authData:
+    | BiometricsStatus<T>
+    | ((prevFeedback: BiometricsStatus<T>) => BiometricsStatus<T>),
+  type: FeedbackKeyType,
+) => BiometricsStatus<T>;
+
+type SetSingleFeedback<T> = (
+  authData:
+    | BiometricsStatus<T>
+    | ((prevFeedback: BiometricsStatus<T>) => BiometricsStatus<T>),
+) => BiometricsStatus<T>;
+
 export type {
   Feedback,
+  SingleFeedback,
+  SetFeedback,
+  SetSingleFeedback,
   Biometrics,
   BiometricsStatus,
   BiometricsStep,

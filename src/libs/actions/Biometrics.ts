@@ -23,6 +23,7 @@ const RESPONSE_TRANSLATION_PATH = {
     409: "unableToAuthorize",
     200: "userAuthorized",
     400: "badRequest",
+    202: "otpCodeRequired",
   },
 } as const;
 
