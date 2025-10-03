@@ -70,7 +70,7 @@ const CONST = {
         NAME: "OpticID",
       },
     },
-    /** What does action's feedback refer to? Which part of biometrics is impacted by it? */
+    /** What does action's status refer to? Which part of biometrics is impacted by it? */
     ACTION_TYPE: {
       NONE: "None",
       CHALLENGE: "Challenge",

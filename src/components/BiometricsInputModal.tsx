@@ -11,9 +11,9 @@ function BiometricsInputModal({ onSubmit, title }: InputModalProps) {
   const [inputValue, setInputValue] = useState("");
 
   return (
-    <View style={styles.callbackContainer}>
-      <View style={styles.gap15}>
-        <Text style={styles.hugeText}>{title}</Text>
+    <View style={styles.inputContainer}>
+      <Text style={styles.hugeText}>{title}</Text>
+      <View style={styles.innerInputContainer}>
         <TextInput
           onChangeText={(text) => setInputValue(text)}
           value={inputValue}
@@ -22,13 +22,13 @@ function BiometricsInputModal({ onSubmit, title }: InputModalProps) {
           maxLength={6}
           style={styles.textInput}
         />
+        <TouchableOpacity
+          style={styles.greenButton}
+          onPress={() => onSubmit(Number(inputValue))}
+        >
+          <Text style={styles.greenButtonText}>Authorize</Text>
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        style={styles.greenButton}
-        onPress={() => onSubmit(Number(inputValue))}
-      >
-        <Text style={styles.greenButtonText}>Authorize</Text>
-      </TouchableOpacity>
     </View>
   );
 }
