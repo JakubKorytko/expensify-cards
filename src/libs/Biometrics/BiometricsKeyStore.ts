@@ -1,9 +1,9 @@
 import * as SecureStore from "expo-secure-store";
 import CONST from "@src/CONST";
-import type { BiometricsStatus } from "@hooks/useBiometrics/types";
 import type { TranslationPaths } from "@src/languages/types";
 import type { ValueOf } from "type-fest";
 import decodeBiometricsExpoMessage from "@libs/Biometrics/decodeBiometricsExpoMessage";
+import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
 
 /**
  * Proxy-like class with CRUD methods to access the SecureStore
@@ -43,7 +43,7 @@ class BiometricsKeyStore {
   }
 
   /** IMPORTANT: Using this method on BiometricsPrivateKeyStore object will display authentication prompt */
-  public set(value: string): Promise<BiometricsStatus<boolean>> {
+  public set(value: string): Promise<BiometricsPartialStatus<boolean>> {
     return SecureStore.setItemAsync(this.key, value, this.options)
       .then((type) => ({
         value: true,
@@ -60,7 +60,7 @@ class BiometricsKeyStore {
       }));
   }
 
-  public delete(): Promise<BiometricsStatus<boolean>> {
+  public delete(): Promise<BiometricsPartialStatus<boolean>> {
     return SecureStore.deleteItemAsync(this.key, {
       keychainService: CONST.BIOMETRICS.KEYCHAIN_SERVICE,
     })
@@ -79,7 +79,7 @@ class BiometricsKeyStore {
   }
 
   /** IMPORTANT: Using this method on BiometricsPrivateKeyStore object will display authentication prompt */
-  public get(): Promise<BiometricsStatus<string | null>> {
+  public get(): Promise<BiometricsPartialStatus<string | null>> {
     return SecureStore.getItemAsync(this.key, this.options)
       .then(([key, type]) => ({
         value: key,

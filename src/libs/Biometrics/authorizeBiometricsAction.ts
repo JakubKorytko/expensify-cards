@@ -7,8 +7,9 @@ import {
   BiometricsAuthFactors,
   DeviceBiometricsStatus,
   BiometricsDeviceStatusMapKey,
-  BiometricsStatusWithOTP,
+  BiometricsPartialStatusWithOTP,
 } from "@libs/Biometrics/types";
+import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
 
 /**
  * Determines the current biometrics device status.
@@ -49,7 +50,7 @@ function verifyRequiredFactors({
   validateCode?: number;
   requiredFactors: BiometricsAuthFactor[];
   isValidateCodeVerified: boolean;
-}): BiometricsStatus<boolean> {
+}): BiometricsPartialStatus<BiometricsAuthFactor | true> {
   const isValidateCodeRequired = requiredFactors.includes(
     CONST.BIOMETRICS.AUTH_FACTORS.VALIDATE_CODE,
   );
@@ -67,14 +68,14 @@ function verifyRequiredFactors({
   /** Check that we have everything we need to proceed */
   if (isValidateCodeRequired && !validateCode) {
     return {
-      value: false,
+      value: CONST.BIOMETRICS.AUTH_FACTORS.VALIDATE_CODE,
       reason: "biometrics.reason.error.validateCodeMissing",
     };
   }
 
   if (isOtpRequired && !otp) {
     return {
-      value: false,
+      value: CONST.BIOMETRICS.AUTH_FACTORS.OTP,
       reason: "biometrics.reason.error.otpMissing",
     };
   }
@@ -105,7 +106,7 @@ function areBiometricsFactorsSufficient<T extends DeviceBiometricsStatus>(
   deviceStatus: T,
   factors: BiometricsAuthFactors<T>,
   isValidateCodeVerified: boolean,
-): BiometricsStatus<boolean> {
+): BiometricsPartialStatus<true | string> {
   const requiredFactors =
     CONST.BIOMETRICS.DEVICE_STATUS_FACTORS_MAP[deviceStatus];
 
@@ -141,9 +142,8 @@ function areBiometricsFactorsSufficient<T extends DeviceBiometricsStatus>(
 
     if (message) {
       return {
-        value: false,
+        value: message,
         reason: "biometrics.reason.generic.authFactorsError",
-        message,
       };
     }
   }
@@ -163,14 +163,14 @@ function authorizeBiometricsAction<T extends BiometricsDeviceStatusMapKey>(
   transactionID: string,
   factors: BiometricsAuthFactors<T>,
   isValidateCodeVerified: boolean = true,
-): Promise<BiometricsStatusWithOTP> {
+): Promise<BiometricsPartialStatusWithOTP> {
   const factorsCheckResult = areBiometricsFactorsSufficient(
     deviceStatus,
     factors,
     isValidateCodeVerified,
   );
 
-  if (!factorsCheckResult.value) {
+  if (factorsCheckResult.value !== true) {
     return Promise.resolve({
       ...factorsCheckResult,
       value: {

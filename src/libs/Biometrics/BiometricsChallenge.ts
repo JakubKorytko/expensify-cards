@@ -1,13 +1,10 @@
-import type { BiometricsStatus } from "@hooks/useBiometrics/types";
 import type { TranslationPaths } from "@src/languages/types";
-import {
-  BiometricsPrivateKeyStore,
-  BiometricsPublicKeyStore,
-} from "@libs/Biometrics/BiometricsKeyStore";
+import { BiometricsPrivateKeyStore } from "@libs/Biometrics/BiometricsKeyStore";
 import { signToken as signTokenED25519 } from "@libs/ED25519";
 import { requestBiometricsChallenge } from "@libs/actions/Biometrics";
 import authorizeBiometricsAction from "@libs/Biometrics/authorizeBiometricsAction";
 import CONST from "@src/CONST";
+import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
 
 /**
  * This class can be used to create an object associated with a transaction.
@@ -20,7 +17,7 @@ import CONST from "@src/CONST";
  */
 class BiometricsChallenge {
   /** Current status of the auth process */
-  private auth: BiometricsStatus<string | undefined> = {
+  private auth: BiometricsPartialStatus<string | undefined> = {
     value: undefined,
     reason: "biometrics.reason.generic.notRequested",
   };
@@ -29,20 +26,10 @@ class BiometricsChallenge {
     this.transactionID = transactionID;
   }
 
-  /**
-   * Internal helper method to remove both keys from SecureStore
-   * Called when the keys are stored on the device but not on the backend.
-   */
-  private resetKeys(): Promise<BiometricsStatus<boolean>> {
-    return BiometricsPrivateKeyStore.delete().then(() =>
-      BiometricsPublicKeyStore.delete(),
-    );
-  }
-
   /** Internal helper method to create an error value object */
   private createErrorReturnValue(
     reasonKey: TranslationPaths,
-  ): BiometricsStatus<boolean> {
+  ): BiometricsPartialStatus<boolean> {
     return {
       value: false,
       reason: reasonKey,
@@ -50,16 +37,23 @@ class BiometricsChallenge {
   }
 
   /** Request challenge from the API */
-  public request(): Promise<BiometricsStatus<boolean>> {
+  public request(): Promise<BiometricsPartialStatus<boolean>> {
     return requestBiometricsChallenge()
       .then(({ httpCode, challenge, reason }) =>
         Promise.all([
           challenge,
           reason,
-          httpCode === 401 ? this.resetKeys() : Promise.resolve({}),
+          httpCode === 401 ? Promise.resolve(false) : Promise.resolve(true),
         ]),
       )
-      .then(([challenge, apiReason]) => {
+      .then(([challenge, apiReason, syncedBE]) => {
+        if (!syncedBE) {
+          return {
+            value: false,
+            reason: "biometrics.reason.error.keyMissingOnTheBE",
+          };
+        }
+
         const challengeString = !!challenge
           ? JSON.stringify(challenge)
           : undefined;
@@ -91,8 +85,8 @@ class BiometricsChallenge {
    * IMPORTANT: Using this method will display authentication prompt
    */
   public sign(
-    chainedPrivateKeyStatus?: BiometricsStatus<string | null>,
-  ): Promise<BiometricsStatus<boolean>> {
+    chainedPrivateKeyStatus?: BiometricsPartialStatus<string | null>,
+  ): Promise<BiometricsPartialStatus<boolean>> {
     const {
       auth: { value: authValue },
     } = this;
@@ -132,7 +126,9 @@ class BiometricsChallenge {
    * If the device is not configured for biometrics, or it is re-registering, a validation code must be provided.
    * This function assumes that if the validation code is provided, the device is not configured for biometrics.
    */
-  public send(validateCode?: number): Promise<BiometricsStatus<boolean>> {
+  public send(
+    validateCode?: number,
+  ): Promise<BiometricsPartialStatus<boolean>> {
     if (!this.auth.value) {
       return Promise.resolve(
         this.createErrorReturnValue("biometrics.reason.error.signatureMissing"),
