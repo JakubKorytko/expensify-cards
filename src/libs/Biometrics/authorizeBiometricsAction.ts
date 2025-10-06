@@ -1,9 +1,9 @@
 import CONST from "@src/CONST";
 import { authorizeTransaction } from "../actions/Biometrics";
 import {
-  BiometricsAuthFactors,
-  DeviceBiometricsStatus,
-  BiometricsDeviceStatusMapKey,
+  BiometricsFactors,
+  BiometricsAction,
+  BiometricsActionMapKey,
   BiometricsPartialStatusWithOTP,
 } from "@libs/Biometrics/types";
 import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
@@ -13,16 +13,15 @@ import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
  * Checks each factor's presence, type, and length requirements.
  * Skips OTP validation if the validation code hasn't been verified yet.
  */
-function areBiometricsFactorsSufficient<T extends DeviceBiometricsStatus>(
-  deviceStatus: T,
-  factors: BiometricsAuthFactors<T>,
+function areBiometricsFactorsSufficient<T extends BiometricsAction>(
+  action: T,
+  factors: BiometricsFactors<T>,
   isValidateCodeVerified: boolean,
 ): BiometricsPartialStatus<true | string, true> {
-  const requiredFactors =
-    CONST.BIOMETRICS.DEVICE_STATUS_FACTORS_MAP[deviceStatus];
+  const requiredFactors = CONST.BIOMETRICS.ACTION_FACTORS_MAP[action];
 
   for (const { id, parameter, name, type, length } of requiredFactors) {
-    if (id === CONST.BIOMETRICS.AUTH_FACTORS.OTP && !isValidateCodeVerified) {
+    if (id === CONST.BIOMETRICS.FACTORS.OTP && !isValidateCodeVerified) {
       continue;
     }
 
@@ -33,7 +32,7 @@ function areBiometricsFactorsSufficient<T extends DeviceBiometricsStatus>(
       };
     }
 
-    const value = factors[parameter as keyof BiometricsAuthFactors<T>];
+    const value = factors[parameter as keyof BiometricsFactors<T>];
 
     if (typeof value !== typeof type) {
       return {
@@ -62,16 +61,14 @@ function areBiometricsFactorsSufficient<T extends DeviceBiometricsStatus>(
  * Then sends the authorization request to the server.
  * Returns whether the authorization was successful and if additional OTP verification is needed.
  */
-async function authorizeBiometricsAction<
-  T extends BiometricsDeviceStatusMapKey,
->(
-  deviceStatus: T,
+async function authorizeBiometricsAction<T extends BiometricsActionMapKey>(
+  action: T,
   transactionID: string,
-  factors: BiometricsAuthFactors<T>,
+  factors: BiometricsFactors<T>,
   isValidateCodeVerified: boolean = true,
 ): Promise<BiometricsPartialStatusWithOTP> {
   const factorsCheckResult = areBiometricsFactorsSufficient(
-    deviceStatus,
+    action,
     factors,
     isValidateCodeVerified,
   );

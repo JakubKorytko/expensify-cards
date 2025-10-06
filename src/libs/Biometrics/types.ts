@@ -3,25 +3,22 @@ import CONST from "@src/CONST";
 import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
 
 /**
- * Represents the current biometric status of the device, such as whether biometrics are 
+ * Represents the current biometric status of the device, such as whether biometrics are
  * configured, supported, or disabled.
  */
-type DeviceBiometricsStatus = ValueOf<
-  typeof CONST.BIOMETRICS.DEVICE_BIOMETRICS_STATUS
->;
+type BiometricsAction = ValueOf<typeof CONST.BIOMETRICS.ACTION>;
 
 /**
  * Represents a single authentication factor used in biometric flows, like signatures
  * or validation codes.
  */
-type BiometricsAuthFactor = ValueOf<typeof CONST.BIOMETRICS.AUTH_FACTORS>;
+type BiometricsFactor = ValueOf<typeof CONST.BIOMETRICS.FACTORS>;
 
 /**
  * Keys used to look up required authentication factors for different device statuses
  * in the device status factors map.
  */
-type BiometricsDeviceStatusMapKey =
-  keyof typeof CONST.BIOMETRICS.DEVICE_STATUS_FACTORS_MAP;
+type BiometricsActionMapKey = keyof typeof CONST.BIOMETRICS.ACTION_FACTORS_MAP;
 
 /**
  * Maps the required authentication factors based on the device's biometric status.
@@ -29,14 +26,14 @@ type BiometricsDeviceStatusMapKey =
  * and the value is the corresponding type for that parameter.
  * Optional parameters will have an undefined union type.
  *
- * For example, when device status is "NOT_CONFIGURED", the type would be:
+ * For example, when device status is "AUTHORIZE_TRANSACTION_WITH_VALIDATE_CODE", the type would be:
  * {
  *  signedChallenge: string;
  *  validateCode: number;
  * }
  */
-type BiometricsAuthFactors<T extends DeviceBiometricsStatus> = {
-  [K in (typeof CONST.BIOMETRICS.DEVICE_STATUS_FACTORS_MAP)[T][number] as K["parameter"]]: K extends {
+type BiometricsFactors<T extends BiometricsAction> = {
+  [K in (typeof CONST.BIOMETRICS.ACTION_FACTORS_MAP)[T][number] as K["parameter"]]: K extends {
     optional: true;
   }
     ? K["type"] | undefined
@@ -44,18 +41,21 @@ type BiometricsAuthFactors<T extends DeviceBiometricsStatus> = {
 };
 
 /**
- * Status type that includes whether authentication was successful and if an 
+ * Status type that includes whether authentication was successful and if an
  * additional OTP (one-time password) verification is required.
  */
-type BiometricsPartialStatusWithOTP = BiometricsPartialStatus<{
-  successful: boolean;
-  isOTPRequired: boolean;
-}, true>;
+type BiometricsPartialStatusWithOTP = BiometricsPartialStatus<
+  {
+    successful: boolean;
+    isOTPRequired: boolean;
+  },
+  true
+>;
 
 export type {
-  DeviceBiometricsStatus,
+  BiometricsAction,
   BiometricsPartialStatusWithOTP,
-  BiometricsAuthFactors,
-  BiometricsAuthFactor,
-  BiometricsDeviceStatusMapKey,
+  BiometricsFactors,
+  BiometricsFactor,
+  BiometricsActionMapKey,
 };

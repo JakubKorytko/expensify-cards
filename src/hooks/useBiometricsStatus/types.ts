@@ -2,7 +2,7 @@ import type { ValueOf } from "type-fest";
 import { TranslationPaths } from "@src/languages/types";
 import { AUTH_TYPE } from "expo-secure-store";
 import CONST from "@src/CONST";
-import { BiometricsAuthFactor } from "@libs/Biometrics/types";
+import { BiometricsFactor } from "@libs/Biometrics/types";
 
 /**
  * Represents the step of the biometric operation.
@@ -10,38 +10,43 @@ import { BiometricsAuthFactor } from "@libs/Biometrics/types";
 type BiometricsStep = {
   /** Whether the recent step was successful */
   wasRecentStepSuccessful: boolean | undefined;
-  
+
   /** The required factor for the next step */
-  requiredFactorForNextStep: BiometricsAuthFactor | undefined;
+  requiredFactorForNextStep: BiometricsFactor | undefined;
 
   /** Whether the request has been fulfilled */
   isRequestFulfilled: boolean;
 };
 
-type BiometricsPartialStatusConditional<omitStatus> = omitStatus extends false ? {
-  /** The status of the biometric operation */
-  status: BiometricsStep;
-} : {};
+type BiometricsPartialStatusConditional<omitStatus> = omitStatus extends false
+  ? {
+      /** The status of the biometric operation */
+      step: BiometricsStep;
+    }
+  : object;
 
 /**
  * Represents the core status information for biometric operations.
  * @template T - The type of the value of the biometric operation.
  * @template omitStatus - Whether to omit the status from the partial status.
-*/
-type BiometricsPartialStatus<T, omitStatus = false> = BiometricsPartialStatusConditional<omitStatus> & {
-  /** 
+ */
+type BiometricsPartialStatus<
+  T,
+  omitStatus = false,
+> = BiometricsPartialStatusConditional<omitStatus> & {
+  /**
    * The result value of the biometric operation.
    * Can be of various types depending on the operation, commonly boolean or string.
    */
   value: T;
 
-  /** 
+  /**
    * Translation key explaining the current status or error condition.
    * Used to provide user feedback about what happened.
    */
   reason: TranslationPaths;
 
-  /** 
+  /**
    * The numeric authentication type identifier from SecureStore.
    * Indicates which authentication method was used (e.g. biometric, passcode).
    */
@@ -53,11 +58,14 @@ type BiometricsPartialStatus<T, omitStatus = false> = BiometricsPartialStatusCon
  * Used to track and communicate the full state of biometric authentication/authorization,
  * including user-facing messages and authentication details.
  */
-type BiometricsStatus<T, omitStatus = false> = BiometricsPartialStatus<T, omitStatus> & {
+type BiometricsStatus<T, omitStatus = false> = BiometricsPartialStatus<
+  T,
+  omitStatus
+> & {
   /** Human-readable name of the authentication method used */
   typeName?: string;
 
-  /** 
+  /**
    * Formatted message combining status, reason, and authentication type
    * for displaying detailed feedback to users
    */

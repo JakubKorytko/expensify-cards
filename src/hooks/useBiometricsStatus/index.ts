@@ -12,14 +12,14 @@ import { getAuthTypeName } from "./helpers";
 
 /**
  * A hook that manages biometrics status state and messaging.
- * 
+ *
  * Acts as middleware to format biometrics-related messages into a consistent, readable format.
  * This allows the main biometrics hook to focus solely on biometric operations.
- * 
+ *
  * Returns the current biometrics status and a setter function. The status includes
  * success/failure messages, titles, and authentication details for both challenge
  * and key-related actions.
- * 
+ *
  * Must be implemented as a hook rather than a function to handle message translations.
  */
 export default function useBiometricsStatus<T>(
@@ -41,7 +41,7 @@ export default function useBiometricsStatus<T>(
       message: notRequestedText,
       title: notRequestedText,
       value: initialValue,
-      status: {
+      step: {
         wasRecentStepSuccessful: undefined,
         requiredFactorForNextStep: undefined,
         isRequestFulfilled: true,
@@ -84,9 +84,12 @@ export default function useBiometricsStatus<T>(
         message: translate(
           `biometrics.statusMessage.${statusType}Message`,
           authorize,
-          success ? typeName : message
+          success ? typeName : message,
         ),
-        title: translate(`biometrics.statusMessage.${statusType}Title`, authorize),
+        title: translate(
+          `biometrics.statusMessage.${statusType}Title`,
+          authorize,
+        ),
       };
     },
     [translate],
@@ -110,13 +113,14 @@ export default function useBiometricsStatus<T>(
   const setStatus: SetBiometricsStatus<T> = useCallback(
     (partialStatus) => {
       const isChallengeType = type === CONST.BIOMETRICS.ACTION_TYPE.CHALLENGE;
-      const state = typeof partialStatus === "function"
-        ? partialStatus(previousStatus.current)
-        : partialStatus;
+      const state =
+        typeof partialStatus === "function"
+          ? partialStatus(previousStatus.current)
+          : partialStatus;
 
       const success = successSource.current
         ? successSource.current(state)
-        : !!state.status.wasRecentStepSuccessful;
+        : !!state.step.wasRecentStepSuccessful;
 
       const createdStatus = createStatus(state, success, isChallengeType);
 

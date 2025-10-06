@@ -6,7 +6,7 @@ import type {
   BiometricsActions,
   BiometricsState,
 } from "./types";
-import useBiometricsAuthentication from "@hooks/useBiometricsAuthentication";
+import useBiometricsSetup from "../useBiometricsSetup";
 import useBiometricsAuthorizationFallback from "@hooks/useBiometricsAuthorizationFallback";
 import useBiometricsAuthorization from "@hooks/useBiometricsAuthorization";
 import { createRecentStatus } from "./helpers";
@@ -17,46 +17,50 @@ import { createRecentStatus } from "./helpers";
  * available actions.
  */
 function useBiometrics(): UseBiometrics {
-  const [BiometricsStatus, BiometricsStatusActions] = useBiometricsAuthentication();
+  const BiometricsSetup = useBiometricsSetup();
   const BiometricsFallback = useBiometricsAuthorizationFallback();
   const BiometricsAuthorization = useBiometricsAuthorization();
 
   const recentStatus = useRef<BiometricsRecentStatus>({
     status: BiometricsAuthorization.status,
-    fulfillMethod: BiometricsAuthorization.fulfill,
+    cancel: BiometricsAuthorization.cancel,
   });
 
   /**
    * Core authorization method that handles different biometric scenarios:
-   * 
+   *
    * - For devices without biometric support: Uses OTP and validation code fallback
    * - For unconfigured biometrics: Attempts registration first, then authorization
    * - For configured biometrics: Proceeds directly to authorization
-   * 
+   *
    * Required parameters vary by scenario:
    * - No biometric support: Requires both OTP and validation code
    * - Unconfigured biometrics: Requires validation code
    * - Configured biometrics: No additional parameters needed
-   * 
+   *
    * Will trigger authentication UI when called.
    */
   const authorize = useCallback(
-    async ({ transactionID, validateCode, otp }: Parameters<BiometricsAuthorization>[0]): Promise<BiometricsRecentStatus> => {
-      if (!BiometricsStatus.deviceSupportBiometrics) {
+    async ({
+      transactionID,
+      validateCode,
+      otp,
+    }: Parameters<BiometricsAuthorization>[0]): Promise<BiometricsRecentStatus> => {
+      if (!BiometricsSetup.deviceSupportBiometrics) {
         const result = await BiometricsFallback.authorize({
           otp,
           validateCode: validateCode!,
           transactionID,
         });
-        return createRecentStatus(result, BiometricsFallback.fulfill);
+        return createRecentStatus(result, BiometricsFallback.cancel);
       }
 
-      if (!BiometricsStatus.isBiometryConfigured) {
+      if (!BiometricsSetup.isBiometryConfigured) {
         /** Biometrics is not configured, let's do that first */
         /** Run the setup method */
-        const requestStatus = await BiometricsStatusActions.register({
+        const requestStatus = await BiometricsSetup.register({
           validateCode,
-          chainedWithAuthorization: true
+          chainedWithAuthorization: true,
         });
 
         /** Setup was successful and auto run was not disabled, let's run the challenge right away */
@@ -66,26 +70,22 @@ function useBiometrics(): UseBiometrics {
           chainedPrivateKeyStatus: requestStatus,
         });
 
-        return createRecentStatus(result, BiometricsAuthorization.fulfill);
+        return createRecentStatus(result, BiometricsAuthorization.cancel);
       }
 
       /** Biometrics is configured already, let's do the challenge logic */
-      const result = await BiometricsAuthorization.authorize({ transactionID, validateCode });
+      const result = await BiometricsAuthorization.authorize({
+        transactionID,
+        validateCode,
+      });
 
       if (result.reason === "biometrics.reason.error.keyMissingOnTheBE") {
-        await BiometricsStatusActions.resetSetup();
+        await BiometricsSetup.revoke();
       }
 
-      return createRecentStatus(result, BiometricsAuthorization.fulfill);
+      return createRecentStatus(result, BiometricsAuthorization.cancel);
     },
-    [
-      BiometricsStatus.deviceSupportBiometrics,
-      BiometricsStatus.isBiometryConfigured,
-      BiometricsAuthorization.authorize,
-      BiometricsFallback.authorize,
-      BiometricsStatusActions.register,
-      BiometricsStatusActions.resetSetup,
-    ],
+    [BiometricsSetup, BiometricsAuthorization, BiometricsFallback],
   );
 
   /**
@@ -98,47 +98,52 @@ function useBiometrics(): UseBiometrics {
       recentStatus.current = result;
       return result.status;
     },
-    [authorize]
+    [authorize],
   );
 
   /**
-   * Completes the current biometric operation by calling the stored fulfill method
+   * Cancels the current biometric operation by calling the stored cancel method
    * and updates the current status with the result.
    */
-  const fulfill = useCallback(() => {
-    const status = recentStatus.current.fulfillMethod();
+  const cancel = useCallback(() => {
+    const status = recentStatus.current.cancel();
     const newStatus = {
       ...status,
-      value: !!status.status.wasRecentStepSuccessful
+      value: !!status.step.wasRecentStepSuccessful,
     };
 
     recentStatus.current = {
       status: newStatus,
-      fulfillMethod: recentStatus.current.fulfillMethod,
+      cancel: recentStatus.current.cancel,
     };
 
     return newStatus;
   }, []);
 
-
   /** Memoized state values exposed to consumers */
-  const state: BiometricsState = useMemo(() => ({
-    isBiometryConfigured: BiometricsStatus.isBiometryConfigured,
-    ...recentStatus.current.status,
-  }), [BiometricsStatus.isBiometryConfigured, recentStatus.current.status]);
+  const state: BiometricsState = useMemo(
+    () => ({
+      isBiometryConfigured: BiometricsSetup.isBiometryConfigured,
+      ...recentStatus.current.status,
+    }),
+    [BiometricsSetup.isBiometryConfigured],
+  );
 
   /** Memoized actions exposed to consumers */
-  const actions: BiometricsActions = useMemo(() => ({
-    register: BiometricsStatusActions.register,
-    resetSetup: BiometricsStatusActions.resetSetup,
-    authorize: authorizeAndSaveRecentStatus,
-    fulfill
-  }), [
-    BiometricsStatusActions.register,
-    BiometricsStatusActions.resetSetup,
-    authorizeAndSaveRecentStatus,
-    fulfill
-  ]);
+  const actions: BiometricsActions = useMemo(
+    () => ({
+      register: BiometricsSetup.register,
+      resetSetup: BiometricsSetup.revoke,
+      authorize: authorizeAndSaveRecentStatus,
+      cancel,
+    }),
+    [
+      BiometricsSetup.register,
+      BiometricsSetup.revoke,
+      authorizeAndSaveRecentStatus,
+      cancel,
+    ],
+  );
 
   return [state, actions];
 }

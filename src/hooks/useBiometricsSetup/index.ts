@@ -7,9 +7,7 @@ import { generateKeyPair } from "@libs/ED25519";
 import { requestValidateCodeAction } from "@libs/actions/User";
 import CONST from "@src/CONST";
 import { registerBiometrics } from "@libs/actions/Biometrics";
-import {
-  BiometricsStatus,
-} from "@hooks/useBiometricsStatus/types";
+import { BiometricsStatus } from "@hooks/useBiometricsStatus/types";
 import useBiometricsStatus from "../useBiometricsStatus";
 import {
   Status,
@@ -17,20 +15,20 @@ import {
   isBiometryConfigured,
   doesDeviceSupportBiometrics,
 } from "./helpers";
-import { Register, UseBiometricsAuthentication } from "./types";
+import { Register, UseBiometricsSetup } from "./types";
 
 /**
  * Core hook that manages biometric authentication setup and state.
- * 
+ *
  * Handles the complete biometrics registration flow including:
  * - Checking device compatibility
  * - Managing key generation and storage
  * - Coordinating with backend registration
  * - Maintaining authentication state
- * 
+ *
  * Returns current biometric state and methods to control the setup process.
  */
-function useBiometricsAuthentication(): UseBiometricsAuthentication {
+function useBiometricsSetup(): UseBiometricsSetup {
   /** Tracks whether biometrics is properly configured and ready for authentication */
   const [status, setStatus] = useBiometricsStatus<boolean>(
     false,
@@ -41,7 +39,7 @@ function useBiometricsAuthentication(): UseBiometricsAuthentication {
    * Marks the current authentication request as complete.
    * Clears any pending requirements while preserving success/failure state.
    */
-  const fulfill = useCallback(
+  const cancel = useCallback(
     () => setStatus(Status.createFulfillStatus),
     [setStatus],
   );
@@ -67,23 +65,23 @@ function useBiometricsAuthentication(): UseBiometricsAuthentication {
    * Resets biometric setup by removing stored keys and refreshing state.
    * Used when keys become invalid or during cleanup.
    */
-  const resetSetup = useCallback(async () => {
+  const revoke = useCallback(async () => {
     await resetKeys();
     return refreshStatus();
   }, [refreshStatus]);
 
   /**
    * Main registration flow for setting up biometric authentication.
-   * 
+   *
    * Flow:
    * 1. Validates device compatibility
    * 2. Ensures validation code is present
    * 3. Generates and stores keypair securely
    * 4. Registers public key with backend
    * 5. Updates local state based on results
-   * 
+   *
    * In chained authentication flows, returns private key on success for immediate use.
-   * 
+   *
    * Note: Will trigger system biometric prompt during key storage.
    */
   const register = useCallback(
@@ -142,7 +140,7 @@ function useBiometricsAuthentication(): UseBiometricsAuthentication {
       const builtStatus = {
         reason: isCallSuccessful ? successMessage : reason,
         type: privateKeyResult.type,
-        status: {
+        step: {
           wasRecentStepSuccessful: isCallSuccessful,
           isRequestFulfilled: true,
           requiredFactorForNextStep: undefined,
@@ -170,28 +168,32 @@ function useBiometricsAuthentication(): UseBiometricsAuthentication {
   ) as Register;
 
   /** Memoized state values exposed to consumers */
-  const values = useMemo(
-    () => ({
+  const values = useMemo(() => {
+    const { step, value: isBiometryConfigured, message, title } = status;
+
+    return {
+      ...step,
       deviceSupportBiometrics,
-      ...status.status,
-      isBiometryConfigured: status.value,
-      message: status.message,
-      title: status.title,
-    }),
-    [deviceSupportBiometrics, status],
-  );
+      isBiometryConfigured,
+      message,
+      title,
+    };
+  }, [deviceSupportBiometrics, status]);
 
   /** Memoized actions exposed to consumers */
   const actions = useMemo(
     () => ({
       register,
-      resetSetup,
-      fulfill,
+      revoke,
+      cancel,
     }),
-    [register, resetSetup, fulfill],
+    [register, revoke, cancel],
   );
 
-  return [values, actions];
+  return {
+    ...values,
+    ...actions,
+  };
 }
 
-export default useBiometricsAuthentication;
+export default useBiometricsSetup;

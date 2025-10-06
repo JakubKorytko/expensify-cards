@@ -6,23 +6,20 @@ import { BiometricsStatus } from "../useBiometricsStatus/types";
  * Returns a status containing the validate code if successful.
  */
 type AutorizeUsingFallback = (params: {
-    otp?: number;
-    validateCode?: number;
-    transactionID: string;
+  otp?: number;
+  validateCode?: number;
+  transactionID: string;
 }) => Promise<BiometricsStatus<number | undefined>>;
 
 /**
  * Hook return type for biometrics fallback authorization.
- * Provides status tracking, authorization function, and request fulfillment.
+ * Provides status tracking, authorization function, and request canceling.
  * Status tracks the current validate code and authorization state.
  */
 type UseBiometricsAuthorizationFallback = {
-    status: BiometricsStatus<number | undefined>;
-    authorize: AutorizeUsingFallback;
-    fulfill: () => BiometricsStatus<number | undefined>;
+  status: BiometricsStatus<number | undefined>;
+  authorize: AutorizeUsingFallback;
+  cancel: () => BiometricsStatus<number | undefined>;
 };
 
-export type {
-    AutorizeUsingFallback,
-    UseBiometricsAuthorizationFallback,
-};
+export type { AutorizeUsingFallback, UseBiometricsAuthorizationFallback };

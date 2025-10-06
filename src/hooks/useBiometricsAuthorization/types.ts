@@ -6,23 +6,20 @@ import { BiometricsStatus } from "../useBiometricsStatus/types";
  * Returns a promise resolving to the authorization status.
  */
 type BiometricsAuthorization = (params: {
-    transactionID: string;
-    validateCode?: number;
-    chainedPrivateKeyStatus?: BiometricsStatus<string | null>;
+  transactionID: string;
+  validateCode?: number;
+  chainedPrivateKeyStatus?: BiometricsStatus<string | null>;
 }) => Promise<BiometricsStatus<boolean>>;
 
 /**
  * Hook return type for biometric transaction authorization.
  * Provides current authorization status, authorize function to initiate authorization,
- * and fulfill function to complete/cancel the current authorization flow.
+ * and cancel function to cancel the current authorization flow.
  */
 type UseBiometricsAuthorization = {
-    status: BiometricsStatus<boolean>;
-    authorize: BiometricsAuthorization;
-    fulfill: () => void;
+  status: BiometricsStatus<boolean>;
+  authorize: BiometricsAuthorization;
+  cancel: () => void;
 };
 
-export type {
-    BiometricsAuthorization,
-    UseBiometricsAuthorization,
-};
+export type { BiometricsAuthorization, UseBiometricsAuthorization };

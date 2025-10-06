@@ -9,12 +9,12 @@ import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
 /**
  * Handles the biometric authentication challenge flow for a specific transaction.
  * Maintains state between steps to ensure transaction consistency.
- * 
+ *
  * The standard authentication flow is:
  * 1. Request a challenge from the API
  * 2. Sign the challenge using biometric authentication
  * 3. Send the signed challenge back for verification
- * 
+ *
  * Each step provides detailed status feedback through BiometricsPartialStatus objects.
  */
 class BiometricsChallenge {
@@ -33,20 +33,26 @@ class BiometricsChallenge {
     return { value: false, reason: reasonKey };
   }
 
-  /** 
+  /**
    * Initiates the challenge process by requesting a new challenge from the API.
    * Verifies the backend is properly synced and handles the challenge response.
    */
   public async request(): Promise<BiometricsPartialStatus<boolean, true>> {
-    const { httpCode, challenge, reason: apiReason } = await requestBiometricsChallenge();
+    const {
+      httpCode,
+      challenge,
+      reason: apiReason,
+    } = await requestBiometricsChallenge();
     const syncedBE = httpCode !== 401;
 
     if (!syncedBE) {
-      return this.createErrorReturnValue("biometrics.reason.error.keyMissingOnTheBE");
+      return this.createErrorReturnValue(
+        "biometrics.reason.error.keyMissingOnTheBE",
+      );
     }
 
     const challengeString = challenge ? JSON.stringify(challenge) : undefined;
-    const reason = apiReason.endsWith("unknownResponse") 
+    const reason = apiReason.endsWith("unknownResponse")
       ? "biometrics.reason.error.badToken"
       : apiReason;
 
@@ -67,7 +73,9 @@ class BiometricsChallenge {
     chainedPrivateKeyStatus?: BiometricsPartialStatus<string | null, true>,
   ): Promise<BiometricsPartialStatus<boolean, true>> {
     if (!this.auth.value) {
-      return this.createErrorReturnValue("biometrics.reason.error.tokenMissing");
+      return this.createErrorReturnValue(
+        "biometrics.reason.error.tokenMissing",
+      );
     }
 
     const { value, type, reason } = chainedPrivateKeyStatus?.value
@@ -75,7 +83,9 @@ class BiometricsChallenge {
       : await BiometricsPrivateKeyStore.get();
 
     if (!value) {
-      return this.createErrorReturnValue(reason || "biometrics.reason.error.keyMissing");
+      return this.createErrorReturnValue(
+        reason || "biometrics.reason.error.keyMissing",
+      );
     }
 
     this.auth = {
@@ -96,14 +106,16 @@ class BiometricsChallenge {
     validateCode?: number,
   ): Promise<BiometricsPartialStatus<boolean, true>> {
     if (!this.auth.value) {
-      return this.createErrorReturnValue("biometrics.reason.error.signatureMissing");
+      return this.createErrorReturnValue(
+        "biometrics.reason.error.signatureMissing",
+      );
     }
 
     let authorizationResult;
 
     if (validateCode) {
       authorizationResult = authorizeBiometricsAction(
-        CONST.BIOMETRICS.DEVICE_BIOMETRICS_STATUS.NOT_CONFIGURED,
+        CONST.BIOMETRICS.ACTION.AUTHORIZE_TRANSACTION_WITH_VALIDATE_CODE,
         this.transactionID,
         {
           signedChallenge: this.auth.value,
@@ -112,7 +124,7 @@ class BiometricsChallenge {
       );
     } else {
       authorizationResult = authorizeBiometricsAction(
-        CONST.BIOMETRICS.DEVICE_BIOMETRICS_STATUS.CONFIGURED,
+        CONST.BIOMETRICS.ACTION.AUTHORIZE_TRANSACTION,
         this.transactionID,
         {
           signedChallenge: this.auth.value,
@@ -126,7 +138,7 @@ class BiometricsChallenge {
       return this.createErrorReturnValue(
         reason.endsWith("unknownResponse")
           ? "biometrics.reason.error.challengeRejected"
-          : reason
+          : reason,
       );
     }
 
