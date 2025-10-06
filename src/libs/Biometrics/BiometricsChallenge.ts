@@ -116,25 +116,25 @@ class BiometricsChallenge {
     if (validateCode) {
       authorizationResult = authorizeBiometricsAction(
         CONST.BIOMETRICS.ACTION.AUTHORIZE_TRANSACTION_WITH_VALIDATE_CODE,
-        this.transactionID,
         {
           signedChallenge: this.auth.value,
           validateCode,
+          transactionID: this.transactionID,
         },
       );
     } else {
       authorizationResult = authorizeBiometricsAction(
         CONST.BIOMETRICS.ACTION.AUTHORIZE_TRANSACTION,
-        this.transactionID,
         {
           signedChallenge: this.auth.value,
+          transactionID: this.transactionID,
         },
       );
     }
 
     const { reason, value } = await authorizationResult;
 
-    if (!value) {
+    if (!value.successful) {
       return this.createErrorReturnValue(
         reason.endsWith("unknownResponse")
           ? "biometrics.reason.error.challengeRejected"

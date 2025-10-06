@@ -1,12 +1,13 @@
 import CONST from "@src/CONST";
-import { authorizeTransaction } from "../actions/Biometrics";
 import {
   BiometricsFactors,
   BiometricsAction,
   BiometricsActionMapKey,
-  BiometricsPartialStatusWithOTP,
 } from "@libs/Biometrics/types";
 import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
+import biometricsActions, {
+  BiometricsActionsAdditionalParameters,
+} from "@libs/Biometrics/biometricsActions";
 
 /**
  * Validates that all required authentication factors are present and of the correct type/format.
@@ -16,7 +17,7 @@ import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
 function areBiometricsFactorsSufficient<T extends BiometricsAction>(
   action: T,
   factors: BiometricsFactors<T>,
-  isValidateCodeVerified: boolean,
+  isValidateCodeVerified: boolean = true,
 ): BiometricsPartialStatus<true | string, true> {
   const requiredFactors = CONST.BIOMETRICS.ACTION_FACTORS_MAP[action];
 
@@ -63,32 +64,37 @@ function areBiometricsFactorsSufficient<T extends BiometricsAction>(
  */
 async function authorizeBiometricsAction<T extends BiometricsActionMapKey>(
   action: T,
-  transactionID: string,
-  factors: BiometricsFactors<T>,
-  isValidateCodeVerified: boolean = true,
-): Promise<BiometricsPartialStatusWithOTP> {
+  params: BiometricsFactors<T> & BiometricsActionsAdditionalParameters[T],
+): Promise<
+  BiometricsPartialStatus<
+    { httpCode: number | undefined; successful: boolean },
+    true
+  >
+> {
+  const isValidateCodeVerified =
+    "isValidateCodeVerified" in params ? params.isValidateCodeVerified : true;
+
   const factorsCheckResult = areBiometricsFactorsSufficient(
     action,
-    factors,
+    params,
     isValidateCodeVerified,
   );
 
   if (factorsCheckResult.value !== true) {
     return {
       ...factorsCheckResult,
-      value: { successful: false, isOTPRequired: false },
+      value: { successful: false, httpCode: undefined },
     };
   }
 
-  const { httpCode, reason } = await authorizeTransaction({
-    ...factors,
-    transactionID,
+  const { httpCode, reason } = await biometricsActions[action]({
+    ...params,
   });
 
   return {
     value: {
       successful: String(httpCode).startsWith("2"),
-      isOTPRequired: httpCode === 202,
+      httpCode,
     },
     reason,
   };

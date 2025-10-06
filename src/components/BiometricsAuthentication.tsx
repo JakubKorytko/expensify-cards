@@ -40,11 +40,7 @@ function BiometricsAuthentication({
 
   return (
     <>
-      <TouchableWithoutFeedback
-        onPress={() => {
-          BiometricsSetup.revoke();
-        }}
-      >
+      <TouchableWithoutFeedback onPress={BiometricsSetup.cancel}>
         <View
           style={[
             styles.layoutContainer,

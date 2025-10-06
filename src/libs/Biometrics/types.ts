@@ -1,6 +1,6 @@
 import { ValueOf } from "type-fest";
 import CONST from "@src/CONST";
-import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
+import { TranslationPaths } from "@src/languages/types";
 
 /**
  * Represents the current biometric status of the device, such as whether biometrics are
@@ -40,21 +40,11 @@ type BiometricsFactors<T extends BiometricsAction> = {
     : K["type"];
 };
 
-/**
- * Status type that includes whether authentication was successful and if an
- * additional OTP (one-time password) verification is required.
- */
-type BiometricsPartialStatusWithOTP = BiometricsPartialStatus<
-  {
-    successful: boolean;
-    isOTPRequired: boolean;
-  },
-  true
->;
+type BiometricsActionResponse = { httpCode: number; reason: TranslationPaths };
 
 export type {
   BiometricsAction,
-  BiometricsPartialStatusWithOTP,
+  BiometricsActionResponse,
   BiometricsFactors,
   BiometricsFactor,
   BiometricsActionMapKey,

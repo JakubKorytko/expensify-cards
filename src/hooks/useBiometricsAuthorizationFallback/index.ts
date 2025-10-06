@@ -69,15 +69,17 @@ function useBiometricsAuthorizationFallback(): UseBiometricsAuthorizationFallbac
 
       const result = await authorizeBiometricsAction(
         CONST.BIOMETRICS.ACTION.AUTHORIZE_TRANSACTION_FALLBACK,
-        transactionID,
         {
           validateCode: providedOrStoredValidateCode!,
           otp,
+          isValidateCodeVerified: !!status.value,
+          transactionID,
         },
-        !!status.value,
       );
 
-      const { successful, isOTPRequired } = result.value;
+      const { successful, httpCode } = result.value;
+
+      const isOTPRequired = httpCode === 202;
 
       let reason = result.reason;
 

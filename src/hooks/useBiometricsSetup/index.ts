@@ -16,6 +16,7 @@ import {
   doesDeviceSupportBiometrics,
 } from "./helpers";
 import { Register, UseBiometricsSetup } from "./types";
+import authorizeBiometricsAction from "@libs/Biometrics/authorizeBiometricsAction";
 
 /**
  * Core hook that manages biometric authentication setup and state.
@@ -124,9 +125,15 @@ function useBiometricsSetup(): UseBiometricsSetup {
       }
 
       /** Call backend to register the public key */
-      const { httpCode, reason } = await registerBiometrics(
-        publicKey,
-        validateCode,
+      const {
+        value: { httpCode },
+        reason,
+      } = await authorizeBiometricsAction(
+        CONST.BIOMETRICS.ACTION.SETUP_BIOMETRICS,
+        {
+          publicKey,
+          validateCode,
+        },
       );
 
       const successMessage = "biometrics.reason.success.keyPairGenerated";

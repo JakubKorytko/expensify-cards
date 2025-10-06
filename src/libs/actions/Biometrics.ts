@@ -11,7 +11,7 @@ const RESPONSE_TRANSLATION_PATH = {
     200: "challengeGenerated",
   },
   REGISTER_BIOMETRICS: {
-    422: "noPublicKey", 
+    422: "noPublicKey",
     409: "keyAlreadyRegistered",
     401: "validationCodeRequired",
     400: "validationCodeInvalid",
@@ -61,11 +61,18 @@ function parseHttpCode(
  */
 
 /** Send biometrics public key to the API along with the validation code if required. */
-async function registerBiometrics(publicKey: string, validateCode: number) {
+async function registerBiometrics({
+  publicKey,
+  validateCode,
+}: {
+  publicKey: string;
+  validateCode: number;
+}) {
   const { jsonCode } = await API.makeRequestWithSideEffects(
     SIDE_EFFECT_REQUEST_COMMANDS.REGISTER_BIOMETRICS,
     { publicKey, validateCode },
-    {});
+    {},
+  );
   return parseHttpCode(jsonCode, RESPONSE_TRANSLATION_PATH.REGISTER_BIOMETRICS);
 }
 
@@ -74,11 +81,15 @@ async function requestBiometricsChallenge() {
   const { jsonCode, challenge } = await API.makeRequestWithSideEffects(
     SIDE_EFFECT_REQUEST_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE,
     {},
-    {});
-  return ({
-    ...parseHttpCode(jsonCode, RESPONSE_TRANSLATION_PATH.REQUEST_BIOMETRIC_CHALLENGE),
+    {},
+  );
+  return {
+    ...parseHttpCode(
+      jsonCode,
+      RESPONSE_TRANSLATION_PATH.REQUEST_BIOMETRIC_CHALLENGE,
+    ),
     challenge,
-  });
+  };
 }
 
 /**
@@ -107,8 +118,12 @@ async function authorizeTransaction({
   const { jsonCode } = await API.makeRequestWithSideEffects(
     SIDE_EFFECT_REQUEST_COMMANDS.AUTHORIZE_TRANSACTION,
     { transactionID, signedChallenge, validateCode, otp },
-    {});
-  return parseHttpCode(jsonCode, RESPONSE_TRANSLATION_PATH.AUTHORIZE_TRANSACTION);
+    {},
+  );
+  return parseHttpCode(
+    jsonCode,
+    RESPONSE_TRANSLATION_PATH.AUTHORIZE_TRANSACTION,
+  );
 }
 
 export { registerBiometrics, requestBiometricsChallenge, authorizeTransaction };
