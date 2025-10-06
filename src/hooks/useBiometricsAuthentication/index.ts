@@ -9,61 +9,63 @@ import CONST from "@src/CONST";
 import { registerBiometrics } from "@libs/actions/Biometrics";
 import {
   BiometricsStatus,
-  BiometricsStepWithStatus,
-} from "@hooks/useBiometrics/types";
+} from "@hooks/useBiometricsStatus/types";
 import useBiometricsStatus from "../useBiometricsStatus";
 import {
   Status,
   resetKeys,
   isBiometryConfigured,
-  INITIAL_BIOMETRICS_STATUS,
   doesDeviceSupportBiometrics,
 } from "./helpers";
-import { Register, UseBiometricsStatus } from "./types";
+import { Register, UseBiometricsAuthentication } from "./types";
 
 /**
- * Manages biometrics setup; exposes current state (values) and actions (steps).
- *
- * High‑level hook that drives the biometrics setup flow. It tells the UI what state it's in (values)
- * and offers actions (steps) to move forward.
- *
- * For detailed documentation on the return value, see types file.
+ * Core hook that manages biometric authentication setup and state.
+ * 
+ * Handles the complete biometrics registration flow including:
+ * - Checking device compatibility
+ * - Managing key generation and storage
+ * - Coordinating with backend registration
+ * - Maintaining authentication state
+ * 
+ * Returns current biometric state and methods to control the setup process.
  */
-function useBiometricsAuthentication(): UseBiometricsStatus {
-  /** Whether the biometrics was set up correctly and the device is able to authenticate using it. */
-  const [status, setStatus] = useBiometricsStatus<BiometricsStepWithStatus>(
-    INITIAL_BIOMETRICS_STATUS,
+function useBiometricsAuthentication(): UseBiometricsAuthentication {
+  /** Tracks whether biometrics is properly configured and ready for authentication */
+  const [status, setStatus] = useBiometricsStatus<boolean>(
+    false,
     CONST.BIOMETRICS.ACTION_TYPE.KEY,
-    (state) => !!state.value.wasRecentStepSuccessful,
   );
 
   /**
-   * Marks the current status as fulfilled. This clears any pending
-   * required factor if present, and retains the last success flag.
+   * Marks the current authentication request as complete.
+   * Clears any pending requirements while preserving success/failure state.
    */
   const fulfill = useCallback(
     () => setStatus(Status.createFulfillStatus),
     [setStatus],
   );
 
+  /** Memoized check for device biometric capability */
   const deviceSupportBiometrics = useMemo(doesDeviceSupportBiometrics, []);
 
   /**
-   * Refreshes configuration status by probing if a public key exists in secure storage.
-   * Avoids prompting authentication since a public key read does not require it.
+   * Updates the biometric configuration status by checking for stored public key.
+   * Safe to call frequently as it doesn't trigger authentication prompts.
    */
   const refreshStatus = useCallback(async () => {
     const isConfigured = await isBiometryConfigured();
     return setStatus(Status.createRefreshStatusStatus(isConfigured));
   }, [setStatus]);
 
+  /** Check initial biometric configuration on mount */
   useEffect(() => {
     refreshStatus();
   }, [refreshStatus]);
 
   /**
-   * Removes both keys from secure storage and then refreshes status.
-   * Useful when local keys exist but are not registered on backend.
+   * Resets biometric setup by removing stored keys and refreshing state.
+   * Used when keys become invalid or during cleanup.
    */
   const resetSetup = useCallback(async () => {
     await resetKeys();
@@ -71,14 +73,18 @@ function useBiometricsAuthentication(): UseBiometricsStatus {
   }, [refreshStatus]);
 
   /**
-   * Starts the registration flow.
-   * - If the device is unsupported, we set a friendly message and stop.
-   * - If a validation code is missing, we trigger requesting it and tell the UI what is needed.
-   * - When ready, we generate a keypair, save it, and call the backend to complete registration.
-   * - On failure we clean up local keys; on success we update the status.
-   * - In a chained auth flow, a successful run returns the private key so the next step can continue.
-   *
-   * IMPORTANT: Using this method will display authentication prompt
+   * Main registration flow for setting up biometric authentication.
+   * 
+   * Flow:
+   * 1. Validates device compatibility
+   * 2. Ensures validation code is present
+   * 3. Generates and stores keypair securely
+   * 4. Registers public key with backend
+   * 5. Updates local state based on results
+   * 
+   * In chained authentication flows, returns private key on success for immediate use.
+   * 
+   * Note: Will trigger system biometric prompt during key storage.
    */
   const register = useCallback(
     async ({ validateCode, chainedWithAuthorization }) => {
@@ -102,13 +108,11 @@ function useBiometricsAuthentication(): UseBiometricsStatus {
         privateKeyResult.reason === "biometrics.reason.expoErrors.keyExists";
 
       if (!privateKeyResult.value) {
-        if (privateKeyExists && !status.value.isBiometryConfigured) {
+        if (privateKeyExists && !status.value) {
           /**
-           * If the private key exists, but the public one does not, we end up having the interaction blocked.
-           * We remove the private key and stop the execution to unblock the auth process.
-           *
-           * This may be handled by getting the public key from BE,
-           * but it is not worth doing as this should never actually happen in the real app.
+           * Handle edge case where private key exists but public key is missing.
+           * Remove private key to unblock authentication rather than trying recovery.
+           * This should never happen in the real app.
            */
           await BiometricsPrivateKeyStore.delete();
         }
@@ -135,15 +139,19 @@ function useBiometricsAuthentication(): UseBiometricsStatus {
         await resetKeys();
       }
 
-      const authReason = {
-        value: isCallSuccessful,
+      const builtStatus = {
         reason: isCallSuccessful ? successMessage : reason,
         type: privateKeyResult.type,
+        status: {
+          wasRecentStepSuccessful: isCallSuccessful,
+          isRequestFulfilled: true,
+          requiredFactorForNextStep: undefined,
+        },
       };
 
       /** Persist and return the status */
       const statusResult = setStatus(
-        Status.createRegistrationResultStatus(authReason),
+        Status.createRegistrationResultStatus(builtStatus),
       );
 
       await refreshStatus();
@@ -158,19 +166,22 @@ function useBiometricsAuthentication(): UseBiometricsStatus {
 
       return statusResult;
     },
-    [setStatus, refreshStatus, status.value.isBiometryConfigured],
+    [setStatus, refreshStatus, status.value],
   ) as Register;
 
+  /** Memoized state values exposed to consumers */
   const values = useMemo(
     () => ({
       deviceSupportBiometrics,
-      ...status.value,
+      ...status.status,
+      isBiometryConfigured: status.value,
       message: status.message,
       title: status.title,
     }),
     [deviceSupportBiometrics, status],
   );
 
+  /** Memoized actions exposed to consumers */
   const actions = useMemo(
     () => ({
       register,

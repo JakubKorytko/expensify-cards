@@ -1,7 +1,8 @@
 import * as ed from "@noble/ed25519";
 
 /**
- * Polyfill for React Native
+ * Required polyfills for React Native to support ED25519 cryptographic operations.
+ * Provides implementations for getRandomValues and SHA-512 hashing.
  * @see https://github.com/paulmillr/noble-ed25519?tab=readme-ov-file#react-native-polyfill-getrandomvalues-and-sha512
  */
 
@@ -12,9 +13,10 @@ ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
 ed.etc.sha512Async = (...m) =>
   Promise.resolve(ed.etc.sha512Sync?.(...m) ?? ([] as unknown as ed.Bytes));
 
-/** --- */
-
-/** Get random private key and associated public key in hex. */
+/**
+ * Generates a new random ED25519 key pair.
+ * Returns both private and public keys encoded as hexadecimal strings.
+ */
 function generateKeyPair() {
   const privateKey = ed.utils.randomPrivateKey();
   const publicKey = ed.getPublicKey(privateKey);
@@ -26,9 +28,9 @@ function generateKeyPair() {
 }
 
 /**
- * Sign token using provided key.
- * The string is encoded using TextEncoder before signing to get 8-bit unsigned integer array.
- * By doing so, we can pass non-standard characters to this function (e.g. JSON stringified objects).
+ * Signs a token string using an ED25519 private key.
+ * The token is first converted to bytes using TextEncoder to support all Unicode characters.
+ * Returns the signature as a hexadecimal string.
  */
 function signToken(token: string, key: string) {
   return ed.etc.bytesToHex(ed.sign(new TextEncoder().encode(token), key));

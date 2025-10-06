@@ -1,36 +1,63 @@
-import { BiometricsAuthFactor } from "@libs/Biometrics/types";
+import { Register } from "../useBiometricsAuthentication/types";
 import { BiometricsStatus } from "../useBiometricsStatus/types";
 
-type BiometricsAuthorizationParams = {
+/**
+ * Represents the most recent biometrics status and method to fulfill it
+ */
+type BiometricsRecentStatus = {
+  status: BiometricsStatus<boolean>;
+  fulfillMethod: () => BiometricsStatus<unknown>;
+}
+
+/**
+ * Parameters required for biometric authorization
+ */
+type AuthorizationParams = {
   otp?: number;
-  validateCode?: number;
+  validateCode?: number; 
   transactionID: string;
-};
+}
 
-type BiometricsStep = {
-  wasRecentStepSuccessful: boolean | undefined;
-  requiredFactorForNextStep: BiometricsAuthFactor | undefined;
-  isRequestFulfilled: boolean;
-};
+/**
+ * Function type for performing biometric authorization
+ */
+type BiometricsAuthorization = (params: AuthorizationParams) => Promise<BiometricsStatus<boolean>>;
 
-type BiometricsStepWithStatus = BiometricsStep & {
+/**
+ * Available biometric actions including registration, authorization, reset and fulfill
+ */
+type BiometricsActions = {
+  register: Register;
+  authorize: BiometricsAuthorization;
+  resetSetup: () => Promise<BiometricsStatus<boolean>>;
+  fulfill: () => BiometricsStatus<boolean>;
+}
+
+/**
+ * Current state of biometrics including status and configuration state
+ */
+type BiometricsState = BiometricsStatus<boolean> & {
   isBiometryConfigured: boolean;
-};
+}
 
-/** Value returned by the useBiometrics hook. */
-type Biometrics = [
-  BiometricsStepWithStatus & BiometricsStatus<BiometricsStep>,
-  (
-    params: BiometricsAuthorizationParams,
-  ) => Promise<BiometricsStatus<BiometricsStep>>,
-  () => void,
-  () => void,
-];
+/**
+ * Hook return type containing biometrics state and available actions
+ */
+type UseBiometrics = [BiometricsState, BiometricsActions];
+
+/**
+ * Factory function type for creating a BiometricsRecentStatus object
+ */
+type CreateBiometricsRecentStatus = (
+  result: BiometricsStatus<unknown>, 
+  fulfillMethod: () => BiometricsStatus<unknown>
+) => BiometricsRecentStatus;
 
 export type {
-  Biometrics,
-  BiometricsStatus,
-  BiometricsStep,
-  BiometricsStepWithStatus,
-  BiometricsAuthorizationParams,
+  BiometricsAuthorization,
+  UseBiometrics,
+  BiometricsRecentStatus,
+  CreateBiometricsRecentStatus,
+  BiometricsActions,
+  BiometricsState
 };

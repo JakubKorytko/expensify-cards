@@ -1,48 +1,60 @@
-import { BiometricsStatus, BiometricsStepWithStatus } from "../useBiometrics/types";
+import { BiometricsStep, BiometricsStatus } from "../useBiometricsStatus/types";
 
 /**
- * It returns different types of status based on whether the authorization is chained or not.
- * If the authorization is chained, it returns a string, otherwise it returns a BiometricsStepWithStatus.
+ * Base type for the register function that handles biometric setup.
+ * Takes a validate code and additional params, returns a BiometricsStatus.
  */
-type Register = {
-    (params: { validateCode?: number; chainedWithAuthorization: true }): Promise<BiometricsStatus<string>>;
-    (params: { validateCode?: number; chainedWithAuthorization?: false }): Promise<BiometricsStatus<BiometricsStepWithStatus>>;
-    (params: { validateCode?: number; chainedWithAuthorization?: boolean }): Promise<BiometricsStatus<BiometricsStepWithStatus>> | Promise<BiometricsStatus<string>>;
+type RegisterFunction<T, R> = (params: { validateCode?: number } & T) => Promise<BiometricsStatus<R>>;
+
+/**
+ * Function to register biometrics on the device.
+ * Returns different status types based on whether authorization is chained:
+ * - With chained=true: Returns a string status for the next authorization step
+ * - With chained=false: Returns a boolean indicating registration success
+ * - With chained unspecified: Returns either boolean or string based on flow
+ */
+type Register = RegisterFunction<{ chainedWithAuthorization: true }, string> &
+    RegisterFunction<{ chainedWithAuthorization?: false }, boolean> &
+    RegisterFunction<{ chainedWithAuthorization?: boolean }, boolean | string>;
+
+/**
+ * Information about the device's biometric capabilities and configuration state
+ */
+type BiometricsInfo = {
+    /** Whether the device supports biometric auth (fingerprint/face) or fallback (PIN/pattern) */
+    deviceSupportBiometrics: boolean;
+
+    /** Whether biometrics is already set up with a stored public key */
+    isBiometryConfigured: boolean;
 }
 
-type UseBiometricsStatus = [
+/**
+ * User-facing status messages for the current biometric state
+ */
+type BiometricsStatusMessage = {
+    /** Detailed message explaining the current state or required action */
+    message: string;
+
+    /** Brief status header (e.g. "Authentication Successful") */
+    title: string;
+}
+
+/**
+ * Authentication hook return type combining status information and available actions.
+ * Returns a tuple with current state and methods to control the biometric setup flow.
+ */
+type UseBiometricsAuthentication = [
+    BiometricsStep & BiometricsInfo & BiometricsStatusMessage,
     {
-        /** Whether the device can use biometrics or a fallback credential */
-        deviceSupportBiometrics: boolean;
-
-        /** Whether the device already has a stored public key (i.e., setup done) */
-        isBiometryConfigured: boolean;
-
-        /** Whether the last step has finished or still needs user action */
-        isRequestFulfilled: boolean;
-
-        /** Whether the last step worked */
-        wasRecentStepSuccessful: boolean | undefined;
-
-        /** What the user must provide next (for example, a validation code) */
-        requiredFactorForNextStep: string | undefined;
-
-        /** Human‑readable strings describing the current state */
-        message: string;
-
-        /** Simple title i.e. Authorization/authentication successful/failed */
-        title: string;
-    },
-    {
-        /** Runs the setup; generates keys, saves them, and registers with the backend. */
+        /** Sets up biometrics by generating keys and registering with backend */
         register: Register
 
-        /** Removes any saved keys and refreshes the status. */
-        resetSetup: () => Promise<BiometricsStatus<BiometricsStepWithStatus>>;
+        /** Clears biometric configuration by removing stored keys */
+        resetSetup: () => Promise<BiometricsStatus<boolean>>;
 
-        /** Marks the current request as finished to unblock the UI. */
-        fulfill: () => BiometricsStatus<BiometricsStepWithStatus>;
+        /** Completes current request and updates UI state accordingly */
+        fulfill: () => BiometricsStatus<boolean>;
     },
 ]
 
-export type { UseBiometricsStatus, Register };
+export type { UseBiometricsAuthentication, Register };

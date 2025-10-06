@@ -11,7 +11,7 @@ const RESPONSE_TRANSLATION_PATH = {
     200: "challengeGenerated",
   },
   REGISTER_BIOMETRICS: {
-    422: "noPublicKey",
+    422: "noPublicKey", 
     409: "keyAlreadyRegistered",
     401: "validationCodeRequired",
     400: "validationCodeInvalid",
@@ -27,14 +27,6 @@ const RESPONSE_TRANSLATION_PATH = {
   },
 } as const;
 
-/** Type guard to check whether object keys include provided value */
-const isKeyOf = <Y extends object>(
-  key: keyof Y | string | number,
-  object: Y,
-): key is keyof Y => {
-  return key in object;
-};
-
 /** Helper method to create an object with an HTTP code and the reason translation path */
 function parseHttpCode(
   jsonCode: string | number | undefined,
@@ -44,17 +36,11 @@ function parseHttpCode(
   reason: TranslationPaths;
 } {
   const httpCode = Number(jsonCode) || 0;
-
-  if (isKeyOf(httpCode, source)) {
-    return {
-      httpCode,
-      reason: `biometrics.apiResponse.${source[httpCode]}`,
-    };
-  }
+  const translation = source[httpCode as keyof typeof source];
 
   return {
     httpCode,
-    reason: `biometrics.apiResponse.${RESPONSE_TRANSLATION_PATH.UNKNOWN}`,
+    reason: `biometrics.apiResponse.${translation || RESPONSE_TRANSLATION_PATH.UNKNOWN}`,
   };
 }
 
@@ -75,32 +61,24 @@ function parseHttpCode(
  */
 
 /** Send biometrics public key to the API along with the validation code if required. */
-function registerBiometrics(publicKey: string, validateCode: number) {
-  return API.makeRequestWithSideEffects(
+async function registerBiometrics(publicKey: string, validateCode: number) {
+  const { jsonCode } = await API.makeRequestWithSideEffects(
     SIDE_EFFECT_REQUEST_COMMANDS.REGISTER_BIOMETRICS,
-    {
-      publicKey,
-      validateCode,
-    },
-    {},
-  ).then(({ jsonCode }) =>
-    parseHttpCode(jsonCode, RESPONSE_TRANSLATION_PATH.REGISTER_BIOMETRICS),
-  );
+    { publicKey, validateCode },
+    {});
+  return parseHttpCode(jsonCode, RESPONSE_TRANSLATION_PATH.REGISTER_BIOMETRICS);
 }
 
 /** Ask API for the biometrics challenge. */
-function requestBiometricsChallenge() {
-  return API.makeRequestWithSideEffects(
+async function requestBiometricsChallenge() {
+  const { jsonCode, challenge } = await API.makeRequestWithSideEffects(
     SIDE_EFFECT_REQUEST_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE,
     {},
-    {},
-  ).then(({ jsonCode, challenge }) => ({
-    ...parseHttpCode(
-      jsonCode,
-      RESPONSE_TRANSLATION_PATH.REQUEST_BIOMETRIC_CHALLENGE,
-    ),
+    {});
+  return ({
+    ...parseHttpCode(jsonCode, RESPONSE_TRANSLATION_PATH.REQUEST_BIOMETRIC_CHALLENGE),
     challenge,
-  }));
+  });
 }
 
 /**
@@ -115,7 +93,7 @@ function requestBiometricsChallenge() {
  * we actually need to make one call with validateCode only,
  * and then another one with otp + validateCode.
  */
-function authorizeTransaction({
+async function authorizeTransaction({
   transactionID,
   signedChallenge,
   validateCode,
@@ -126,18 +104,11 @@ function authorizeTransaction({
   validateCode?: number;
   otp?: number;
 }) {
-  return API.makeRequestWithSideEffects(
+  const { jsonCode } = await API.makeRequestWithSideEffects(
     SIDE_EFFECT_REQUEST_COMMANDS.AUTHORIZE_TRANSACTION,
-    {
-      transactionID,
-      signedChallenge,
-      validateCode,
-      otp,
-    },
-    {},
-  ).then(({ jsonCode }) =>
-    parseHttpCode(jsonCode, RESPONSE_TRANSLATION_PATH.AUTHORIZE_TRANSACTION),
-  );
+    { transactionID, signedChallenge, validateCode, otp },
+    {});
+  return parseHttpCode(jsonCode, RESPONSE_TRANSLATION_PATH.AUTHORIZE_TRANSACTION);
 }
 
 export { registerBiometrics, requestBiometricsChallenge, authorizeTransaction };

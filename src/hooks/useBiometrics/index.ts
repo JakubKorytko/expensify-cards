@@ -1,120 +1,146 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import type {
-  Biometrics,
-  BiometricsAuthorizationParams,
-  BiometricsStatus,
-  BiometricsStep,
+  UseBiometrics,
+  BiometricsAuthorization,
+  BiometricsRecentStatus,
+  BiometricsActions,
+  BiometricsState,
 } from "./types";
 import useBiometricsAuthentication from "@hooks/useBiometricsAuthentication";
 import useBiometricsAuthorizationFallback from "@hooks/useBiometricsAuthorizationFallback";
 import useBiometricsAuthorization from "@hooks/useBiometricsAuthorization";
+import { createRecentStatus } from "./helpers";
 
 /**
- * Hook used to run the biometrics process and receive status.
+ * Hook that manages the biometrics authentication flow, including registration,
+ * authorization and fallback mechanisms. Returns current biometrics state and
+ * available actions.
  */
-function useBiometrics(): Biometrics {
-  const [
-    { deviceSupportBiometrics, isBiometryConfigured },
-    { register, resetSetup, fulfill: statusFulfill },
-  ] = useBiometricsAuthentication();
-  const {
-    authorize: authorizeUsingFallback,
-    status: authorizationStatus,
-    fulfill: authorizationFulfill,
-  } = useBiometricsAuthorizationFallback();
-  const {
-    challenge: authorizeBiometrics,
-    status: fallbackStatus,
-    fulfill: fallbackFulfill,
-  } = useBiometricsAuthorization();
+function useBiometrics(): UseBiometrics {
+  const [BiometricsStatus, BiometricsStatusActions] = useBiometricsAuthentication();
+  const BiometricsFallback = useBiometricsAuthorizationFallback();
+  const BiometricsAuthorization = useBiometricsAuthorization();
 
-  const currentStatus =
-    useRef<BiometricsStatus<BiometricsStep>>(authorizationStatus);
+  const recentStatus = useRef<BiometricsRecentStatus>({
+    status: BiometricsAuthorization.status,
+    fulfillMethod: BiometricsAuthorization.fulfill,
+  });
 
   /**
-   * Main method to authorize a transaction using biometrics if available and configured,
-   * or falling back to otp and validate code if not.
-   * If biometrics is not configured, it will attempt to register it first.
-   * If the registration is successful, it will attempt to authorize the transaction using biometrics right away.
-   * You can check which factors are required by checking the requiredFactors property before calling this method.
-   *
-   * Note: If the device does not support biometrics, both validateCode and otp must be provided.
-   * If the device supports biometrics, but it is not configured, validateCode must be provided.
-   * If the device supports and is configured for biometrics, neither validateCode nor otp are needed.
-   *
-   * IMPORTANT: Using this method will display authentication prompt.
+   * Core authorization method that handles different biometric scenarios:
+   * 
+   * - For devices without biometric support: Uses OTP and validation code fallback
+   * - For unconfigured biometrics: Attempts registration first, then authorization
+   * - For configured biometrics: Proceeds directly to authorization
+   * 
+   * Required parameters vary by scenario:
+   * - No biometric support: Requires both OTP and validation code
+   * - Unconfigured biometrics: Requires validation code
+   * - Configured biometrics: No additional parameters needed
+   * 
+   * Will trigger authentication UI when called.
    */
   const authorize = useCallback(
-    ({
-      transactionID,
-      validateCode,
-      otp,
-    }: BiometricsAuthorizationParams): Promise<
-      BiometricsStatus<BiometricsStep>
-    > => {
-      if (!deviceSupportBiometrics) {
-        return authorizeUsingFallback({
+    async ({ transactionID, validateCode, otp }: Parameters<BiometricsAuthorization>[0]): Promise<BiometricsRecentStatus> => {
+      if (!BiometricsStatus.deviceSupportBiometrics) {
+        const result = await BiometricsFallback.authorize({
           otp,
           validateCode: validateCode!,
           transactionID,
-        }).then((fallbackResult) => {
-          currentStatus.current = fallbackResult;
-          return Promise.resolve(fallbackResult);
         });
+        return createRecentStatus(result, BiometricsFallback.fulfill);
       }
 
-      if (!isBiometryConfigured) {
+      if (!BiometricsStatus.isBiometryConfigured) {
         /** Biometrics is not configured, let's do that first */
         /** Run the setup method */
-        return register({ validateCode, chainedWithAuthorization: true }).then(
-          (requestStatus) => {
-            /** Setup was successful and auto run was not disabled, let's run the challenge right away */
-            return authorizeBiometrics({
-              transactionID,
-              validateCode,
-              chainedPrivateKeyStatus: requestStatus,
-            });
-          },
-        );
+        const requestStatus = await BiometricsStatusActions.register({
+          validateCode,
+          chainedWithAuthorization: true
+        });
+
+        /** Setup was successful and auto run was not disabled, let's run the challenge right away */
+        const result = await BiometricsAuthorization.authorize({
+          transactionID,
+          validateCode,
+          chainedPrivateKeyStatus: requestStatus,
+        });
+
+        return createRecentStatus(result, BiometricsAuthorization.fulfill);
       }
 
       /** Biometrics is configured already, let's do the challenge logic */
-      return authorizeBiometrics({ transactionID, validateCode }).then(
-        (result) => {
-          const shouldResetSetup =
-            result.reason === "biometrics.reason.error.keyMissingOnTheBE";
-          (shouldResetSetup ? resetSetup() : Promise.resolve()).then(() => {
-            currentStatus.current = result;
-          });
+      const result = await BiometricsAuthorization.authorize({ transactionID, validateCode });
 
-          return result;
-        },
-      );
+      if (result.reason === "biometrics.reason.error.keyMissingOnTheBE") {
+        await BiometricsStatusActions.resetSetup();
+      }
+
+      return createRecentStatus(result, BiometricsAuthorization.fulfill);
     },
     [
-      deviceSupportBiometrics,
-      isBiometryConfigured,
-      authorizeBiometrics,
-      authorizeUsingFallback,
-      register,
-      resetSetup,
+      BiometricsStatus.deviceSupportBiometrics,
+      BiometricsStatus.isBiometryConfigured,
+      BiometricsAuthorization.authorize,
+      BiometricsFallback.authorize,
+      BiometricsStatusActions.register,
+      BiometricsStatusActions.resetSetup,
     ],
   );
 
+  /**
+   * Wrapper around authorize that saves the authorization result to current status
+   * before returning it.
+   */
+  const authorizeAndSaveRecentStatus: BiometricsAuthorization = useCallback(
+    async (params: Parameters<BiometricsAuthorization>[0]) => {
+      const result = await authorize(params);
+      recentStatus.current = result;
+      return result.status;
+    },
+    [authorize]
+  );
+
+  /**
+   * Completes the current biometric operation by calling the stored fulfill method
+   * and updates the current status with the result.
+   */
   const fulfill = useCallback(() => {
-    // ...
+    const status = recentStatus.current.fulfillMethod();
+    const newStatus = {
+      ...status,
+      value: !!status.status.wasRecentStepSuccessful
+    };
+
+    recentStatus.current = {
+      status: newStatus,
+      fulfillMethod: recentStatus.current.fulfillMethod,
+    };
+
+    return newStatus;
   }, []);
 
-  return [
-    {
-      ...currentStatus.current,
-      ...currentStatus.current.value,
-      isBiometryConfigured,
-    },
-    authorize,
-    resetSetup,
-    fulfill,
-  ];
+
+  /** Memoized state values exposed to consumers */
+  const state: BiometricsState = useMemo(() => ({
+    isBiometryConfigured: BiometricsStatus.isBiometryConfigured,
+    ...recentStatus.current.status,
+  }), [BiometricsStatus.isBiometryConfigured, recentStatus.current.status]);
+
+  /** Memoized actions exposed to consumers */
+  const actions: BiometricsActions = useMemo(() => ({
+    register: BiometricsStatusActions.register,
+    resetSetup: BiometricsStatusActions.resetSetup,
+    authorize: authorizeAndSaveRecentStatus,
+    fulfill
+  }), [
+    BiometricsStatusActions.register,
+    BiometricsStatusActions.resetSetup,
+    authorizeAndSaveRecentStatus,
+    fulfill
+  ]);
+
+  return [state, actions];
 }
 
 export default useBiometrics;

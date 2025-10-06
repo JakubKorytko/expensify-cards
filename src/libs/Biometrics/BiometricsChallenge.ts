@@ -7,132 +7,96 @@ import CONST from "@src/CONST";
 import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
 
 /**
- * This class can be used to create an object associated with a transaction.
- * Methods of the created object are called without any arguments or parameters.
- * The standard flow is request -> sign -> send.
- *
- * This logic ensures that the transaction on which we are operating will not change between steps,
- * thereby preventing unexpected errors.
- * It also facilitates obtaining the current status and feedback of each step in the challenge process.
+ * Handles the biometric authentication challenge flow for a specific transaction.
+ * Maintains state between steps to ensure transaction consistency.
+ * 
+ * The standard authentication flow is:
+ * 1. Request a challenge from the API
+ * 2. Sign the challenge using biometric authentication
+ * 3. Send the signed challenge back for verification
+ * 
+ * Each step provides detailed status feedback through BiometricsPartialStatus objects.
  */
 class BiometricsChallenge {
-  /** Current status of the auth process */
-  private auth: BiometricsPartialStatus<string | undefined> = {
+  /** Tracks the current state and status of the authentication process */
+  private auth: BiometricsPartialStatus<string | undefined, true> = {
     value: undefined,
     reason: "biometrics.reason.generic.notRequested",
   };
 
-  constructor(private readonly transactionID: string) {
-    this.transactionID = transactionID;
-  }
+  constructor(private readonly transactionID: string) {}
 
-  /** Internal helper method to create an error value object */
+  /** Creates a standardized error response with the given reason key */
   private createErrorReturnValue(
     reasonKey: TranslationPaths,
-  ): BiometricsPartialStatus<boolean> {
-    return {
-      value: false,
-      reason: reasonKey,
-    };
+  ): BiometricsPartialStatus<boolean, true> {
+    return { value: false, reason: reasonKey };
   }
 
-  /** Request challenge from the API */
-  public request(): Promise<BiometricsPartialStatus<boolean>> {
-    return requestBiometricsChallenge()
-      .then(({ httpCode, challenge, reason }) =>
-        Promise.all([
-          challenge,
-          reason,
-          httpCode === 401 ? Promise.resolve(false) : Promise.resolve(true),
-        ]),
-      )
-      .then(([challenge, apiReason, syncedBE]) => {
-        if (!syncedBE) {
-          return {
-            value: false,
-            reason: "biometrics.reason.error.keyMissingOnTheBE",
-          };
-        }
-
-        const challengeString = !!challenge
-          ? JSON.stringify(challenge)
-          : undefined;
-
-        const isReasonIncluded = !apiReason.endsWith("unknownResponse");
-
-        const reason = isReasonIncluded
-          ? apiReason
-          : "biometrics.reason.error.badToken";
-
-        this.auth = {
-          value: challengeString,
-          reason: challenge
-            ? "biometrics.reason.success.tokenReceived"
-            : reason,
-        };
-
-        return {
-          ...this.auth,
-          value: true,
-        };
-      });
-  }
-
-  /**
-   * Sign requested challenge with the private key.
-   * Chained private key status can be provided to avoid fetching the private key again if it was already obtained.
-   *
-   * IMPORTANT: Using this method will display authentication prompt
+  /** 
+   * Initiates the challenge process by requesting a new challenge from the API.
+   * Verifies the backend is properly synced and handles the challenge response.
    */
-  public sign(
-    chainedPrivateKeyStatus?: BiometricsPartialStatus<string | null>,
-  ): Promise<BiometricsPartialStatus<boolean>> {
-    const {
-      auth: { value: authValue },
-    } = this;
+  public async request(): Promise<BiometricsPartialStatus<boolean, true>> {
+    const { httpCode, challenge, reason: apiReason } = await requestBiometricsChallenge();
+    const syncedBE = httpCode !== 401;
 
-    if (!authValue) {
-      return Promise.resolve(
-        this.createErrorReturnValue("biometrics.reason.error.tokenMissing"),
-      );
+    if (!syncedBE) {
+      return this.createErrorReturnValue("biometrics.reason.error.keyMissingOnTheBE");
     }
 
-    const privateKeyPromise = !!chainedPrivateKeyStatus?.value
-      ? Promise.resolve(chainedPrivateKeyStatus)
-      : BiometricsPrivateKeyStore.get();
+    const challengeString = challenge ? JSON.stringify(challenge) : undefined;
+    const reason = apiReason.endsWith("unknownResponse") 
+      ? "biometrics.reason.error.badToken"
+      : apiReason;
 
-    return privateKeyPromise.then(({ value, type, reason }) => {
-      if (!value) {
-        return this.createErrorReturnValue(
-          reason || "biometrics.reason.error.keyMissing",
-        );
-      }
+    this.auth = {
+      value: challengeString,
+      reason: challenge ? "biometrics.reason.success.tokenReceived" : reason,
+    };
 
-      this.auth = {
-        value: signTokenED25519(authValue, value),
-        reason: "biometrics.reason.success.tokenSigned",
-        type,
-      };
-
-      return {
-        ...this.auth,
-        value: true,
-      };
-    });
+    return { ...this.auth, value: true };
   }
 
   /**
-   * Send signed challenge to the API to verify it
-   * If the device is not configured for biometrics, or it is re-registering, a validation code must be provided.
-   * This function assumes that if the validation code is provided, the device is not configured for biometrics.
+   * Signs the challenge using the private key stored in secure storage.
+   * Triggers a biometric authentication prompt when accessing the private key.
+   * Can reuse a previously fetched private key status to avoid multiple auth prompts.
    */
-  public send(
-    validateCode?: number,
-  ): Promise<BiometricsPartialStatus<boolean>> {
+  public async sign(
+    chainedPrivateKeyStatus?: BiometricsPartialStatus<string | null, true>,
+  ): Promise<BiometricsPartialStatus<boolean, true>> {
     if (!this.auth.value) {
-      return Promise.resolve(
-        this.createErrorReturnValue("biometrics.reason.error.signatureMissing"),
-      );
+      return this.createErrorReturnValue("biometrics.reason.error.tokenMissing");
+    }
+
+    const { value, type, reason } = chainedPrivateKeyStatus?.value
+      ? chainedPrivateKeyStatus
+      : await BiometricsPrivateKeyStore.get();
+
+    if (!value) {
+      return this.createErrorReturnValue(reason || "biometrics.reason.error.keyMissing");
+    }
+
+    this.auth = {
+      value: signTokenED25519(this.auth.value, value),
+      reason: "biometrics.reason.success.tokenSigned",
+      type,
+    };
+
+    return { ...this.auth, value: true };
+  }
+
+  /**
+   * Sends the signed challenge to the API for verification.
+   * Handles both configured and unconfigured device states.
+   * For unconfigured devices or re-registration, requires a validation code.
+   */
+  public async send(
+    validateCode?: number,
+  ): Promise<BiometricsPartialStatus<boolean, true>> {
+    if (!this.auth.value) {
+      return this.createErrorReturnValue("biometrics.reason.error.signatureMissing");
     }
 
     let authorizationResult;
@@ -156,22 +120,21 @@ class BiometricsChallenge {
       );
     }
 
-    return authorizationResult.then(({ reason, value }) => {
-      if (!value) {
-        const isReasonIncluded = !reason.endsWith("unknownResponse");
+    const { reason, value } = await authorizationResult;
 
-        return this.createErrorReturnValue(
-          isReasonIncluded
-            ? reason
-            : "biometrics.reason.error.challengeRejected",
-        );
-      }
-      return {
-        value: true,
-        reason: "biometrics.reason.success.verificationSuccess",
-        type: this.auth.type,
-      };
-    });
+    if (!value) {
+      return this.createErrorReturnValue(
+        reason.endsWith("unknownResponse")
+          ? "biometrics.reason.error.challengeRejected"
+          : reason
+      );
+    }
+
+    return {
+      value: true,
+      reason: "biometrics.reason.success.verificationSuccess",
+      type: this.auth.type,
+    };
   }
 }
 

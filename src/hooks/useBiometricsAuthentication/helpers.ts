@@ -4,166 +4,131 @@ import {
 } from "@libs/Biometrics/BiometricsKeyStore";
 import {
   BiometricsStatus,
-  BiometricsStepWithStatus,
-} from "@hooks/useBiometrics/types";
+  BiometricsPartialStatus
+} from "@hooks/useBiometricsStatus/types";
 import CONST from "@src/CONST";
-import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
+import { BiometricsAuthFactor } from "@src/libs/Biometrics/types";
 
 /**
- * Initial, neutral biometrics status shape used to bootstrap hook state.
- * - isRequestFulfilled defaults to true so UI isn't blocked initially.
- */
-const INITIAL_BIOMETRICS_STATUS = {
-  requiredFactorForNextStep: undefined,
-  wasRecentStepSuccessful: undefined,
-  isBiometryConfigured: false,
-  isRequestFulfilled: true,
-};
-
-/**
- * Returns whether the device supports either biometrics or device credentials
- * based on values exposed by the key store implementation.
+ * Checks if the device supports either biometric authentication (like fingerprint/face)
+ * or device credentials (like PIN/pattern) by querying the key store capabilities.
  */
 function doesDeviceSupportBiometrics() {
-  const { biometrics, credentials } =
-    BiometricsPublicKeyStore.supportedAuthentication;
-
+  const { biometrics, credentials } = BiometricsPublicKeyStore.supportedAuthentication;
   return biometrics || credentials;
 }
 
 /**
- * Checks if a biometrics public key exists in the secure store.
- * Presence indicates prior successful registration/configuration.
+ * Checks if biometrics is already set up by looking for a public key in secure storage.
+ * A stored public key indicates successful prior configuration.
  */
 async function isBiometryConfigured() {
-  const key = await BiometricsPublicKeyStore.get();
-  return !!key.value;
+  return !!(await BiometricsPublicKeyStore.get()).value;
 }
 
 /**
- * Removes both private and public keys from the secure store.
- * Useful for recovering from partial/failed registrations.
+ * Cleans up biometrics configuration by removing both private and public keys
+ * from secure storage. Used when resetting or recovering from failed setup.
  */
 async function resetKeys() {
-  await BiometricsPrivateKeyStore.delete();
-  await BiometricsPublicKeyStore.delete();
+  await Promise.all([
+    BiometricsPrivateKeyStore.delete(),
+    BiometricsPublicKeyStore.delete()
+  ]);
 }
 
 /**
- * Builds status for the case where the device cannot support biometrics.
+ * Creates the common status fields used across different status states.
+ * Tracks success, fulfillment and any required authentication factor.
  */
-function createUnsupportedDeviceStatus(
-  prevStatus: BiometricsStatus<BiometricsStepWithStatus>,
-) {
+const createBaseStatus = (wasSuccessful: boolean, isRequestFulfilled: boolean, requiredFactor?: BiometricsAuthFactor) => ({
+  wasRecentStepSuccessful: wasSuccessful,
+  isRequestFulfilled,
+  requiredFactorForNextStep: requiredFactor,
+});
+
+/**
+ * Creates a status indicating the device lacks biometric capability.
+ * Sets success to false but marks request as fulfilled since no further action is possible.
+ */
+function createUnsupportedDeviceStatus(prevStatus: BiometricsStatus<boolean>) {
   return {
     ...prevStatus,
-    value: {
-      requiredFactorForNextStep: undefined,
-      isRequestFulfilled: true,
-      isBiometryConfigured: false,
-      wasRecentStepSuccessful: false,
-    },
+    value: false,
+    status: createBaseStatus(false, true),
   };
 }
 
 /**
- * Builds status when a required validate code is missing.
+ * Creates a status requesting a validation code from the user.
+ * Sets success to false and unfulfilled since user input is required.
  */
-function createValidateCodeMissingStatus(
-  prevStatus: BiometricsStatus<BiometricsStepWithStatus>,
-): BiometricsStatus<BiometricsStepWithStatus> {
+function createValidateCodeMissingStatus(prevStatus: BiometricsStatus<boolean>): BiometricsStatus<boolean> {
   return {
     ...prevStatus,
-    value: {
-      ...prevStatus.value,
-      wasRecentStepSuccessful: false,
-      isRequestFulfilled: false,
-      requiredFactorForNextStep: CONST.BIOMETRICS.AUTH_FACTORS.VALIDATE_CODE,
-    },
+    status: createBaseStatus(false, false, CONST.BIOMETRICS.AUTH_FACTORS.VALIDATE_CODE),
     reason: "biometrics.reason.error.validateCodeMissing",
   };
 }
 
 /**
- * Builds status from a key store error result.
+ * Creates a status from a key store error.
+ * Preserves the error details but marks the request as fulfilled since retry is needed.
  */
-function createKeyErrorStatus(
-  keyResult: BiometricsPartialStatus<boolean>,
-): (
-  prevStatus: BiometricsStatus<BiometricsStepWithStatus>,
-) => BiometricsStatus<BiometricsStepWithStatus> {
-  return (prevStatus: BiometricsStatus<BiometricsStepWithStatus>) => ({
+function createKeyErrorStatus({reason, type}: BiometricsPartialStatus<boolean, true>) {
+  return (prevStatus: BiometricsStatus<boolean>): BiometricsStatus<boolean> => ({
     ...prevStatus,
-    ...keyResult,
-    value: {
-      ...prevStatus.value,
-      wasRecentStepSuccessful: false,
-      isRequestFulfilled: true,
-      requiredFactorForNextStep: undefined,
-    },
+    reason,
+    type,
+    status: createBaseStatus(false, true),
   });
 }
 
 /**
- * Builds status from a registration API call outcome.
+ * Creates a status reflecting the result of registering with the backend.
+ * Success is based on the API response but always marks as fulfilled.
  */
-function createRegistrationResultStatus(
-  authReason: BiometricsPartialStatus<boolean>,
-): (
-  prevStatus: BiometricsStatus<BiometricsStepWithStatus>,
-) => BiometricsStatus<BiometricsStepWithStatus> {
-  return (prevStatus: BiometricsStatus<BiometricsStepWithStatus>) => ({
+function createRegistrationResultStatus(partialStatus: Partial<BiometricsPartialStatus<boolean>>) {
+  return (prevStatus: BiometricsStatus<boolean>): BiometricsStatus<boolean> => ({
     ...prevStatus,
-    ...authReason,
-    value: {
-      ...prevStatus.value,
-      wasRecentStepSuccessful: authReason.value,
-      isRequestFulfilled: true,
-      requiredFactorForNextStep: undefined,
-    },
+    ...partialStatus,
+    status: createBaseStatus(!!partialStatus.status?.wasRecentStepSuccessful, true),
   });
 }
 
 /**
- * Marks the current status as fulfilled, clearing pending requirements.
+ * Creates a status marking the current request as complete.
+ * Success depends on having no pending requirements and previous success.
+ * Returns unchanged status if already fulfilled.
  */
-function createFulfillStatus(
-  prevStatus: BiometricsStatus<BiometricsStepWithStatus>,
-): BiometricsStatus<BiometricsStepWithStatus> {
-  return prevStatus.value.isRequestFulfilled
-    ? prevStatus
-    : {
-        ...prevStatus,
-        value: {
-          ...prevStatus.value,
-          isRequestFulfilled: true,
-          requiredFactorForNextStep: undefined,
-          wasRecentStepSuccessful:
-            !prevStatus.value.requiredFactorForNextStep &&
-            prevStatus.value.wasRecentStepSuccessful,
-        },
-      };
+function createFulfillStatus(prevStatus: BiometricsStatus<boolean>): BiometricsStatus<boolean> {
+  if (prevStatus.status.isRequestFulfilled) {
+    return prevStatus;
+  }
+
+  const wasSuccessful = !prevStatus.status.requiredFactorForNextStep && 
+                       !!prevStatus.status.wasRecentStepSuccessful;
+
+  return {
+    ...prevStatus,
+    status: createBaseStatus(wasSuccessful, true),
+  };
 }
 
 /**
- * Updates the "isBiometryConfigured" field from a boolean probe result.
+ * Creates a status reflecting whether biometrics is configured.
+ * Only updates the configuration flag while preserving other status fields.
  */
-function createRefreshStatusStatus(
-  isBiometricsConfiguredValue: boolean,
-): (
-  prevStatus: BiometricsStatus<BiometricsStepWithStatus>,
-) => BiometricsStatus<BiometricsStepWithStatus> {
-  return (prevStatus: BiometricsStatus<BiometricsStepWithStatus>) => ({
+function createRefreshStatusStatus(isBiometricsConfiguredValue: boolean) {
+  return (prevStatus: BiometricsStatus<boolean>): BiometricsStatus<boolean> => ({
     ...prevStatus,
-    value: {
-      ...prevStatus.value,
-      isBiometryConfigured: isBiometricsConfiguredValue,
-    },
+    value: isBiometricsConfiguredValue,
   });
 }
 
 /**
- * Namespaced helper factory for building common biometrics status states.
+ * Collection of status creator functions for handling different biometric states.
+ * Each function builds a properly formatted status object for its specific case.
  */
 const Status = {
   createUnsupportedDeviceStatus,
@@ -178,6 +143,5 @@ export {
   doesDeviceSupportBiometrics,
   isBiometryConfigured,
   resetKeys,
-  INITIAL_BIOMETRICS_STATUS,
   Status,
 };

@@ -1,167 +1,127 @@
 import { useCallback } from "react";
-import type {
-  BiometricsStatus,
-  BiometricsStep,
-} from "@hooks/useBiometrics/types";
-import authorizeBiometricsAction, {
-  verifyRequiredFactors,
-} from "@libs/Biometrics/authorizeBiometricsAction";
+import authorizeBiometricsAction from "@libs/Biometrics/authorizeBiometricsAction";
 import CONST from "@src/CONST";
+import { verifyRequiredFactors } from "./helpers";
 import useBiometricsStatus from "../useBiometricsStatus";
 import { requestValidateCodeAction } from "@libs/actions/User";
+import { AutorizeUsingFallback, UseBiometricsAuthorizationFallback } from "./types";
 
-function useBiometricsAuthorizationFallback() {
-  const [status, setStatus] = useBiometricsStatus<
-    BiometricsStep & {
-      storedValidateCode: number | undefined;
-    }
-  >(
-    {
-      wasRecentStepSuccessful: undefined,
-      requiredFactorForNextStep: undefined,
-      isRequestFulfilled: true,
-      storedValidateCode: undefined,
-    },
+/**
+ * Hook that provides fallback authorization flow when biometrics is not available.
+ * Uses validate code and OTP for transaction authorization instead.
+ */
+function useBiometricsAuthorizationFallback(): UseBiometricsAuthorizationFallback {
+  const [status, setStatus] = useBiometricsStatus<number | undefined>(
+    undefined,
     CONST.BIOMETRICS.ACTION_TYPE.CHALLENGE,
-    (statusValue) => !!statusValue.value.wasRecentStepSuccessful,
-  );
-
-  const verifyFactors = useCallback(
-    ({ otp, validateCode }: { otp?: number; validateCode?: number }) => {
-      const isValidateCodeVerified = !!status.value.storedValidateCode;
-
-      return verifyRequiredFactors({
-        otp,
-        validateCode,
-        requiredFactors:
-          CONST.BIOMETRICS.DEVICE_STATUS_FACTORS_MAP.NOT_SUPPORTED.map(
-            ({ id }) => id,
-          ),
-        isValidateCodeVerified,
-      });
-    },
-    [status.value.storedValidateCode],
   );
 
   /**
-   * Internal method to authorize transaction using otp and validate code.
-   * This is used when biometrics is not available on the device.
+   * Verifies that all required authentication factors are provided.
+   * Checks both OTP and validate code against the requirements for non-biometric devices.
    */
-  const authorize = useCallback(
-    ({
+  const verifyFactors = useCallback(
+    ({ otp, validateCode }: { otp?: number; validateCode?: number }) => (
+      verifyRequiredFactors({
+        otp,
+        validateCode,
+        requiredFactors: CONST.BIOMETRICS.DEVICE_STATUS_FACTORS_MAP.NOT_SUPPORTED.map(
+          ({ id }) => id
+        ),
+        isValidateCodeVerified: !!status.value,
+      })
+    ),
+    [status.value],
+  );
+
+  /**
+   * Authorizes a transaction using OTP and validate code when biometrics is unavailable.
+   * Handles the multi-step verification process, requesting additional factors when needed.
+   * Updates status to reflect the current state of authorization and any required next steps.
+   */
+  const authorize: AutorizeUsingFallback = useCallback(
+    async ({
       otp,
       validateCode,
       transactionID,
-    }: {
-      transactionID: string;
-      validateCode?: number;
-      otp?: number;
-    }): Promise<BiometricsStatus<BiometricsStep>> => {
-      const providedOrStoredValidateCode =
-        validateCode || status.value.storedValidateCode;
-
-      const factorsCheckResult = verifyFactors({
+    }) => {
+      const providedOrStoredValidateCode = validateCode || status.value;
+      const { value: factorsCheckValue, reason: factorsCheckReason } = verifyFactors({
         otp,
         validateCode: providedOrStoredValidateCode,
       });
-
-      const { value: factorsCheckValue } = factorsCheckResult;
 
       if (factorsCheckValue !== true) {
         if (factorsCheckValue === CONST.BIOMETRICS.AUTH_FACTORS.VALIDATE_CODE) {
           requestValidateCodeAction();
         }
 
-        return Promise.resolve(
-          setStatus((prevStatus) => ({
-            ...prevStatus,
-            value: {
-              ...prevStatus.value,
-              requiredFactorForNextStep: factorsCheckValue,
-              wasRecentStepSuccessful: false,
-              isRequestFulfilled: false,
-            },
-            reason: factorsCheckResult.reason,
-          })),
-        );
+        return setStatus(prevStatus => ({
+          ...prevStatus,
+          status: {
+            requiredFactorForNextStep: factorsCheckValue,
+            wasRecentStepSuccessful: false,
+            isRequestFulfilled: false,
+          },
+          reason: factorsCheckReason,
+        }));
       }
 
-      const isValidateCodeVerified = !!status.value.storedValidateCode;
-
-      return authorizeBiometricsAction(
+      const result = await authorizeBiometricsAction(
         CONST.BIOMETRICS.DEVICE_BIOMETRICS_STATUS.NOT_SUPPORTED,
         transactionID,
         {
           validateCode: providedOrStoredValidateCode!,
           otp,
         },
-        isValidateCodeVerified,
-      )
-        .then((result) => {
-          const { successful, isOTPRequired } = result.value;
+        !!status.value
+      );
 
-          const shouldStoreValidateCode =
-            validateCode && isOTPRequired && successful;
+      const { successful, isOTPRequired } = result.value;
+      
+      let reason = result.reason;
 
-          let reason = result.reason;
+      if (result.reason !== "biometrics.apiResponse.unableToAuthorize") {
+        reason = result.reason;
+      } else if (!!otp && !!providedOrStoredValidateCode) {
+        reason = "biometrics.apiResponse.otpCodeInvalid";
+      } else if (!otp && !!providedOrStoredValidateCode) {
+        reason = "biometrics.apiResponse.validationCodeInvalid";
+      }
 
-          if (result.reason === "biometrics.apiResponse.unableToAuthorize") {
-            if (!!otp && !!providedOrStoredValidateCode) {
-              reason = "biometrics.apiResponse.otpCodeInvalid";
-            } else if (!otp && !!providedOrStoredValidateCode) {
-              reason = "biometrics.apiResponse.validationCodeInvalid";
-            }
-          }
-
-          // // const areParametersBad =
-          // //
-          // // const isOTPCodeReason =
-          //
-          // const isValidateCodeReason =
-          //    && areParametersBad;
-
-          console.log(result);
-
-          return setStatus({
-            ...result,
-            value: {
-              requiredFactorForNextStep: isOTPRequired
-                ? CONST.BIOMETRICS.AUTH_FACTORS.OTP
-                : undefined,
-              wasRecentStepSuccessful: successful,
-              isRequestFulfilled: !successful || !isOTPRequired,
-              storedValidateCode: shouldStoreValidateCode
-                ? validateCode
-                : undefined,
-            },
-            reason,
-            // value: isOTPRequired
-            //   ? CONST.BIOMETRICS.AUTH_FACTORS.OTP
-            //   : !wasValidateCodeInvalid,
-          });
-        })
-        .then((result) => {
-          return setStatus(result);
-        });
+      return setStatus({
+        ...result,
+        value: validateCode && isOTPRequired && successful ? validateCode : undefined,
+        status: {
+          requiredFactorForNextStep: isOTPRequired ? CONST.BIOMETRICS.AUTH_FACTORS.OTP : undefined,
+          wasRecentStepSuccessful: successful,
+          isRequestFulfilled: !successful || !isOTPRequired,
+        },
+        reason,
+      });
     },
-    [status.value.storedValidateCode, setStatus, verifyFactors],
+    [status.value, setStatus, verifyFactors],
   );
 
-  const fulfill = useCallback(() => {
-    return setStatus((prevStatus) => ({
+  /**
+   * Marks the current authorization request as fulfilled and resets the validate code.
+   * Used when completing or canceling an authorization flow.
+   */
+  const fulfill = useCallback(() => (
+    setStatus(prevStatus => ({
       ...prevStatus,
-      value: {
+      value: undefined,
+      status: {
         isRequestFulfilled: true,
         requiredFactorForNextStep: undefined,
         wasRecentStepSuccessful:
-          !prevStatus.value.requiredFactorForNextStep &&
-          prevStatus.value.wasRecentStepSuccessful,
-        storedValidateCode: undefined,
+          !prevStatus.status.requiredFactorForNextStep &&
+          prevStatus.status.wasRecentStepSuccessful,
       },
-    }));
-  }, [setStatus]);
+    }))
+  ), [setStatus]);
 
-  return { status, authorize, fulfill } as const;
+  return { status, authorize, fulfill }
 }
 
 export default useBiometricsAuthorizationFallback;

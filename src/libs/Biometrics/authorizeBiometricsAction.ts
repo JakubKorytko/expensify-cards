@@ -1,9 +1,6 @@
-import { BiometricsStatus } from "@hooks/useBiometrics/types";
 import CONST from "@src/CONST";
 import { authorizeTransaction } from "../actions/Biometrics";
-import { BiometricsPublicKeyStore } from "@libs/Biometrics/BiometricsKeyStore";
 import {
-  BiometricsAuthFactor,
   BiometricsAuthFactors,
   DeviceBiometricsStatus,
   BiometricsDeviceStatusMapKey,
@@ -12,137 +9,42 @@ import {
 import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
 
 /**
- * Determines the current biometrics device status.
- * i.e. whether the device supports biometrics or device credentials and whether the user has configured it.
- */
-function getDeviceBiometricsStatus(): Promise<DeviceBiometricsStatus> {
-  const { supportedAuthentication } = BiometricsPublicKeyStore;
-
-  const isAnythingSupported = Object.values(supportedAuthentication).some(
-    Boolean,
-  );
-
-  if (!isAnythingSupported) {
-    return Promise.resolve(
-      CONST.BIOMETRICS.DEVICE_BIOMETRICS_STATUS.NOT_SUPPORTED,
-    );
-  }
-
-  return BiometricsPublicKeyStore.get().then(
-    ({ value }) =>
-      CONST.BIOMETRICS.DEVICE_BIOMETRICS_STATUS[
-        value ? "CONFIGURED" : "NOT_CONFIGURED"
-      ],
-  );
-}
-
-/**
- * Verifies that the provided factors meet the required factors for authorization.
- * Specifically checks for the presence of OTP and validateCode if they are required.
- */
-function verifyRequiredFactors({
-  otp,
-  validateCode,
-  requiredFactors,
-  isValidateCodeVerified,
-}: {
-  otp?: number;
-  validateCode?: number;
-  requiredFactors: BiometricsAuthFactor[];
-  isValidateCodeVerified: boolean;
-}): BiometricsPartialStatus<BiometricsAuthFactor | true> {
-  const isValidateCodeRequired = requiredFactors.includes(
-    CONST.BIOMETRICS.AUTH_FACTORS.VALIDATE_CODE,
-  );
-  const isOtpIncludedAsFactor = requiredFactors.includes(
-    CONST.BIOMETRICS.AUTH_FACTORS.OTP,
-  );
-
-  const areBothRequired = isOtpIncludedAsFactor && isValidateCodeRequired;
-
-  /** If both are required, and the validate code hasn't been verified yet, only validateCode is needed */
-  const isOtpRequired = areBothRequired
-    ? isValidateCodeVerified
-    : isOtpIncludedAsFactor;
-
-  /** Check that we have everything we need to proceed */
-  if (isValidateCodeRequired && !validateCode) {
-    return {
-      value: CONST.BIOMETRICS.AUTH_FACTORS.VALIDATE_CODE,
-      reason: "biometrics.reason.error.validateCodeMissing",
-    };
-  }
-
-  if (isOtpRequired && !otp) {
-    return {
-      value: CONST.BIOMETRICS.AUTH_FACTORS.OTP,
-      reason: "biometrics.reason.error.otpMissing",
-    };
-  }
-
-  return {
-    value: true,
-    reason: "biometrics.reason.generic.authFactorsSufficient",
-  };
-}
-
-/**
- * Returns a list of required authorization factors based on the current device biometrics status.
- * This mostly applies to authorization process,
- * but if the factors include validateCode, it also applies to the authentication.
- */
-function getBiometricsAuthorizationFactors(): Promise<BiometricsAuthFactor[]> {
-  return getDeviceBiometricsStatus().then((deviceStatus) =>
-    CONST.BIOMETRICS.DEVICE_STATUS_FACTORS_MAP[deviceStatus].map(
-      (factor) => factor.id,
-    ),
-  );
-}
-
-/**
- * Validates whether the provided authorization factors are sufficient based on the current device biometrics status.
+ * Validates that all required authentication factors are present and of the correct type/format.
+ * Checks each factor's presence, type, and length requirements.
+ * Skips OTP validation if the validation code hasn't been verified yet.
  */
 function areBiometricsFactorsSufficient<T extends DeviceBiometricsStatus>(
   deviceStatus: T,
   factors: BiometricsAuthFactors<T>,
   isValidateCodeVerified: boolean,
-): BiometricsPartialStatus<true | string> {
+): BiometricsPartialStatus<true | string, true> {
   const requiredFactors =
     CONST.BIOMETRICS.DEVICE_STATUS_FACTORS_MAP[deviceStatus];
 
-  for (const factor of requiredFactors) {
-    const param = factor.parameter;
-    let message = "";
-
-    /** We should skip OTP check if the validate code was not verified before */
-    if (
-      factor.id === CONST.BIOMETRICS.AUTH_FACTORS.OTP &&
-      !isValidateCodeVerified
-    ) {
+  for (const { id, parameter, name, type, length } of requiredFactors) {
+    if (id === CONST.BIOMETRICS.AUTH_FACTORS.OTP && !isValidateCodeVerified) {
       continue;
     }
 
-    if (!(param in factors)) {
-      message = `Missing required factor: ${factor.name} (${factor.parameter})`;
-    }
-
-    const value = factors[param as keyof BiometricsAuthFactors<T>];
-
-    if (!message && typeof value !== typeof factor.type) {
-      message = `Invalid type for factor: ${factor.name} (${factor.parameter}). Expected ${typeof factor.type}, got ${typeof value}`;
-    }
-
-    if (
-      !message &&
-      typeof factor.length === "number" &&
-      String(value).length !== factor.length
-    ) {
-      message = `Invalid length for factor: ${factor.name} (${factor.parameter}). Expected length ${factor.length}, got length ${String(value).length}`;
-    }
-
-    if (message) {
+    if (!(parameter in factors)) {
       return {
-        value: message,
+        value: `Missing required factor: ${name} (${parameter})`,
+        reason: "biometrics.reason.generic.authFactorsError",
+      };
+    }
+
+    const value = factors[parameter as keyof BiometricsAuthFactors<T>];
+
+    if (typeof value !== typeof type) {
+      return {
+        value: `Invalid type for factor: ${name} (${parameter}). Expected ${typeof type}, got ${typeof value}`,
+        reason: "biometrics.reason.generic.authFactorsError",
+      };
+    }
+
+    if (typeof length === "number" && String(value).length !== length) {
+      return {
+        value: `Invalid length for factor: ${name} (${parameter}). Expected length ${length}, got length ${String(value).length}`,
         reason: "biometrics.reason.generic.authFactorsError",
       };
     }
@@ -155,10 +57,14 @@ function areBiometricsFactorsSufficient<T extends DeviceBiometricsStatus>(
 }
 
 /**
- * Authorizes a transaction using biometrics and/or other factors based on the device's biometrics status.
- * Validates that the provided factors are sufficient before attempting authorization.
+ * Main authorization function that handles the complete transaction flow.
+ * First validates that all required factors are present and valid.
+ * Then sends the authorization request to the server.
+ * Returns whether the authorization was successful and if additional OTP verification is needed.
  */
-function authorizeBiometricsAction<T extends BiometricsDeviceStatusMapKey>(
+async function authorizeBiometricsAction<
+  T extends BiometricsDeviceStatusMapKey,
+>(
   deviceStatus: T,
   transactionID: string,
   factors: BiometricsAuthFactors<T>,
@@ -171,26 +77,24 @@ function authorizeBiometricsAction<T extends BiometricsDeviceStatusMapKey>(
   );
 
   if (factorsCheckResult.value !== true) {
-    return Promise.resolve({
+    return {
       ...factorsCheckResult,
-      value: {
-        successful: false,
-        isOTPRequired: false,
-      },
-    });
+      value: { successful: false, isOTPRequired: false },
+    };
   }
 
-  return authorizeTransaction({
+  const { httpCode, reason } = await authorizeTransaction({
     ...factors,
     transactionID,
-  }).then(({ httpCode, reason }) => ({
+  });
+
+  return {
     value: {
       successful: String(httpCode).startsWith("2"),
       isOTPRequired: httpCode === 202,
     },
     reason,
-  }));
+  };
 }
 
 export default authorizeBiometricsAction;
-export { getBiometricsAuthorizationFactors, verifyRequiredFactors };

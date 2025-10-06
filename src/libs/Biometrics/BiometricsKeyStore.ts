@@ -6,24 +6,26 @@ import decodeBiometricsExpoMessage from "@libs/Biometrics/decodeBiometricsExpoMe
 import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
 
 /**
- * Proxy-like class with CRUD methods to access the SecureStore
- * Every method handles thrown errors and wraps the return value with translation path reason.
- * It also has pre-defined options passed as an argument when accessing the store.
- *
- * This class is not exported, instead 2 objects are created & exported (BiometricsPrivateKeyStore and BiometricsPublicKeyStore).
- * This way we can skip authentication if we access the public key and require it for the private one.
+ * Provides secure storage for biometric keys with authentication controls.
+ * Handles CRUD operations on the SecureStore with error handling and feedback support.
+ * Returns standardized response objects containing operation status, reason messages, and auth type.
+ * 
+ * The class is used internally to create two specialized stores:
+ * - BiometricsPrivateKeyStore: Requires biometric/credential auth for access
+ * - BiometricsPublicKeyStore: Allows access without authentication
  */
 class BiometricsKeyStore {
   constructor(
     private readonly key: ValueOf<typeof CONST.BIOMETRICS.KEY_ALIASES>,
-  ) {
-    this.key = key;
-  }
+  ) {}
 
-  /** Pre-defined options for setter and getter with a check whether it should require authentication */
+  /**
+   * SecureStore options that control authentication requirements.
+   * Private keys require biometric/credential auth, while public keys don't.
+   * Also configures keychain access and credential alternatives.
+   */
   private get options(): SecureStore.SecureStoreOptions {
     const isPrivateKey = this.key === CONST.BIOMETRICS.KEY_ALIASES.PRIVATE_KEY;
-
     return {
       failOnDuplicate: isPrivateKey,
       requireAuthentication: isPrivateKey,
@@ -34,7 +36,10 @@ class BiometricsKeyStore {
     };
   }
 
-  /** Check what authentication types are supported on the current device */
+  /**
+   * Checks device support for different authentication methods.
+   * Returns whether biometrics and device credentials can be used.
+   */
   public get supportedAuthentication() {
     return {
       biometrics: SecureStore.canUseBiometricAuthentication(),
@@ -42,73 +47,79 @@ class BiometricsKeyStore {
     };
   }
 
-  /** IMPORTANT: Using this method on BiometricsPrivateKeyStore object will display authentication prompt */
-  public set(value: string): Promise<BiometricsPartialStatus<boolean>> {
-    return SecureStore.setItemAsync(this.key, value, this.options)
-      .then((type) => ({
+  /**
+   * Stores a value in SecureStore. For private keys, this will trigger an auth prompt.
+   * Returns success/failure status with a reason message and auth type used.
+   */
+  public async set(value: string): Promise<BiometricsPartialStatus<boolean, true>> {
+    try {
+      const type = await SecureStore.setItemAsync(this.key, value, this.options);
+      return {
         value: true,
-        reason:
-          "biometrics.reason.success.keySavedInSecureStore" as TranslationPaths,
+        reason: "biometrics.reason.success.keySavedInSecureStore" as TranslationPaths,
         type,
-      }))
-      .catch((error) => ({
+      };
+    } catch (error) {
+      return {
         value: false,
-        reason: decodeBiometricsExpoMessage(
-          error,
-          "biometrics.reason.error.unableToSaveKey",
-        ),
-      }));
+        reason: decodeBiometricsExpoMessage(error, "biometrics.reason.error.unableToSaveKey"),
+      };
+    }
   }
 
-  public delete(): Promise<BiometricsPartialStatus<boolean>> {
-    return SecureStore.deleteItemAsync(this.key, {
-      keychainService: CONST.BIOMETRICS.KEYCHAIN_SERVICE,
-    })
-      .then(() => ({
+  /**
+   * Removes a value from SecureStore.
+   * Returns success/failure status with a reason message.
+   */
+  public async delete(): Promise<BiometricsPartialStatus<boolean, true>> {
+    try {
+      await SecureStore.deleteItemAsync(this.key, {
+        keychainService: CONST.BIOMETRICS.KEYCHAIN_SERVICE,
+      });
+      return {
         value: true,
-        reason:
-          "biometrics.reason.success.keyDeletedFromSecureStore" as TranslationPaths,
-      }))
-      .catch((error) => ({
+        reason: "biometrics.reason.success.keyDeletedFromSecureStore" as TranslationPaths,
+      };
+    } catch (error) {
+      return {
         value: false,
-        reason: decodeBiometricsExpoMessage(
-          error,
-          "biometrics.reason.error.unableToDelete",
-        ),
-      }));
+        reason: decodeBiometricsExpoMessage(error, "biometrics.reason.error.unableToDelete"),
+      };
+    }
   }
 
-  /** IMPORTANT: Using this method on BiometricsPrivateKeyStore object will display authentication prompt */
-  public get(): Promise<BiometricsPartialStatus<string | null>> {
-    return SecureStore.getItemAsync(this.key, this.options)
-      .then(([key, type]) => ({
+  /**
+   * Retrieves a value from SecureStore. For private keys, this will trigger an auth prompt.
+   * Returns the stored value (or null) with a reason message and auth type used.
+   */
+  public async get(): Promise<BiometricsPartialStatus<string | null, true>> {
+    try {
+      const [key, type] = await SecureStore.getItemAsync(this.key, this.options);
+      return {
         value: key,
-        reason:
-          `biometrics.reason.success.${!!key ? "keyRetrievedFromSecureStore" : "keyNotInSecureStore"}` as TranslationPaths,
+        reason: `biometrics.reason.success.${key ? "keyRetrievedFromSecureStore" : "keyNotInSecureStore"}` as TranslationPaths,
         type,
-      }))
-      .catch((error) => ({
+      };
+    } catch (error) {
+      return {
         value: null,
-        reason: decodeBiometricsExpoMessage(
-          error,
-          "biometrics.reason.error.unableToRetrieve",
-        ),
-      }));
+        reason: decodeBiometricsExpoMessage(error, "biometrics.reason.error.unableToRetrieve"),
+      };
+    }
   }
 }
 
 /**
- * Store for the biometrics private key.
- *
- * IMPORTANT: Setting or getting a value will display authentication prompt
+ * Secure storage for the private key that requires biometric/credential authentication.
+ * All operations (get/set) will trigger an authentication prompt.
  */
 const BiometricsPrivateKeyStore = new BiometricsKeyStore(
   CONST.BIOMETRICS.KEY_ALIASES.PRIVATE_KEY,
 );
 
 /**
- * Store for the biometrics public key.
- * Using any of its methods do not require authentication.
+ * Storage for the public key that can be accessed without authentication.
+ * Provides the same interface as BiometricsPrivateKeyStore but without auth requirements.
  */
 const BiometricsPublicKeyStore = new BiometricsKeyStore(
   CONST.BIOMETRICS.KEY_ALIASES.PUBLIC_KEY,
