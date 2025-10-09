@@ -112,7 +112,8 @@ export default function useBiometricsStatus<T>(
    */
   const setStatus: SetBiometricsStatus<T> = useCallback(
     (partialStatus) => {
-      const isChallengeType = type === CONST.BIOMETRICS.ACTION_TYPE.CHALLENGE;
+      const isChallengeType =
+        type === CONST.BIOMETRICS.ACTION_TYPE.AUTHORIZATION;
       const state =
         typeof partialStatus === "function"
           ? partialStatus(previousStatus.current)

@@ -132,9 +132,12 @@ class BiometricsChallenge {
       );
     }
 
-    const { reason, value } = await authorizationResult;
+    const {
+      reason,
+      step: { wasRecentStepSuccessful, isRequestFulfilled },
+    } = await authorizationResult;
 
-    if (!value.successful) {
+    if (!wasRecentStepSuccessful || !isRequestFulfilled) {
       return this.createErrorReturnValue(
         reason.endsWith("unknownResponse")
           ? "biometrics.reason.error.challengeRejected"

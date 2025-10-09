@@ -1,5 +1,10 @@
 import CONST from "@src/CONST";
-import { BiometricsFactor } from "@libs/Biometrics/types";
+import {
+  BiometricsFactor,
+  BiometricsFallbackAction,
+  BiometricsFallbackFactor,
+  BiometricsFallbackFactors,
+} from "@libs/Biometrics/types";
 import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
 
 /**
@@ -11,19 +16,19 @@ function verifyRequiredFactors({
   otp,
   validateCode,
   requiredFactors,
-  isValidateCodeVerified,
+  isFirstFactorVerified,
 }: {
   otp?: number;
   validateCode?: number;
   requiredFactors: BiometricsFactor[];
-  isValidateCodeVerified: boolean;
+  isFirstFactorVerified: boolean;
 }): BiometricsPartialStatus<BiometricsFactor | true, true> {
   const isValidateCodeRequired = requiredFactors.includes(
     CONST.BIOMETRICS.FACTORS.VALIDATE_CODE,
   );
   const isOtpRequired =
     requiredFactors.includes(CONST.BIOMETRICS.FACTORS.OTP) &&
-    (!isValidateCodeRequired || isValidateCodeVerified);
+    (!isValidateCodeRequired || isFirstFactorVerified);
 
   /** Check that we have everything we need to proceed */
   if (isValidateCodeRequired && !validateCode) {
@@ -46,4 +51,16 @@ function verifyRequiredFactors({
   };
 }
 
-export { verifyRequiredFactors };
+/**
+ * Takes a biometrics factor (like OTP or validate code) and converts it to the corresponding
+ * parameter name that will be used in the fallback authentication flow. For example,
+ * converts the factor "VALIDATE_CODE" to the parameter name "validateCode".
+ */
+function convertBiometricsFactorToParameterName<
+  T extends BiometricsFallbackAction,
+>(factor: BiometricsFallbackFactor) {
+  return CONST.BIOMETRICS.FACTORS_REQUIREMENTS[factor]
+    .parameter as keyof BiometricsFallbackFactors<T>;
+}
+
+export { verifyRequiredFactors, convertBiometricsFactorToParameterName };

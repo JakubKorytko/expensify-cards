@@ -1,25 +1,40 @@
-import { BiometricsStatus } from "../useBiometricsStatus/types";
+import { BiometricsStatus, BiometricsStep } from "../useBiometricsStatus/types";
+import {
+  BiometricsFallbackAction,
+  BiometricsFallbackActionParams,
+  StoredValueType,
+} from "@libs/Biometrics/types";
 
 /**
  * Function type for authorizing transactions when biometrics is not available.
- * Uses OTP and validate code as alternative authentication factors.
- * Returns a status containing the validate code if successful.
+ * Uses provided factors as alternative authentication factors.
+ * Returns a status containing the first verified factor.
  */
-type AutorizeUsingFallback = (params: {
-  otp?: number;
-  validateCode?: number;
-  transactionID: string;
-}) => Promise<BiometricsStatus<number | undefined>>;
+type AuthorizeUsingFallback<T extends BiometricsFallbackAction> = (
+  params: BiometricsFallbackActionParams<T>,
+) => Promise<BiometricsStatus<StoredValueType<T> | undefined>>;
+
+/**
+ * User-facing status messages for the current biometric state
+ */
+type BiometricsStatusMessage = {
+  /** Detailed message explaining the current state or required action */
+  message: string;
+
+  /** Brief status header (e.g. "Authentication Successful") */
+  title: string;
+};
 
 /**
  * Hook return type for biometrics fallback authorization.
  * Provides status tracking, authorization function, and request canceling.
- * Status tracks the current validate code and authorization state.
+ * Status tracks the current verified factor and authorization state.
  */
-type UseBiometricsAuthorizationFallback = {
-  status: BiometricsStatus<number | undefined>;
-  authorize: AutorizeUsingFallback;
-  cancel: () => BiometricsStatus<number | undefined>;
-};
+type UseBiometricsAuthorizationFallback<T extends BiometricsFallbackAction> =
+  BiometricsStatusMessage &
+    BiometricsStep & {
+      authorize: AuthorizeUsingFallback<T>;
+      cancel: () => BiometricsStatus<StoredValueType<T> | undefined>;
+    };
 
-export type { AutorizeUsingFallback, UseBiometricsAuthorizationFallback };
+export type { AuthorizeUsingFallback, UseBiometricsAuthorizationFallback };

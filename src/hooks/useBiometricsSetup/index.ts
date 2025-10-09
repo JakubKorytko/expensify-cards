@@ -6,7 +6,6 @@ import {
 import { generateKeyPair } from "@libs/ED25519";
 import { requestValidateCodeAction } from "@libs/actions/User";
 import CONST from "@src/CONST";
-import { registerBiometrics } from "@libs/actions/Biometrics";
 import { BiometricsStatus } from "@hooks/useBiometricsStatus/types";
 import useBiometricsStatus from "../useBiometricsStatus";
 import {
@@ -33,7 +32,7 @@ function useBiometricsSetup(): UseBiometricsSetup {
   /** Tracks whether biometrics is properly configured and ready for authentication */
   const [status, setStatus] = useBiometricsStatus<boolean>(
     false,
-    CONST.BIOMETRICS.ACTION_TYPE.KEY,
+    CONST.BIOMETRICS.ACTION_TYPE.AUTHENTICATION,
   );
 
   /**
@@ -126,7 +125,7 @@ function useBiometricsSetup(): UseBiometricsSetup {
 
       /** Call backend to register the public key */
       const {
-        value: { httpCode },
+        step: { wasRecentStepSuccessful, isRequestFulfilled },
         reason,
       } = await authorizeBiometricsAction(
         CONST.BIOMETRICS.ACTION.SETUP_BIOMETRICS,
@@ -137,7 +136,7 @@ function useBiometricsSetup(): UseBiometricsSetup {
       );
 
       const successMessage = "biometrics.reason.success.keyPairGenerated";
-      const isCallSuccessful = String(httpCode).startsWith("2");
+      const isCallSuccessful = wasRecentStepSuccessful && isRequestFulfilled;
 
       /** Cleanup keys on failure to avoid partial state */
       if (!isCallSuccessful) {

@@ -1,40 +1,50 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import authorizeBiometricsAction from "@libs/Biometrics/authorizeBiometricsAction";
 import CONST from "@src/CONST";
-import { verifyRequiredFactors } from "./helpers";
+import {
+  convertBiometricsFactorToParameterName,
+  verifyRequiredFactors,
+} from "./helpers";
 import useBiometricsStatus from "../useBiometricsStatus";
 import { requestValidateCodeAction } from "@libs/actions/User";
 import {
-  AutorizeUsingFallback,
+  AuthorizeUsingFallback,
   UseBiometricsAuthorizationFallback,
 } from "./types";
+import {
+  BiometricsFallbackAction,
+  BiometricsFallbackActionParams,
+  BiometricsFallbackFactor,
+  BiometricsFallbackFactors,
+  StoredValueType,
+} from "@libs/Biometrics/types";
+import biometricsActions from "@libs/Biometrics/biometricsActions";
 
 /**
  * Hook that provides fallback authorization flow when biometrics is not available.
  * Uses validate code and OTP for transaction authorization instead.
  */
-function useBiometricsAuthorizationFallback(): UseBiometricsAuthorizationFallback {
-  const [status, setStatus] = useBiometricsStatus<number | undefined>(
-    undefined,
-    CONST.BIOMETRICS.ACTION_TYPE.CHALLENGE,
-  );
+function useBiometricsAuthorizationFallback<T extends BiometricsFallbackAction>(
+  action: T,
+): UseBiometricsAuthorizationFallback<T> {
+  const [status, setStatus] = useBiometricsStatus<
+    StoredValueType<T> | undefined
+  >(undefined, CONST.BIOMETRICS.ACTION_TYPE.AUTHORIZATION);
+
+  const requiredFactors = CONST.BIOMETRICS.ACTION_FACTORS_MAP[action];
 
   /**
    * Verifies that all required authentication factors are provided.
    * Checks both OTP and validate code against the requirements for non-biometric devices.
    */
   const verifyFactors = useCallback(
-    ({ otp, validateCode }: { otp?: number; validateCode?: number }) =>
+    (params: BiometricsFallbackActionParams<T>) =>
       verifyRequiredFactors({
-        otp,
-        validateCode,
-        requiredFactors:
-          CONST.BIOMETRICS.ACTION_FACTORS_MAP.AUTHORIZE_TRANSACTION_FALLBACK.map(
-            ({ id }) => id,
-          ),
-        isValidateCodeVerified: !!status.value,
+        ...params,
+        requiredFactors: requiredFactors.map(({ id }) => id),
+        isFirstFactorVerified: !!status.value,
       }),
-    [status.value],
+    [requiredFactors, status.value],
   );
 
   /**
@@ -42,13 +52,27 @@ function useBiometricsAuthorizationFallback(): UseBiometricsAuthorizationFallbac
    * Handles the multistep verification process, requesting additional factors when needed.
    * Updates status to reflect the current state of authorization and any required next steps.
    */
-  const authorize: AutorizeUsingFallback = useCallback(
-    async ({ otp, validateCode, transactionID }) => {
-      const providedOrStoredValidateCode = validateCode || status.value;
+  const authorize: AuthorizeUsingFallback<T> = useCallback(
+    async (params) => {
+      const valueToStore =
+        "factorToStore" in biometricsActions[action] &&
+        biometricsActions[action].factorToStore;
+
+      const parameterName =
+        valueToStore &&
+        CONST.BIOMETRICS.FACTORS_REQUIREMENTS[valueToStore].origin ===
+          CONST.BIOMETRICS.FACTORS_ORIGIN.FALLBACK &&
+        (convertBiometricsFactorToParameterName(
+          valueToStore as BiometricsFallbackFactor,
+        ) as keyof BiometricsFallbackFactors<T>);
+      const storedValue =
+        parameterName && (params[parameterName] as StoredValueType<T>);
+
+      const providedOrStoredFactor = storedValue || status.value;
       const { value: factorsCheckValue, reason: factorsCheckReason } =
         verifyFactors({
-          otp,
-          validateCode: providedOrStoredValidateCode,
+          ...params,
+          ...(parameterName ? { [parameterName]: providedOrStoredFactor } : {}),
         });
 
       if (factorsCheckValue !== true) {
@@ -67,47 +91,15 @@ function useBiometricsAuthorizationFallback(): UseBiometricsAuthorizationFallbac
         }));
       }
 
-      const result = await authorizeBiometricsAction(
-        CONST.BIOMETRICS.ACTION.AUTHORIZE_TRANSACTION_FALLBACK,
-        {
-          validateCode: providedOrStoredValidateCode!,
-          otp,
-          isValidateCodeVerified: !!status.value,
-          transactionID,
-        },
+      return setStatus(
+        await authorizeBiometricsAction(action, {
+          ...params,
+          ...(parameterName ? { [parameterName]: providedOrStoredFactor } : {}),
+          isStoredFactorVerified: !!status.value,
+        }),
       );
-
-      const { successful, httpCode } = result.value;
-
-      const isOTPRequired = httpCode === 202;
-
-      let reason = result.reason;
-
-      if (result.reason !== "biometrics.apiResponse.unableToAuthorize") {
-        reason = result.reason;
-      } else if (!!otp && !!providedOrStoredValidateCode) {
-        reason = "biometrics.apiResponse.otpCodeInvalid";
-      } else if (!otp && !!providedOrStoredValidateCode) {
-        reason = "biometrics.apiResponse.validationCodeInvalid";
-      }
-
-      return setStatus({
-        ...result,
-        value:
-          validateCode && isOTPRequired && successful
-            ? validateCode
-            : undefined,
-        step: {
-          requiredFactorForNextStep: isOTPRequired
-            ? CONST.BIOMETRICS.FACTORS.OTP
-            : undefined,
-          wasRecentStepSuccessful: successful,
-          isRequestFulfilled: !successful || !isOTPRequired,
-        },
-        reason,
-      });
     },
-    [status.value, setStatus, verifyFactors],
+    [status.value, verifyFactors, action, setStatus],
   );
 
   /**
@@ -130,7 +122,16 @@ function useBiometricsAuthorizationFallback(): UseBiometricsAuthorizationFallbac
     [setStatus],
   );
 
-  return { status, authorize, cancel };
+  /** Memoized state values exposed to consumers */
+  const values = useMemo(() => {
+    const { step, message, title } = status;
+    return { ...step, message, title };
+  }, [status]);
+
+  /** Memoized actions exposed to consumers */
+  const actions = useMemo(() => ({ authorize, cancel }), [authorize, cancel]);
+
+  return { ...values, ...actions };
 }
 
 export default useBiometricsAuthorizationFallback;

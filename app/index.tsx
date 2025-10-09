@@ -1,5 +1,5 @@
-import BiometricsAuthentication from "@src/components/BiometricsAuthentication";
+import BiometricsAuthenticationFallback from "@src/components/BiometricsAuthenticationFallback";
 
 export default function Index() {
-  return <BiometricsAuthentication transactionID={"162953228"} />;
+  return <BiometricsAuthenticationFallback transactionID="162953228" />;
 }

@@ -12,27 +12,16 @@ import BiometricsInputModal from "@src/components/BiometricsInputModal";
 import useLocalize from "@hooks/useLocalize";
 import useBiometricsSetup from "../hooks/useBiometricsSetup";
 
-type BiometricsAuthenticationProps = {
-  transactionID: string;
-};
-
-type AuthorizeWithModal = {
-  validateCode?: number;
-  otp?: number;
-};
-
-function BiometricsAuthentication({
-  transactionID,
-}: BiometricsAuthenticationProps) {
+function BiometricsAuthenticationSetup() {
   const { translate } = useLocalize();
   const BiometricsSetup = useBiometricsSetup();
   const [showModal, setShowModal] = useState<boolean>(false);
 
-  const authorizeWithModal = async (props: AuthorizeWithModal = {}) => {
+  const authorizeWithModal = async (validateCode?: number) => {
     setShowModal(false);
 
     await BiometricsSetup.register({
-      ...props,
+      validateCode,
     });
 
     setShowModal(true);
@@ -90,21 +79,14 @@ function BiometricsAuthentication({
       {BiometricsSetup.requiredFactorForNextStep ===
         CONST.BIOMETRICS.FACTORS.VALIDATE_CODE && (
         <BiometricsInputModal
-          onSubmit={(validateCode) => authorizeWithModal({ validateCode })}
+          onSubmit={(validateCode) => authorizeWithModal(validateCode)}
           title={translate("biometrics.provideValidateCode")}
-        />
-      )}
-      {BiometricsSetup.requiredFactorForNextStep ===
-        CONST.BIOMETRICS.FACTORS.OTP && (
-        <BiometricsInputModal
-          onSubmit={(otp) => authorizeWithModal({ otp })}
-          title={translate("biometrics.provideOTPCode")}
         />
       )}
     </>
   );
 }
 
-BiometricsAuthentication.displayName = "BiometricsAuthentication";
+BiometricsAuthenticationSetup.displayName = "BiometricsAuthenticationSetup";
 
-export default BiometricsAuthentication;
+export default BiometricsAuthenticationSetup;
