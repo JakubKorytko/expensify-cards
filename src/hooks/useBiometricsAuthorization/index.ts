@@ -18,7 +18,7 @@ import { createAuthorizeErrorStatus } from "./helpers";
 function useBiometricsAuthorization() {
   const [status, setStatus] = useBiometricsStatus(
     false,
-    CONST.BIOMETRICS.ACTION_TYPE.AUTHORIZATION,
+    CONST.BIOMETRICS.SCENARIO_TYPE.AUTHORIZATION,
   );
 
   /**

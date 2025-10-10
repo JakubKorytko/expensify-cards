@@ -2,7 +2,7 @@ import type { TranslationPaths } from "@src/languages/types";
 import { BiometricsPrivateKeyStore } from "@libs/Biometrics/BiometricsKeyStore";
 import { signToken as signTokenED25519 } from "@libs/ED25519";
 import { requestBiometricsChallenge } from "@libs/actions/Biometrics";
-import authorizeBiometricsAction from "@libs/Biometrics/authorizeBiometricsAction";
+import { processBiometricsScenario } from "@libs/Biometrics/scenarios";
 import CONST from "@src/CONST";
 import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
 
@@ -114,8 +114,8 @@ class BiometricsChallenge {
     let authorizationResult;
 
     if (validateCode) {
-      authorizationResult = authorizeBiometricsAction(
-        CONST.BIOMETRICS.ACTION.AUTHORIZE_TRANSACTION_WITH_VALIDATE_CODE,
+      authorizationResult = processBiometricsScenario(
+        CONST.BIOMETRICS.SCENARIO.AUTHORIZE_TRANSACTION_WITH_VALIDATE_CODE,
         {
           signedChallenge: this.auth.value,
           validateCode,
@@ -123,8 +123,8 @@ class BiometricsChallenge {
         },
       );
     } else {
-      authorizationResult = authorizeBiometricsAction(
-        CONST.BIOMETRICS.ACTION.AUTHORIZE_TRANSACTION,
+      authorizationResult = processBiometricsScenario(
+        CONST.BIOMETRICS.SCENARIO.AUTHORIZE_TRANSACTION,
         {
           signedChallenge: this.auth.value,
           transactionID: this.transactionID,

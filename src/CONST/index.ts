@@ -8,59 +8,6 @@ const BIOMETRICS_FACTOR_ORIGIN = {
   FALLBACK: "Fallback",
 } as const;
 
-/**
- * Defines the requirements for each authentication factor used in the biometrics process.
- * Each factor has:
- * - An identifier used internally
- * - A user-friendly display name
- * - The parameter name expected by the API
- * - The data type (string or number)
- * - Length requirements if applicable
- * - Whether it originates from biometrics or fallback authentication
- */
-const BIOMETRICS_FACTORS_REQUIREMENTS = {
-  SIGNED_CHALLENGE: {
-    id: "SIGNED_CHALLENGE",
-    name: "Signed Challenge",
-    parameter: "signedChallenge",
-    type: String(),
-    length: undefined,
-    origin: BIOMETRICS_FACTOR_ORIGIN.BIOMETRICS,
-  },
-  OTP: {
-    id: "OTP",
-    name: "Two-Factor Authentication or SMS One-Time Password",
-    parameter: "otp",
-    type: Number(),
-    length: 6,
-    origin: BIOMETRICS_FACTOR_ORIGIN.FALLBACK,
-  },
-  VALIDATE_CODE: {
-    id: "VALIDATE_CODE",
-    name: "Email One-Time Password",
-    parameter: "validateCode",
-    type: Number(),
-    length: 6,
-    origin: BIOMETRICS_FACTOR_ORIGIN.FALLBACK,
-  },
-} as const;
-
-/**
- * Optional versions of the authentication factors.
- * These are the same as the regular factors but marked as optional,
- * meaning they are not required in all authentication flows.
- */
-const BIOMETRICS_FACTORS_REQUIREMENTS_OPTIONAL = {
-  VALIDATE_CODE: {
-    ...BIOMETRICS_FACTORS_REQUIREMENTS.VALIDATE_CODE,
-    optional: true,
-  },
-  OTP: {
-    ...BIOMETRICS_FACTORS_REQUIREMENTS.OTP,
-    optional: true,
-  },
-} as const;
-
 const CONST = {
   // ...
   BIOMETRICS: {
@@ -102,8 +49,8 @@ const CONST = {
         NAME: "OpticID",
       },
     },
-    /** What does action's status refer to? Which part of biometrics is impacted by it? */
-    ACTION_TYPE: {
+    /** What does scenario's status refer to? Which part of biometrics is impacted by it? */
+    SCENARIO_TYPE: {
       NONE: "None",
       AUTHORIZATION: "Authorization",
       AUTHENTICATION: "Authentication",
@@ -123,11 +70,45 @@ const CONST = {
         OLD_ANDROID: "NoSuchMethodError",
       },
     },
-    /** All possible requirements for biometric authentication */
-    FACTORS_REQUIREMENTS: BIOMETRICS_FACTORS_REQUIREMENTS,
+    /**
+     * Defines the requirements for each authentication factor used in the biometrics process.
+     * Each factor has:
+     * - An identifier used internally
+     * - A user-friendly display name
+     * - The parameter name expected by the API
+     * - The data type (string or number)
+     * - Length requirements if applicable
+     * - Whether it originates from biometrics or fallback authentication
+     */
+    FACTORS_REQUIREMENTS: {
+      SIGNED_CHALLENGE: {
+        id: "SIGNED_CHALLENGE",
+        name: "Signed Challenge",
+        parameter: "signedChallenge",
+        type: String(),
+        length: undefined,
+        origin: BIOMETRICS_FACTOR_ORIGIN.BIOMETRICS,
+      },
+      OTP: {
+        id: "OTP",
+        name: "Two-Factor Authentication or SMS One-Time Password",
+        parameter: "otp",
+        type: Number(),
+        length: 6,
+        origin: BIOMETRICS_FACTOR_ORIGIN.FALLBACK,
+      },
+      VALIDATE_CODE: {
+        id: "VALIDATE_CODE",
+        name: "Email One-Time Password",
+        parameter: "validateCode",
+        type: Number(),
+        length: 6,
+        origin: BIOMETRICS_FACTOR_ORIGIN.FALLBACK,
+      },
+    },
     FACTORS_ORIGIN: BIOMETRICS_FACTOR_ORIGIN,
-    /** Defines the different actions that can be performed in the biometric process */
-    ACTION: {
+    /** Defines the different scenarios that can be performed in the biometric process */
+    SCENARIO: {
       SETUP_BIOMETRICS: "SETUP_BIOMETRICS",
       AUTHORIZE_TRANSACTION_FALLBACK: "AUTHORIZE_TRANSACTION_FALLBACK",
       AUTHORIZE_TRANSACTION_WITH_VALIDATE_CODE:
@@ -139,19 +120,6 @@ const CONST = {
       SIGNED_CHALLENGE: "SIGNED_CHALLENGE",
       VALIDATE_CODE: "VALIDATE_CODE",
       OTP: "OTP",
-    },
-    /** Mapping of the biometrics actions to the authentication factors required for that action */
-    ACTION_FACTORS_MAP: {
-      SETUP_BIOMETRICS: [BIOMETRICS_FACTORS_REQUIREMENTS.VALIDATE_CODE],
-      AUTHORIZE_TRANSACTION_FALLBACK: [
-        BIOMETRICS_FACTORS_REQUIREMENTS_OPTIONAL.VALIDATE_CODE,
-        BIOMETRICS_FACTORS_REQUIREMENTS_OPTIONAL.OTP,
-      ],
-      AUTHORIZE_TRANSACTION_WITH_VALIDATE_CODE: [
-        BIOMETRICS_FACTORS_REQUIREMENTS.SIGNED_CHALLENGE,
-        BIOMETRICS_FACTORS_REQUIREMENTS.VALIDATE_CODE,
-      ],
-      AUTHORIZE_TRANSACTION: [BIOMETRICS_FACTORS_REQUIREMENTS.SIGNED_CHALLENGE],
     },
   },
   // ...

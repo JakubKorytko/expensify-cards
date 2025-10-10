@@ -37,7 +37,7 @@ type WriteCommands = {
     route: typeof APIRoutes.Write.RegisterBiometrics;
     parameters: {
       publicKey: string;
-      validateCode: number;
+      validateCode?: number;
     };
     returns: APIResponse;
   };

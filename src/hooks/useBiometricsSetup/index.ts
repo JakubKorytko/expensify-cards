@@ -15,7 +15,7 @@ import {
   doesDeviceSupportBiometrics,
 } from "./helpers";
 import { Register, UseBiometricsSetup } from "./types";
-import authorizeBiometricsAction from "@libs/Biometrics/authorizeBiometricsAction";
+import processBiometricsScenario from "@libs/Biometrics/scenarios/processBiometricsScenario";
 
 /**
  * Core hook that manages biometric authentication setup and state.
@@ -32,7 +32,7 @@ function useBiometricsSetup(): UseBiometricsSetup {
   /** Tracks whether biometrics is properly configured and ready for authentication */
   const [status, setStatus] = useBiometricsStatus<boolean>(
     false,
-    CONST.BIOMETRICS.ACTION_TYPE.AUTHENTICATION,
+    CONST.BIOMETRICS.SCENARIO_TYPE.AUTHENTICATION,
   );
 
   /**
@@ -127,8 +127,8 @@ function useBiometricsSetup(): UseBiometricsSetup {
       const {
         step: { wasRecentStepSuccessful, isRequestFulfilled },
         reason,
-      } = await authorizeBiometricsAction(
-        CONST.BIOMETRICS.ACTION.SETUP_BIOMETRICS,
+      } = await processBiometricsScenario(
+        CONST.BIOMETRICS.SCENARIO.SETUP_BIOMETRICS,
         {
           publicKey,
           validateCode,
@@ -186,8 +186,8 @@ function useBiometricsSetup(): UseBiometricsSetup {
     };
   }, [deviceSupportBiometrics, status]);
 
-  /** Memoized actions exposed to consumers */
-  const actions = useMemo(
+  /** Memoized scenarios exposed to consumers */
+  const scenarios = useMemo(
     () => ({
       register,
       revoke,
@@ -198,7 +198,7 @@ function useBiometricsSetup(): UseBiometricsSetup {
 
   return {
     ...values,
-    ...actions,
+    ...scenarios,
   };
 }
 

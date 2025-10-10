@@ -1,5 +1,4 @@
 import { useCallback, useMemo } from "react";
-import authorizeBiometricsAction from "@libs/Biometrics/authorizeBiometricsAction";
 import CONST from "@src/CONST";
 import {
   convertBiometricsFactorToParameterName,
@@ -12,36 +11,40 @@ import {
   UseBiometricsAuthorizationFallback,
 } from "./types";
 import {
-  BiometricsFallbackAction,
-  BiometricsFallbackActionParams,
+  BiometricsFallbackScenario,
+  BiometricsFallbackScenarioParams,
   BiometricsFallbackFactor,
   BiometricsFallbackFactors,
-  StoredValueType,
-} from "@libs/Biometrics/types";
-import biometricsActions from "@libs/Biometrics/biometricsActions";
+  BiometricsScenarioStoredValueType,
+} from "@libs/Biometrics/scenarios/types";
+import {
+  biometricsScenarios,
+  biometricsScenarioRequiredFactors,
+  processBiometricsScenario,
+} from "@libs/Biometrics/scenarios";
 
 /**
  * Hook that provides fallback authorization flow when biometrics is not available.
  * Uses validate code and OTP for transaction authorization instead.
  */
-function useBiometricsAuthorizationFallback<T extends BiometricsFallbackAction>(
-  action: T,
-): UseBiometricsAuthorizationFallback<T> {
+function useBiometricsAuthorizationFallback<
+  T extends BiometricsFallbackScenario,
+>(scenario: T): UseBiometricsAuthorizationFallback<T> {
   const [status, setStatus] = useBiometricsStatus<
-    StoredValueType<T> | undefined
-  >(undefined, CONST.BIOMETRICS.ACTION_TYPE.AUTHORIZATION);
+    BiometricsScenarioStoredValueType<T> | undefined
+  >(undefined, CONST.BIOMETRICS.SCENARIO_TYPE.AUTHORIZATION);
 
-  const requiredFactors = CONST.BIOMETRICS.ACTION_FACTORS_MAP[action];
+  const requiredFactors = biometricsScenarioRequiredFactors[scenario];
 
   /**
    * Verifies that all required authentication factors are provided.
    * Checks both OTP and validate code against the requirements for non-biometric devices.
    */
   const verifyFactors = useCallback(
-    (params: BiometricsFallbackActionParams<T>) =>
+    (params: BiometricsFallbackScenarioParams<T>) =>
       verifyRequiredFactors({
         ...params,
-        requiredFactors: requiredFactors.map(({ id }) => id),
+        requiredFactors,
         isFirstFactorVerified: !!status.value,
       }),
     [requiredFactors, status.value],
@@ -55,8 +58,8 @@ function useBiometricsAuthorizationFallback<T extends BiometricsFallbackAction>(
   const authorize: AuthorizeUsingFallback<T> = useCallback(
     async (params) => {
       const valueToStore =
-        "factorToStore" in biometricsActions[action] &&
-        biometricsActions[action].factorToStore;
+        "factorToStore" in biometricsScenarios[scenario] &&
+        biometricsScenarios[scenario].factorToStore;
 
       const parameterName =
         valueToStore &&
@@ -65,8 +68,10 @@ function useBiometricsAuthorizationFallback<T extends BiometricsFallbackAction>(
         (convertBiometricsFactorToParameterName(
           valueToStore as BiometricsFallbackFactor,
         ) as keyof BiometricsFallbackFactors<T>);
+
       const storedValue =
-        parameterName && (params[parameterName] as StoredValueType<T>);
+        parameterName &&
+        (params[parameterName] as BiometricsScenarioStoredValueType<T>);
 
       const providedOrStoredFactor = storedValue || status.value;
       const { value: factorsCheckValue, reason: factorsCheckReason } =
@@ -92,14 +97,14 @@ function useBiometricsAuthorizationFallback<T extends BiometricsFallbackAction>(
       }
 
       return setStatus(
-        await authorizeBiometricsAction(action, {
+        await processBiometricsScenario(scenario, {
           ...params,
           ...(parameterName ? { [parameterName]: providedOrStoredFactor } : {}),
           isStoredFactorVerified: !!status.value,
         }),
       );
     },
-    [status.value, verifyFactors, action, setStatus],
+    [status.value, verifyFactors, scenario, setStatus],
   );
 
   /**
@@ -128,10 +133,10 @@ function useBiometricsAuthorizationFallback<T extends BiometricsFallbackAction>(
     return { ...step, message, title };
   }, [status]);
 
-  /** Memoized actions exposed to consumers */
-  const actions = useMemo(() => ({ authorize, cancel }), [authorize, cancel]);
+  /** Memoized scenarios exposed to consumers */
+  const scenarios = useMemo(() => ({ authorize, cancel }), [authorize, cancel]);
 
-  return { ...values, ...actions };
+  return { ...values, ...scenarios };
 }
 
 export default useBiometricsAuthorizationFallback;

@@ -34,7 +34,7 @@ type BiometricsInfo = {
  * User-facing status messages for the current biometric state
  */
 type BiometricsStatusMessage = {
-  /** Detailed message explaining the current state or required action */
+  /** Detailed message explaining the current state or required scenario */
   message: string;
 
   /** Brief status header (e.g. "Authentication Successful") */
@@ -42,7 +42,7 @@ type BiometricsStatusMessage = {
 };
 
 /**
- * Authentication hook return type combining status information and available actions.
+ * Authentication hook return type combining status information and available scenarios.
  * Returns a tuple with current state and methods to control the biometric setup flow.
  */
 type UseBiometricsSetup = BiometricsStep &

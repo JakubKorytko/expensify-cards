@@ -26,7 +26,7 @@ function BiometricsAuthenticationFallback({
 }: BiometricsAuthenticationFallbackProps) {
   const { translate } = useLocalize();
   const BiometricsSetup = useBiometricsAuthorizationFallback(
-    CONST.BIOMETRICS.ACTION.AUTHORIZE_TRANSACTION_FALLBACK,
+    CONST.BIOMETRICS.SCENARIO.AUTHORIZE_TRANSACTION_FALLBACK,
   );
   const [showModal, setShowModal] = useState<boolean>(false);
 

@@ -1,30 +1,37 @@
-import CONST from "@src/CONST";
 import {
   BiometricsFactors,
-  BiometricsAction,
-  BiometricsActionParams,
-  StoredValueType,
-  BiometricsActionMap,
-} from "@libs/Biometrics/types";
+  BiometricsScenario,
+  BiometricsScenarioParams,
+  BiometricsScenarioStoredValueType,
+  BiometricsScenarioMap,
+  BiometricsScenarioResponseWithSuccess,
+} from "@libs/Biometrics/scenarios/types";
 import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
-import biometricsActions from "@libs/Biometrics/biometricsActions";
+import {
+  biometricsScenarios,
+  biometricsScenarioRequiredFactors,
+} from "@libs/Biometrics/scenarios";
+import CONST from "@src/CONST";
 
 /**
  * Validates that all required authentication factors are present and of the correct type/format.
  * Checks each factor's presence, type, and length requirements.
  * Skips OTP validation if the validation code hasn't been verified yet.
  */
-function areBiometricsFactorsSufficient<T extends BiometricsAction>(
-  action: T,
-  factors: BiometricsActionParams<T, true>,
+function areBiometricsFactorsSufficient<T extends BiometricsScenario>(
+  scenario: T,
+  factors: BiometricsScenarioParams<T, true>,
 ): BiometricsPartialStatus<true | string> {
-  const requiredFactors = CONST.BIOMETRICS.ACTION_FACTORS_MAP[action];
+  const requiredFactors = biometricsScenarioRequiredFactors[scenario].map(
+    (id) => CONST.BIOMETRICS.FACTORS_REQUIREMENTS[id],
+  );
+
   const { isStoredFactorVerified = true } = factors;
 
   for (const { id, parameter, name, type, length } of requiredFactors) {
     if (
-      "factorToStore" in biometricsActions[action] &&
-      id !== biometricsActions[action].factorToStore &&
+      "factorToStore" in biometricsScenarios[scenario] &&
+      id !== biometricsScenarios[scenario].factorToStore &&
       !isStoredFactorVerified
     ) {
       continue;
@@ -75,13 +82,7 @@ function areBiometricsFactorsSufficient<T extends BiometricsAction>(
 }
 
 const authorizeBiometricsPostMethodFallback = (
-  status: BiometricsPartialStatus<
-    {
-      httpCode: number | undefined;
-      successful: boolean;
-    },
-    true
-  >,
+  status: BiometricsPartialStatus<BiometricsScenarioResponseWithSuccess, true>,
 ) => ({
   ...status,
   step: {
@@ -96,33 +97,35 @@ const authorizeBiometricsPostMethodFallback = (
  * Main authorization function that handles different biometric scenarios.
  * First validates that all required factors are present and valid.
  * Then sends the authorization request to the server.
- * Finally, post-processes the result based on the action type.
+ * Finally, post-processes the result based on the scenario type.
  * Returns a status object containing the authorization result and any additional information needed.
  */
-async function authorizeBiometricsAction<T extends BiometricsAction>(
-  action: T,
-  params: BiometricsActionParams<T, true>,
-): Promise<BiometricsPartialStatus<StoredValueType<T> | undefined>> {
-  const { actionMethod, postActionMethod } = biometricsActions[
-    action
-  ] as BiometricsActionMap[T];
+async function processBiometricsScenario<T extends BiometricsScenario>(
+  scenario: T,
+  params: BiometricsScenarioParams<T, true>,
+): Promise<
+  BiometricsPartialStatus<BiometricsScenarioStoredValueType<T> | undefined>
+> {
+  const { scenarioMethod, postScenarioMethod } = biometricsScenarios[
+    scenario
+  ] as BiometricsScenarioMap[T];
 
   /**
-   * Selects the appropriate post-processing method based on the action type.
+   * Selects the appropriate post-processing method based on the scenario type.
    * Uses the fallback method if no post-processing method is defined.
    */
   const postMethod = (
     status: BiometricsPartialStatus<
-      {
-        httpCode: number | undefined;
-        successful: boolean;
-      },
+      BiometricsScenarioResponseWithSuccess,
       true
     >,
   ) =>
-    (postActionMethod ?? authorizeBiometricsPostMethodFallback)(status, params);
+    (postScenarioMethod ?? authorizeBiometricsPostMethodFallback)(
+      status,
+      params,
+    );
 
-  const factorsCheckResult = areBiometricsFactorsSufficient(action, params);
+  const factorsCheckResult = areBiometricsFactorsSufficient(scenario, params);
 
   if (factorsCheckResult.value !== true) {
     return postMethod({
@@ -131,7 +134,7 @@ async function authorizeBiometricsAction<T extends BiometricsAction>(
     });
   }
 
-  const { httpCode, reason } = await actionMethod(params);
+  const { httpCode, reason } = await scenarioMethod(params);
 
   return postMethod({
     value: {
@@ -142,4 +145,4 @@ async function authorizeBiometricsAction<T extends BiometricsAction>(
   });
 }
 
-export default authorizeBiometricsAction;
+export default processBiometricsScenario;

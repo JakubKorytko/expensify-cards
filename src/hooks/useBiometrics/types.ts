@@ -26,9 +26,9 @@ type BiometricsAuthorization = (
 ) => Promise<BiometricsStatus<boolean>>;
 
 /**
- * Available biometric actions including registration, authorization, reset and cancel
+ * Available biometric scenarios including registration, authorization, reset and cancel
  */
-type BiometricsActions = {
+type BiometricsScenarios = {
   register: Register;
   authorize: BiometricsAuthorization;
   resetSetup: () => Promise<BiometricsStatus<boolean>>;
@@ -43,9 +43,9 @@ type BiometricsState = BiometricsStatus<boolean> & {
 };
 
 /**
- * Hook return type containing biometrics state and available actions
+ * Hook return type containing biometrics state and available scenarios
  */
-type UseBiometrics = [BiometricsState, BiometricsActions];
+type UseBiometrics = [BiometricsState, BiometricsScenarios];
 
 /**
  * Factory function type for creating a BiometricsRecentStatus object
@@ -60,6 +60,6 @@ export type {
   UseBiometrics,
   BiometricsRecentStatus,
   CreateBiometricsRecentStatus,
-  BiometricsActions,
+  BiometricsScenarios,
   BiometricsState,
 };

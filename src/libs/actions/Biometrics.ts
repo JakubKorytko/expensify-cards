@@ -47,7 +47,7 @@ function parseHttpCode(
 /**
  * To keep the code clean and readable, these functions return parsed data in order to:
  *
- * - Check whether biometrics action was successful as we need to know it as fast as possible
+ * - Check whether biometrics scenario was successful as we need to know it as fast as possible
  *   to make the usage of authentication seamless and to tell if we should abort the process
  *   if an error occurred.
  *
@@ -66,7 +66,7 @@ async function registerBiometrics({
   validateCode,
 }: {
   publicKey: string;
-  validateCode: number;
+  validateCode?: number;
 }) {
   const { jsonCode } = await API.makeRequestWithSideEffects(
     SIDE_EFFECT_REQUEST_COMMANDS.REGISTER_BIOMETRICS,

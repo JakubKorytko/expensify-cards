@@ -2,7 +2,7 @@ import type { ValueOf } from "type-fest";
 import { TranslationPaths } from "@src/languages/types";
 import { AUTH_TYPE } from "expo-secure-store";
 import CONST from "@src/CONST";
-import { BiometricsFactor } from "@libs/Biometrics/types";
+import { BiometricsFactor } from "@libs/Biometrics/scenarios/types";
 
 /**
  * Represents the step of the biometric operation.
@@ -78,8 +78,8 @@ type BiometricsStatus<T, omitStatus = false> = BiometricsPartialStatus<
   title: string;
 };
 
-/** Valid biometric action types as defined in constants */
-type BiometricsStatusKeyType = ValueOf<typeof CONST.BIOMETRICS.ACTION_TYPE>;
+/** Valid biometric scenario types as defined in constants */
+type BiometricsStatusKeyType = ValueOf<typeof CONST.BIOMETRICS.SCENARIO_TYPE>;
 
 /** Names of supported authentication types */
 type AuthTypeName = ValueOf<typeof CONST.BIOMETRICS.AUTH_TYPE>["NAME"];

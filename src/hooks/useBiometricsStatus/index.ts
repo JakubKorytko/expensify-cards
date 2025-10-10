@@ -18,7 +18,7 @@ import { getAuthTypeName } from "./helpers";
  *
  * Returns the current biometrics status and a setter function. The status includes
  * success/failure messages, titles, and authentication details for both challenge
- * and key-related actions.
+ * and key-related scenarios.
  *
  * Must be implemented as a hook rather than a function to handle message translations.
  */
@@ -34,7 +34,7 @@ export default function useBiometricsStatus<T>(
     [translate],
   );
 
-  /** Initial empty status used when no biometric action has been attempted */
+  /** Initial empty status used when no biometric scenario has been attempted */
   const emptyAuth = useMemo<BiometricsStatus<T>>(
     () => ({
       reason: "biometrics.reason.generic.notRequested",
@@ -113,7 +113,7 @@ export default function useBiometricsStatus<T>(
   const setStatus: SetBiometricsStatus<T> = useCallback(
     (partialStatus) => {
       const isChallengeType =
-        type === CONST.BIOMETRICS.ACTION_TYPE.AUTHORIZATION;
+        type === CONST.BIOMETRICS.SCENARIO_TYPE.AUTHORIZATION;
       const state =
         typeof partialStatus === "function"
           ? partialStatus(previousStatus.current)

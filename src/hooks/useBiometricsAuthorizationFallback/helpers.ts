@@ -1,10 +1,10 @@
 import CONST from "@src/CONST";
 import {
   BiometricsFactor,
-  BiometricsFallbackAction,
+  BiometricsFallbackScenario,
   BiometricsFallbackFactor,
   BiometricsFallbackFactors,
-} from "@libs/Biometrics/types";
+} from "@libs/Biometrics/scenarios/types";
 import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
 
 /**
@@ -20,7 +20,7 @@ function verifyRequiredFactors({
 }: {
   otp?: number;
   validateCode?: number;
-  requiredFactors: BiometricsFactor[];
+  requiredFactors: readonly BiometricsFactor[];
   isFirstFactorVerified: boolean;
 }): BiometricsPartialStatus<BiometricsFactor | true, true> {
   const isValidateCodeRequired = requiredFactors.includes(
@@ -57,7 +57,7 @@ function verifyRequiredFactors({
  * converts the factor "VALIDATE_CODE" to the parameter name "validateCode".
  */
 function convertBiometricsFactorToParameterName<
-  T extends BiometricsFallbackAction,
+  T extends BiometricsFallbackScenario,
 >(factor: BiometricsFallbackFactor) {
   return CONST.BIOMETRICS.FACTORS_REQUIREMENTS[factor]
     .parameter as keyof BiometricsFallbackFactors<T>;

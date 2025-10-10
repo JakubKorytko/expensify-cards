@@ -7,7 +7,7 @@ import {
   BiometricsPartialStatus,
 } from "@hooks/useBiometricsStatus/types";
 import CONST from "@src/CONST";
-import { BiometricsFactor } from "@src/libs/Biometrics/types";
+import { BiometricsFactor } from "@libs/Biometrics/scenarios/types";
 
 /**
  * Checks if the device supports either biometric authentication (like fingerprint/face)
@@ -54,7 +54,7 @@ const createBaseStep = (
 
 /**
  * Creates a status indicating the device lacks biometric capability.
- * Sets success to false but marks request as fulfilled since no further action is possible.
+ * Sets success to false but marks request as fulfilled since no further scenario is possible.
  */
 function createUnsupportedDeviceStatus(prevStatus: BiometricsStatus<boolean>) {
   return {

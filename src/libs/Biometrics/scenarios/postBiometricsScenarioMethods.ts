@@ -1,10 +1,10 @@
 /**
- * This module defines the post-processing logic for different biometric authentication actions.
+ * This module defines the post-processing logic for different biometric authentication scenarios.
  * It handles the logic for storing validation codes, OTPs, and determining the next required authentication factor.
  */
 
 import CONST from "@src/CONST";
-import { BiometricsPostAction } from "@libs/Biometrics/types";
+import { BiometricsScenarioPostMethod } from "@libs/Biometrics/scenarios/types";
 
 /**
  * Handles the post-processing of a transaction authorization attempt when biometrics is not available.
@@ -15,8 +15,8 @@ import { BiometricsPostAction } from "@libs/Biometrics/types";
  * - The next required authentication factor (OTP if needed)
  * - Whether the overall request was successful and is now complete
  */
-const postAuthorizeTransactionFallback: BiometricsPostAction<
-  typeof CONST.BIOMETRICS.ACTION.AUTHORIZE_TRANSACTION_FALLBACK
+const postAuthorizeTransactionFallback: BiometricsScenarioPostMethod<
+  typeof CONST.BIOMETRICS.SCENARIO.AUTHORIZE_TRANSACTION_FALLBACK
 > = (result, requestParams) => {
   const { successful, httpCode } = result.value;
   const { otp, validateCode } = requestParams;

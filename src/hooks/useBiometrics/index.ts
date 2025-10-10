@@ -3,7 +3,7 @@ import type {
   UseBiometrics,
   BiometricsAuthorization,
   BiometricsRecentStatus,
-  BiometricsActions,
+  BiometricsScenarios,
   BiometricsState,
 } from "./types";
 import useBiometricsSetup from "../useBiometricsSetup";
@@ -14,11 +14,13 @@ import { createRecentStatus } from "./helpers";
 /**
  * Hook that manages the biometrics authentication flow, including registration,
  * authorization and fallback mechanisms. Returns current biometrics state and
- * available actions.
+ * available scenarios.
  */
 function useBiometrics(): UseBiometrics {
   const BiometricsSetup = useBiometricsSetup();
-  const BiometricsFallback = useBiometricsAuthorizationFallback();
+  const BiometricsFallback = useBiometricsAuthorizationFallback(
+    "AUTHORIZE_TRANSACTION_FALLBACK",
+  );
   const BiometricsAuthorization = useBiometricsAuthorization();
 
   const recentStatus = useRef<BiometricsRecentStatus>({
@@ -129,8 +131,8 @@ function useBiometrics(): UseBiometrics {
     [BiometricsSetup.isBiometryConfigured],
   );
 
-  /** Memoized actions exposed to consumers */
-  const actions: BiometricsActions = useMemo(
+  /** Memoized scenarios exposed to consumers */
+  const scenarios: BiometricsScenarios = useMemo(
     () => ({
       register: BiometricsSetup.register,
       resetSetup: BiometricsSetup.revoke,
@@ -145,7 +147,7 @@ function useBiometrics(): UseBiometrics {
     ],
   );
 
-  return [state, actions];
+  return [state, scenarios];
 }
 
 export default useBiometrics;
