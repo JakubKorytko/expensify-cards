@@ -170,14 +170,19 @@ type BiometricsScenarioParams<
   T extends BiometricsScenario,
   WithStored extends boolean = false,
 > = BiometricsFactors<T> &
-  BiometricsScenarioParameters[T] &
+  (T extends keyof BiometricsScenarioParameters
+    ? BiometricsScenarioParameters[T]
+    : {}) &
   (WithStored extends true ? IsStoredFactorVerified : {});
 
 /**
  * Parameters required for a fallback scenario
  */
 type BiometricsFallbackScenarioParams<T extends BiometricsFallbackScenario> =
-  BiometricsFallbackFactors<T> & BiometricsScenarioParameters[T];
+  BiometricsFallbackFactors<T> &
+    (T extends keyof BiometricsScenarioParameters
+      ? BiometricsScenarioParameters[T]
+      : {});
 
 /**
  * Gets the parameter type for a specific factor
@@ -210,6 +215,10 @@ type BiometricsScenarioMethod<T extends BiometricsScenario> = (
   params: BiometricsScenarioParams<T>,
 ) => Promise<BiometricsScenarioResponse>;
 
+type BiometricsScenarioMissingFactorMiddleware = (
+  missingFactor: BiometricsFactor,
+) => Promise<void>;
+
 /**
  * Function signature for post-scenario processing
  */
@@ -225,6 +234,7 @@ type BiometricsScenarioMap = {
   [T in BiometricsScenario]: {
     scenarioMethod: BiometricsScenarioMethod<T>;
     postScenarioMethod?: BiometricsScenarioPostMethod<T>;
+    missingFactorMiddleware?: BiometricsScenarioMissingFactorMiddleware;
     factorToStore?: BiometricsFactor;
   };
 };

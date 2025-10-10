@@ -13,7 +13,9 @@ import {
   registerBiometrics,
 } from "@libs/actions/Biometrics";
 import { postAuthorizeTransactionFallback } from "@libs/Biometrics/scenarios/postBiometricsScenarioMethods";
-import processBiometricsScenario from "@libs/Biometrics/scenarios/processBiometricsScenario";
+import { PHONE_NUMBER, STORAGE, USER_EMAIL } from "@/mocks/api/utils";
+import { requestValidateCodeAction } from "@libs/actions/User";
+import router from "@/mocks/api/router";
 
 /**
  * Defines the required parameters for each biometric scenario type.
@@ -53,6 +55,10 @@ const biometricsScenarioRequiredFactors = {
     CONST.BIOMETRICS.FACTORS.VALIDATE_CODE,
     CONST.BIOMETRICS.FACTORS.OTP,
   ],
+  [CONST.BIOMETRICS.SCENARIO.TEST_OTP_FIRST]: [
+    CONST.BIOMETRICS.FACTORS.OTP,
+    CONST.BIOMETRICS.FACTORS.VALIDATE_CODE,
+  ],
 } as const satisfies BiometricsRequiredFactorsRecord;
 
 /**
@@ -72,14 +78,58 @@ const biometricsScenarios = {
   },
   [CONST.BIOMETRICS.SCENARIO.AUTHORIZE_TRANSACTION_FALLBACK]: {
     scenarioMethod: authorizeTransaction,
+    missingFactorMiddleware: async (missingFactor) => {
+      if (missingFactor === CONST.BIOMETRICS.FACTORS.VALIDATE_CODE) {
+        requestValidateCodeAction();
+      }
+    },
     postScenarioMethod: postAuthorizeTransactionFallback,
     factorToStore: CONST.BIOMETRICS.FACTORS.VALIDATE_CODE,
   },
+  [CONST.BIOMETRICS.SCENARIO.TEST_OTP_FIRST]: {
+    scenarioMethod: async (params) => {
+      const { validateCode, otp } = params;
+
+      if (!otp) {
+        return {
+          httpCode: 400,
+          reason: "biometrics.reason.error.otpMissing",
+        };
+      }
+
+      if (!validateCode) {
+        requestValidateCodeAction();
+        return {
+          httpCode: 400,
+          reason: "biometrics.reason.error.validateCodeMissing",
+        };
+      }
+
+      const isOK =
+        STORAGE.OTPs[PHONE_NUMBER].includes(otp) &&
+        STORAGE.validateCodes[USER_EMAIL].includes(validateCode);
+
+      return {
+        httpCode: isOK ? 200 : 400,
+        reason: isOK
+          ? "biometrics.reason.apiResponse.userAuthorized"
+          : "biometrics.reason.apiResponse.unableToAuthorize",
+      };
+    },
+    missingFactorMiddleware: async (missingFactor) => {
+      if (missingFactor === CONST.BIOMETRICS.FACTORS.VALIDATE_CODE) {
+        requestValidateCodeAction();
+      } else if (missingFactor === CONST.BIOMETRICS.FACTORS.OTP) {
+        await router("/send_otp", {
+          method: "POST",
+          body: {
+            phoneNumber: PHONE_NUMBER,
+          },
+        });
+      }
+    },
+  },
 } as const satisfies BiometricsScenarioMap;
 
-export {
-  biometricsScenarios,
-  biometricsScenarioRequiredFactors,
-  processBiometricsScenario,
-};
+export { biometricsScenarios, biometricsScenarioRequiredFactors };
 export type { BiometricsScenarioParameters };

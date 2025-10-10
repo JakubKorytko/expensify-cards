@@ -2,7 +2,7 @@ import type { TranslationPaths } from "@src/languages/types";
 import { BiometricsPrivateKeyStore } from "@libs/Biometrics/BiometricsKeyStore";
 import { signToken as signTokenED25519 } from "@libs/ED25519";
 import { requestBiometricsChallenge } from "@libs/actions/Biometrics";
-import { processBiometricsScenario } from "@libs/Biometrics/scenarios";
+import processBiometricsScenario from "@libs/Biometrics/scenarios/processBiometricsScenario";
 import CONST from "@src/CONST";
 import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
 

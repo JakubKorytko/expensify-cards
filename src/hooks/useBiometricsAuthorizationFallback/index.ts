@@ -20,8 +20,8 @@ import {
 import {
   biometricsScenarios,
   biometricsScenarioRequiredFactors,
-  processBiometricsScenario,
 } from "@libs/Biometrics/scenarios";
+import processBiometricsScenario from "@libs/Biometrics/scenarios/processBiometricsScenario";
 
 /**
  * Hook that provides fallback authorization flow when biometrics is not available.
@@ -81,8 +81,10 @@ function useBiometricsAuthorizationFallback<
         });
 
       if (factorsCheckValue !== true) {
-        if (factorsCheckValue === CONST.BIOMETRICS.FACTORS.VALIDATE_CODE) {
-          requestValidateCodeAction();
+        if ("missingFactorMiddleware" in biometricsScenarios[scenario]) {
+          await biometricsScenarios[scenario].missingFactorMiddleware?.(
+            factorsCheckValue,
+          );
         }
 
         return setStatus((prevStatus) => ({

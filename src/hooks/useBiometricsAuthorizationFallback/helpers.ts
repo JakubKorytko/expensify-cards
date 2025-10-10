@@ -4,8 +4,10 @@ import {
   BiometricsFallbackScenario,
   BiometricsFallbackFactor,
   BiometricsFallbackFactors,
+  BiometricsFallbackScenarioParams,
 } from "@libs/Biometrics/scenarios/types";
 import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
+import { biometricsScenarioRequiredFactors } from "@/src/libs/Biometrics/scenarios";
 
 /**
  * Checks if all required authentication factors are present.
@@ -63,4 +65,20 @@ function convertBiometricsFactorToParameterName<
     .parameter as keyof BiometricsFallbackFactors<T>;
 }
 
-export { verifyRequiredFactors, convertBiometricsFactorToParameterName };
+function areBiometricsFallbackParamsValid<T extends BiometricsFallbackScenario>(
+  scenario: T,
+  params: Record<string, unknown>,
+): params is BiometricsFallbackScenarioParams<T> {
+  return Object.keys(params).every((key) => {
+    return biometricsScenarioRequiredFactors[scenario].find(
+      (factor) =>
+        CONST.BIOMETRICS.FACTORS_REQUIREMENTS[factor].parameter === key,
+    );
+  });
+}
+
+export {
+  verifyRequiredFactors,
+  convertBiometricsFactorToParameterName,
+  areBiometricsFallbackParamsValid,
+};

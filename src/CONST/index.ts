@@ -114,6 +114,7 @@ const CONST = {
       AUTHORIZE_TRANSACTION_WITH_VALIDATE_CODE:
         "AUTHORIZE_TRANSACTION_WITH_VALIDATE_CODE",
       AUTHORIZE_TRANSACTION: "AUTHORIZE_TRANSACTION",
+      TEST_OTP_FIRST: "TEST_OTP_FIRST",
     },
     /** All possible authentication factors that can be used in the biometrics process */
     FACTORS: {
