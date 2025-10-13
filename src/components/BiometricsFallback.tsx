@@ -10,7 +10,7 @@ import BiometricsInfoModal from "@src/components/BiometricsInfoModal";
 import { UseBiometricsAuthorizationFallback } from "@hooks/useBiometricsAuthorizationFallback/types";
 
 // Base type for biometrics status including modal state
-type BiometricsStatus<T extends BiometricsFallbackScenario> = 
+type BiometricsStatus<T extends BiometricsFallbackScenario> =
   UseBiometricsAuthorizationFallback<T> & {
     isModalShown: boolean;
   };
@@ -24,13 +24,16 @@ type ContentProps<T extends BiometricsFallbackScenario> = {
   children: (
     content: React.ReactNode,
     authorize: () => Promise<void>,
-    status: BiometricsStatus<T>
+    status: BiometricsStatus<T>,
   ) => React.ReactNode;
 };
 
 // Component type definitions
-type SecretComponent = React.ReactElement<SecretProps, typeof BiometricsFallbackSecret>;
-type ContentComponent<T extends BiometricsFallbackScenario> = 
+type SecretComponent = React.ReactElement<
+  SecretProps,
+  typeof BiometricsFallbackSecret
+>;
+type ContentComponent<T extends BiometricsFallbackScenario> =
   React.ReactElement<ContentProps<T>, typeof BiometricsFallbackContent>;
 
 // Main guard props
@@ -61,18 +64,18 @@ function BiometricsFallback<T extends BiometricsFallbackScenario>({
   const BiometricsFallback = useBiometricsAuthorizationFallback(scenario);
   const [showModal, setShowModal] = useState<boolean>(false);
   const { translate } = useLocalize();
-
   // Find and validate required child components
   const [secretComponent, contentComponent] = [
-    BiometricsFallbackSecret, 
-    BiometricsFallbackContent,
-  ].map(type => 
-    children.find(child => child.type === type)
-  ) as [SecretComponent?, ContentComponent<T>?];
+    BiometricsFallbackSecret.name,
+    BiometricsFallbackContent.name,
+  ].map((name) => children.find((child) => child.type.name === name)) as [
+    SecretComponent?,
+    ContentComponent<T>?,
+  ];
 
   if (!secretComponent || !contentComponent) {
     throw new Error(
-      "BiometricsFallback requires exactly two children: Secret and Content."
+      "BiometricsFallback requires exactly two children: Secret and Content.",
     );
   }
 
@@ -86,27 +89,30 @@ function BiometricsFallback<T extends BiometricsFallbackScenario>({
 
     await BiometricsFallback.authorize({
       ...props,
-      ...params
+      ...params,
     });
 
     setShowModal(true);
   };
 
   // Get wrapper render function
-  const renderContent = contentComponent.props.children || ((secret) => <>{secret}</>);
+  const renderContent =
+    contentComponent.props.children || ((secret) => <>{secret}</>);
 
   // Handle successful authentication
-  const hasAccess = BiometricsFallback.wasRecentStepSuccessful && BiometricsFallback.isRequestFulfilled;
+  const hasAccess =
+    BiometricsFallback.wasRecentStepSuccessful &&
+    BiometricsFallback.isRequestFulfilled;
   const shouldShowSecret = hasAccess && !showModal;
-  
+
   if (shouldShowSecret) {
     return renderContent(
       <>{secretComponent.props.children(shouldShowSecret)}</>,
       handleAuthorize,
       {
         ...BiometricsFallback,
-        isModalShown: showModal
-      }
+        isModalShown: showModal,
+      },
     );
   }
 
@@ -124,8 +130,8 @@ function BiometricsFallback<T extends BiometricsFallbackScenario>({
         handleAuthorize,
         {
           ...BiometricsFallback,
-          isModalShown: showModal
-        }
+          isModalShown: showModal,
+        },
       )}
 
       {showModal && BiometricsFallback.isRequestFulfilled && (
@@ -136,12 +142,18 @@ function BiometricsFallback<T extends BiometricsFallbackScenario>({
           onClose={() => setShowModal(false)}
         />
       )}
-
-      {BiometricsFallback.requiredFactorForNextStep === CONST.BIOMETRICS.FACTORS.VALIDATE_CODE &&
-        renderBiometricsInput('ValidateCode', 'validateCode')}
-
-      {BiometricsFallback.requiredFactorForNextStep === CONST.BIOMETRICS.FACTORS.OTP &&
-        renderBiometricsInput('OTPCode', 'otp')}
+      {BiometricsFallback.requiredFactorForNextStep ===
+        CONST.BIOMETRICS.FACTORS.VALIDATE_CODE &&
+        renderBiometricsInput(
+          "ValidateCode",
+          CONST.BIOMETRICS.FACTORS_REQUIREMENTS.VALIDATE_CODE.parameter,
+        )}
+      {BiometricsFallback.requiredFactorForNextStep ===
+        CONST.BIOMETRICS.FACTORS.OTP &&
+        renderBiometricsInput(
+          "OTPCode",
+          CONST.BIOMETRICS.FACTORS_REQUIREMENTS.OTP.parameter,
+        )}
     </>
   );
 }
