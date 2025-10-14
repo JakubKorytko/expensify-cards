@@ -1,37 +1,37 @@
 import { useCallback } from "react";
 import CONST from "@src/CONST";
-import BiometricsChallenge from "@libs/Biometrics/BiometricsChallenge";
-import useBiometricsStatus from "./useBiometricsStatus";
-import { BiometricsAuthorization } from "./types";
+import MultiFactorAuthenticationChallenge from "@libs/MultiFactorAuthentication/MultiFactorAuthenticationChallenge";
+import useMultiFactorAuthenticationStatus from "./useMultiFactorAuthenticationStatus";
+import { MultiFactorAuthorization, UseMultiFactorAuthorization } from "./types";
 import { createAuthorizeErrorStatus } from "./helpers";
 
 /**
- * Hook that manages biometric authorization for transactions.
+ * Hook that manages multifactorial authentication authorization for transactions.
  *
  * Handles the complete authorization flow including:
  * - Requesting a challenge from the server
- * - Signing the challenge with biometric authentication
+ * - Signing the challenge with multifactorial authentication
  * - Verifying the signature with the server
  *
  * Returns current authorization status and methods to control the flow.
  */
-function useBiometricsAuthorization() {
-  const [status, setStatus] = useBiometricsStatus(
+function useMultiFactorAuthorization(): UseMultiFactorAuthorization {
+  const [status, setStatus] = useMultiFactorAuthenticationStatus(
     false,
-    CONST.BIOMETRICS.SCENARIO_TYPE.AUTHORIZATION,
+    CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION,
   );
 
   /**
-   * Requests, signs and verifies a biometric challenge for transaction authorization.
+   * Requests, signs and verifies a multifactorial authentication challenge for transaction authorization.
    *
-   * Can accept a validate code for devices without biometrics or during re-registration.
+   * Can accept a validate code for devices without multifactorial authentication or during re-registration.
    * Can accept a previously obtained private key status to avoid duplicate auth prompts.
    *
-   * Will trigger a biometric authentication prompt if no private key status is provided.
+   * Will trigger a multifactorial authentication prompt if no private key status is provided.
    */
-  const authorize: BiometricsAuthorization = useCallback(
+  const authorize: MultiFactorAuthorization = useCallback(
     async ({ transactionID, chainedPrivateKeyStatus }) => {
-      const challenge = new BiometricsChallenge(transactionID);
+      const challenge = new MultiFactorAuthenticationChallenge(transactionID);
 
       const requestStatus = await challenge.request();
       if (!requestStatus.value)
@@ -74,4 +74,4 @@ function useBiometricsAuthorization() {
   return { status, authorize, cancel };
 }
 
-export default useBiometricsAuthorization;
+export default useMultiFactorAuthorization;

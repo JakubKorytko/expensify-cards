@@ -1,4 +1,4 @@
-/** 
+/**
  * @module @hooks/useLocalize
  * Mock implementation of the useLocalize hook.
  */

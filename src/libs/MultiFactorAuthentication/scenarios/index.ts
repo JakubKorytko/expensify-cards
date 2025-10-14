@@ -1,0 +1,49 @@
+/**
+ * This module defines the available multifactorial authentication scenarios and their parameters.
+ * It maps each scenario type to its corresponding implementation method and any post-processing logic.
+ * The scenarios include setting up multifactorial authentication and authorizing transactions with different authentication flows.
+ */
+import { MultiFactorAuthenticationScenarioMap } from "@libs/MultiFactorAuthentication/scenarios/types";
+import CONST from "@src/CONST";
+import {
+  authorizeTransaction,
+  registerBiometrics,
+} from "@libs/actions/MultiFactorAuthentication";
+
+/**
+ * Defines the required parameters for each multifactorial authentication scenario type.
+ * Each scenario requires specific parameters:
+ * - Regular transaction authorization needs a transaction ID
+ * - Authorization with validation code needs a transaction ID
+ * - Fallback authorization needs a transaction ID
+ * - Multi-factor authentication setup needs a public key
+ */
+type MultiFactorAuthenticationScenarioParameters = {
+  [CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION]: {
+    transactionID: string;
+  };
+  [CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS]: {
+    publicKey: string;
+  };
+};
+
+/**
+ * Maps each multifactorial authentication scenario to its implementation details.
+ * Regular scenarios just need a scenario method.
+ * The fallback scenario includes additional post-processing and validation code storage.
+ */
+const MULTI_FACTOR_AUTHENTICATION_SCENARIOS = {
+  [CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION]: {
+    allowBiometrics: true,
+    allow2FA: true,
+    action: authorizeTransaction,
+  },
+  [CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS]: {
+    allowBiometrics: false,
+    allow2FA: true,
+    action: registerBiometrics,
+  },
+} as const satisfies MultiFactorAuthenticationScenarioMap;
+
+export { MULTI_FACTOR_AUTHENTICATION_SCENARIOS };
+export type { MultiFactorAuthenticationScenarioParameters };

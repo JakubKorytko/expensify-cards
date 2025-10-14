@@ -1,27 +1,30 @@
 import type { TranslationPaths } from "@src/languages/types";
-import { BiometricsPrivateKeyStore } from "@libs/Biometrics/BiometricsKeyStore";
+import { MultiFactorAuthenticationPrivateKeyStore } from "@libs/MultiFactorAuthentication/MultiFactorAuthenticationKeyStore";
 import { signToken as signTokenED25519 } from "@libs/ED25519";
-import { requestBiometricsChallenge } from "@libs/actions/Biometrics";
-import processBiometricsScenario from "@libs/Biometrics/scenarios/processBiometricsScenario";
+import { requestMultiFactorAuthenticationChallenge } from "@libs/actions/MultiFactorAuthentication";
+import processMultiFactorAuthenticationScenario from "@libs/MultiFactorAuthentication/scenarios/processMultiFactorAuthenticationScenario";
 import CONST from "@src/CONST";
-import { BiometricsPartialStatus } from "@hooks/useMultiAuthentication/types";
+import { MultiFactorAuthenticationPartialStatus } from "@hooks/useMultiAuthentication/types";
 
 /**
- * Handles the biometric authentication challenge flow for a specific transaction.
+ * Handles the multifactorial authentication challenge flow for a specific transaction.
  * Maintains state between steps to ensure transaction consistency.
  *
  * The standard authentication flow is:
  * 1. Request a challenge from the API
- * 2. Sign the challenge using biometric authentication
+ * 2. Sign the challenge using multifactorial authentication
  * 3. Send the signed challenge back for verification
  *
- * Each step provides detailed status feedback through BiometricsPartialStatus objects.
+ * Each step provides detailed status feedback through MultiFactorAuthenticationPartialStatus objects.
  */
-class BiometricsChallenge {
+class MultiFactorAuthenticationChallenge {
   /** Tracks the current state and status of the authentication process */
-  private auth: BiometricsPartialStatus<string | undefined, true> = {
+  private auth: MultiFactorAuthenticationPartialStatus<
+    string | undefined,
+    true
+  > = {
     value: undefined,
-    reason: "biometrics.reason.generic.notRequested",
+    reason: "multiFactorAuthentication.reason.generic.notRequested",
   };
 
   constructor(private readonly transactionID: string) {}
@@ -29,7 +32,7 @@ class BiometricsChallenge {
   /** Creates a standardized error response with the given reason key */
   private createErrorReturnValue(
     reasonKey: TranslationPaths,
-  ): BiometricsPartialStatus<boolean, true> {
+  ): MultiFactorAuthenticationPartialStatus<boolean, true> {
     return { value: false, reason: reasonKey };
   }
 
@@ -37,28 +40,32 @@ class BiometricsChallenge {
    * Initiates the challenge process by requesting a new challenge from the API.
    * Verifies the backend is properly synced and handles the challenge response.
    */
-  public async request(): Promise<BiometricsPartialStatus<boolean, true>> {
+  public async request(): Promise<
+    MultiFactorAuthenticationPartialStatus<boolean, true>
+  > {
     const {
       httpCode,
       challenge,
       reason: apiReason,
-    } = await requestBiometricsChallenge();
+    } = await requestMultiFactorAuthenticationChallenge();
     const syncedBE = httpCode !== 401;
 
     if (!syncedBE) {
       return this.createErrorReturnValue(
-        "biometrics.reason.error.keyMissingOnTheBE",
+        "multiFactorAuthentication.reason.error.keyMissingOnTheBE",
       );
     }
 
     const challengeString = challenge ? JSON.stringify(challenge) : undefined;
     const reason = apiReason.endsWith("unknownResponse")
-      ? "biometrics.reason.error.badToken"
+      ? "multiFactorAuthentication.reason.error.badToken"
       : apiReason;
 
     this.auth = {
       value: challengeString,
-      reason: challenge ? "biometrics.reason.success.tokenReceived" : reason,
+      reason: challenge
+        ? "multiFactorAuthentication.reason.success.tokenReceived"
+        : reason,
     };
 
     return { ...this.auth, value: true };
@@ -70,27 +77,30 @@ class BiometricsChallenge {
    * Can reuse a previously fetched private key status to avoid multiple auth prompts.
    */
   public async sign(
-    chainedPrivateKeyStatus?: BiometricsPartialStatus<string | null, true>,
-  ): Promise<BiometricsPartialStatus<boolean, true>> {
+    chainedPrivateKeyStatus?: MultiFactorAuthenticationPartialStatus<
+      string | null,
+      true
+    >,
+  ): Promise<MultiFactorAuthenticationPartialStatus<boolean, true>> {
     if (!this.auth.value) {
       return this.createErrorReturnValue(
-        "biometrics.reason.error.tokenMissing",
+        "multiFactorAuthentication.reason.error.tokenMissing",
       );
     }
 
     const { value, type, reason } = chainedPrivateKeyStatus?.value
       ? chainedPrivateKeyStatus
-      : await BiometricsPrivateKeyStore.get();
+      : await MultiFactorAuthenticationPrivateKeyStore.get();
 
     if (!value) {
       return this.createErrorReturnValue(
-        reason || "biometrics.reason.error.keyMissing",
+        reason || "multiFactorAuthentication.reason.error.keyMissing",
       );
     }
 
     this.auth = {
       value: signTokenED25519(this.auth.value, value),
-      reason: "biometrics.reason.success.tokenSigned",
+      reason: "multiFactorAuthentication.reason.success.tokenSigned",
       type,
     };
 
@@ -102,15 +112,17 @@ class BiometricsChallenge {
    * Handles both configured and unconfigured device states.
    * For unconfigured devices or re-registration, requires a validation code.
    */
-  public async send(): Promise<BiometricsPartialStatus<boolean, true>> {
+  public async send(): Promise<
+    MultiFactorAuthenticationPartialStatus<boolean, true>
+  > {
     if (!this.auth.value) {
       return this.createErrorReturnValue(
-        "biometrics.reason.error.signatureMissing",
+        "multiFactorAuthentication.reason.error.signatureMissing",
       );
     }
 
-    const authorizationResult = processBiometricsScenario(
-      CONST.BIOMETRICS.SCENARIO.AUTHORIZE_TRANSACTION,
+    const authorizationResult = processMultiFactorAuthenticationScenario(
+      CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION,
       {
         signedChallenge: this.auth.value,
 
@@ -126,17 +138,17 @@ class BiometricsChallenge {
     if (!wasRecentStepSuccessful || !isRequestFulfilled) {
       return this.createErrorReturnValue(
         reason.endsWith("unknownResponse")
-          ? "biometrics.reason.error.challengeRejected"
+          ? "multiFactorAuthentication.reason.error.challengeRejected"
           : reason,
       );
     }
 
     return {
       value: true,
-      reason: "biometrics.reason.success.verificationSuccess",
+      reason: "multiFactorAuthentication.reason.success.verificationSuccess",
       type: this.auth.type,
     };
   }
 }
 
-export default BiometricsChallenge;
+export default MultiFactorAuthenticationChallenge;

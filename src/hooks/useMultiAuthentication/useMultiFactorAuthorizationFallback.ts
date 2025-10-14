@@ -1,38 +1,37 @@
 import { useCallback, useMemo } from "react";
 import CONST from "@src/CONST";
-import useBiometricsStatus from "./useBiometricsStatus";
+import useMultiFactorAuthenticationStatus from "./useMultiFactorAuthenticationStatus";
 import {
   AuthorizeUsingFallback,
-  UseBiometricsAuthorizationFallback,
+  UseMultiFactorAuthorizationFallback,
 } from "./types";
 import {
-  BiometricsFallbackScenario,
-  BiometricsFallbackScenarioParams,
-} from "@libs/Biometrics/scenarios/types";
-import processBiometricsScenario, {
-  areBiometricsFactorsSufficient,
-} from "@libs/Biometrics/scenarios/processBiometricsScenario";
+  MultiFactorAuthorizationFallbackScenario,
+  MultiFactorAuthorizationFallbackScenarioParams,
+} from "@libs/MultiFactorAuthentication/scenarios/types";
+import processMultiFactorAuthenticationScenario, {
+  areMultiFactorAuthenticationFactorsSufficient,
+} from "@libs/MultiFactorAuthentication/scenarios/processMultiFactorAuthenticationScenario";
 import { requestValidateCodeAction } from "@libs/actions/User";
 
 /**
- * Hook that provides fallback authorization flow when biometrics is not available.
+ * Hook that provides fallback authorization flow when multifactorial authentication is not available.
  * Uses validate code and OTP for transaction authorization instead.
  */
-function useBiometricsAuthorizationFallback<
-  T extends BiometricsFallbackScenario,
->(scenario: T): UseBiometricsAuthorizationFallback<T> {
-  const [status, setStatus] = useBiometricsStatus<number | undefined>(
-    undefined,
-    CONST.BIOMETRICS.SCENARIO_TYPE.AUTHORIZATION,
-  );
+function useMultiFactorAuthorizationFallback<
+  T extends MultiFactorAuthorizationFallbackScenario,
+>(scenario: T): UseMultiFactorAuthorizationFallback<T> {
+  const [status, setStatus] = useMultiFactorAuthenticationStatus<
+    number | undefined
+  >(undefined, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION);
 
   /**
    * Verifies that all required authentication factors are provided.
-   * Checks both OTP and validate code against the requirements for non-biometric devices.
+   * Checks both OTP and validate code against the requirements for non-multifactorial authentication devices.
    */
   const verifyFactors = useCallback(
-    (params: BiometricsFallbackScenarioParams<T>) =>
-      areBiometricsFactorsSufficient(
+    (params: MultiFactorAuthorizationFallbackScenarioParams<T>) =>
+      areMultiFactorAuthenticationFactorsSufficient(
         {
           ...params,
         },
@@ -43,15 +42,17 @@ function useBiometricsAuthorizationFallback<
   );
 
   /**
-   * Authorizes a transaction using OTP and validate code when biometrics is unavailable.
+   * Authorizes a transaction using OTP and validate code when multifactorial authentication is unavailable.
    * Handles the multistep verification process, requesting additional factors when needed.
    * Updates status to reflect the current state of authorization and any required next steps.
    */
   const authorize: AuthorizeUsingFallback<T> = useCallback(
     async (params) => {
-      const valueToStore = CONST.BIOMETRICS.FACTORS.VALIDATE_CODE;
+      const valueToStore =
+        CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE;
       const parameterName =
-        CONST.BIOMETRICS.FACTORS_REQUIREMENTS[valueToStore].parameter;
+        CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS_REQUIREMENTS[valueToStore]
+          .parameter;
       const storedValue = params[parameterName];
 
       const providedOrStoredFactor = storedValue || status.value;
@@ -64,7 +65,7 @@ function useBiometricsAuthorizationFallback<
       if (factorsCheckStep.requiredFactorForNextStep) {
         if (
           factorsCheckStep.requiredFactorForNextStep ===
-          CONST.BIOMETRICS.FACTORS.VALIDATE_CODE
+          CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE
         ) {
           requestValidateCodeAction();
         }
@@ -76,7 +77,7 @@ function useBiometricsAuthorizationFallback<
         }));
       }
 
-      const processResult = await processBiometricsScenario(
+      const processResult = await processMultiFactorAuthenticationScenario(
         scenario,
         {
           ...params,
@@ -131,4 +132,4 @@ function useBiometricsAuthorizationFallback<
   return { ...values, ...scenarios };
 }
 
-export default useBiometricsAuthorizationFallback;
+export default useMultiFactorAuthorizationFallback;

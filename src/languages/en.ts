@@ -1,12 +1,12 @@
 /**
  * Translation strings for the application.
- * Contains translations for biometrics-related messages, including success/failure states,
+ * Contains translations for multifactorial authentication-related messages, including success/failure states,
  * error messages, and API responses.
  */
 const translations = {
   // ...
-  biometrics: {
-    /** Messages and titles displayed after biometric operations */
+  multiFactorAuthentication: {
+    /** Messages and titles displayed after multifactorial authentication operations */
     statusMessage: {
       successMessage: (authorization?: boolean, using?: string) =>
         `You have successfully ${authorization ? "authorized the challenge" : "authenticated"}${using ? ` using ${using}` : ""}`,
@@ -17,14 +17,15 @@ const translations = {
       failedTitle: (authorization?: boolean) =>
         `${authorization ? "Authorization" : "Authentication"} failed`,
     },
-    /** Title indicating biometrics registration status */
+    /** Title indicating multifactorial authentication registration status */
     title: (registered: boolean = true) =>
-      `Biometrics (${registered ? "Registered" : "Not registered"})`,
+      `Multi-Factor Authentication (${registered ? "Registered" : "Not registered"})`,
     reason: {
-      /** Success messages for biometric operations */
+      /** Success messages for multifactorial authentication operations */
       success: {
         keySavedInSecureStore: "Key successfully saved in SecureStore",
-        keyRetrievedFromSecureStore: "Key successfully retrieved from SecureStore",
+        keyRetrievedFromSecureStore:
+          "Key successfully retrieved from SecureStore",
         keyNotInSecureStore: "No key found in SecureStore",
         keyPairGenerated: "Key pair successfully generated",
         tokenReceived: "Token received successfully",
@@ -32,7 +33,7 @@ const translations = {
         verificationSuccess: "Verification completed successfully",
         keyDeletedFromSecureStore: "Key successfully deleted from SecureStore",
       },
-      /** Error messages for biometric operation failures */
+      /** Error messages for multifactorial authentication operation failures */
       error: {
         unableToSaveKey: "Failed to save key in SecureStore",
         unableToRetrieve: "Failed to retrieve key from SecureStore",
@@ -45,7 +46,8 @@ const translations = {
         validateCodeMissing: "Validation code is missing",
         otpMissing: "OTP code is missing",
         keyMissingOnTheBE: "Key is stored locally but not found on server",
-        biometricsNotSupported: "This device does not support biometrics",
+        multiFactorAuthenticationNotSupported:
+          "This device does not support multifactorial authentication",
       },
       /** Error messages specific to Expo's SecureStore */
       expoErrors: {
@@ -75,7 +77,8 @@ const translations = {
       validationCodeInvalid: "Invalid validation code",
       otpCodeInvalid: "Invalid OTP code",
       otpCodeRequired: "Please provide an OTP code",
-      biometricsSuccess: "Biometric registration successful",
+      multiFactorAuthenticationSuccess:
+        "Multi-factor authentication registration successful",
       noTransactionID: "Transaction ID not provided",
       userNotRegistered: "User registration not found",
       unableToAuthorize: "Authorization failed with provided credentials",
@@ -83,7 +86,7 @@ const translations = {
       badRequest: "Invalid request",
       unknownResponse: "Unrecognized response type",
     },
-    /** User input prompts during biometric flows */
+    /** User input prompts during multifactorial authentication flows */
     provideValidateCode: "Enter your verification code to continue",
     provideOTPCode: "Enter your one-time password to continue",
   },

@@ -3,21 +3,21 @@ import { TranslationPaths } from "@src/languages/types";
 import { AUTH_TYPE } from "expo-secure-store";
 import CONST from "@src/CONST";
 import {
-  BiometricsFallbackScenario,
-  BiometricsFallbackScenarioParams,
-  BiometricsFactor,
-} from "@libs/Biometrics/scenarios/types";
+  MultiFactorAuthorizationFallbackScenario,
+  MultiFactorAuthorizationFallbackScenarioParams,
+  MultiFactorAuthenticationFactor,
+} from "@libs/MultiFactorAuthentication/scenarios/types";
 
 /**
- * Represents the most recent biometrics status and method to cancel it
+ * Represents the most recent multifactorial authentication status and method to cancel it
  */
-type BiometricsRecentStatus = {
-  status: BiometricsStatus<boolean>;
-  cancel: () => BiometricsStatus<unknown>;
+type MultiFactorAuthenticationRecentStatus = {
+  status: MultiFactorAuthenticationStatus<boolean>;
+  cancel: () => MultiFactorAuthenticationStatus<unknown>;
 };
 
 /**
- * Parameters required for biometric authorization
+ * Parameters required for multifactorial authentication authorization
  */
 type AuthorizationParams = {
   otp?: number;
@@ -26,95 +26,102 @@ type AuthorizationParams = {
 };
 
 /**
- * Function type for performing biometric authorization
+ * Function type for performing multifactorial authentication authorization
  */
-type BiometricsAuthorizationMethod = (
+type MultiFactorAuthorizationMethod = (
   params: AuthorizationParams,
-) => Promise<BiometricsStatus<boolean>>;
+) => Promise<MultiFactorAuthenticationStatus<boolean>>;
 
 /**
- * Available biometric scenarios including registration, authorization, reset and cancel
+ * Available multifactorial authentication scenarios including registration, authorization, reset and cancel
  */
-type BiometricsMethods = {
+type MultiFactorAuthenticationMethods = {
   register: Register;
-  authorize: BiometricsAuthorization;
-  resetSetup: () => Promise<BiometricsStatus<boolean>>;
-  cancel: () => BiometricsStatus<boolean>;
+  authorize: MultiFactorAuthorization;
+  resetSetup: () => Promise<MultiFactorAuthenticationStatus<boolean>>;
+  cancel: () => MultiFactorAuthenticationStatus<boolean>;
 };
 
 /**
- * Current state of biometrics including status and configuration state
+ * Current state of multifactorial authentication including status and configuration state
  */
-type BiometricsState = BiometricsStatus<boolean> & {
-  isBiometryConfigured: boolean;
-};
+type MultiFactorAuthenticationState =
+  MultiFactorAuthenticationStatus<boolean> & {
+    isBiometryConfigured: boolean;
+  };
 
 /**
- * Hook return type containing biometrics state and available scenarios
+ * Hook return type containing multifactorial authentication state and available scenarios
  */
-type UseBiometrics = [BiometricsState, BiometricsMethods];
+type UseMultiFactorAuthentication = [
+  MultiFactorAuthenticationState,
+  MultiFactorAuthenticationMethods,
+];
 
 /**
- * Factory function type for creating a BiometricsRecentStatus object
+ * Factory function type for creating a MultiFactorAuthenticationRecentStatus object
  */
-type CreateBiometricsRecentStatus = (
-  result: BiometricsStatus<unknown>,
-  cancel: () => BiometricsStatus<unknown>,
-) => BiometricsRecentStatus;
+type CreateMultiFactorAuthenticationRecentStatus = (
+  result: MultiFactorAuthenticationStatus<unknown>,
+  cancel: () => MultiFactorAuthenticationStatus<unknown>,
+) => MultiFactorAuthenticationRecentStatus;
 
 /**
- * Function that handles biometric authorization of transactions.
+ * Function that handles multifactorial authentication authorization of transactions.
  * Takes a transaction ID, optional validate code, and optional chained private key status.
  * Returns a promise resolving to the authorization status.
  */
-type BiometricsAuthorization = (params: {
+type MultiFactorAuthorization = (params: {
   transactionID: string;
   validateCode?: number;
-  chainedPrivateKeyStatus?: BiometricsStatus<string | null>;
-}) => Promise<BiometricsStatus<boolean>>;
+  chainedPrivateKeyStatus?: MultiFactorAuthenticationStatus<string | null>;
+}) => Promise<MultiFactorAuthenticationStatus<boolean>>;
 
 /**
- * Hook return type for biometric transaction authorization.
+ * Hook return type for multifactorial authentication transaction authorization.
  * Provides current authorization status, authorize function to initiate authorization,
  * and cancel function to cancel the current authorization flow.
  */
-type UseBiometricsAuthorization = {
-  status: BiometricsStatus<boolean>;
-  authorize: BiometricsAuthorization;
-  cancel: () => void;
+type UseMultiFactorAuthorization = {
+  status: MultiFactorAuthenticationStatus<boolean>;
+  authorize: MultiFactorAuthorization;
+  cancel: () => MultiFactorAuthenticationStatus<boolean>;
 };
 
 /**
- * Function type for authorizing transactions when biometrics is not available.
+ * Function type for authorizing transactions when multifactorial authentication is not available.
  * Uses provided factors as alternative authentication factors.
  * Returns a status containing the first verified factor.
  */
-type AuthorizeUsingFallback<T extends BiometricsFallbackScenario> = (
-  params: BiometricsFallbackScenarioParams<T>,
-) => Promise<BiometricsStatus<number | undefined>>;
+type AuthorizeUsingFallback<
+  T extends MultiFactorAuthorizationFallbackScenario,
+> = (
+  params: MultiFactorAuthorizationFallbackScenarioParams<T>,
+) => Promise<MultiFactorAuthenticationStatus<number | undefined>>;
 
 /**
- * Hook return type for biometrics fallback authorization.
+ * Hook return type for multifactorial authentication fallback authorization.
  * Provides status tracking, authorization function, and request canceling.
  * Status tracks the current verified factor and authorization state.
  */
-type UseBiometricsAuthorizationFallback<T extends BiometricsFallbackScenario> =
-  BiometricsStatusMessage &
-    BiometricsStep & {
-      authorize: AuthorizeUsingFallback<T>;
-      cancel: () => BiometricsStatus<number | undefined>;
-    };
+type UseMultiFactorAuthorizationFallback<
+  T extends MultiFactorAuthorizationFallbackScenario,
+> = MultiFactorAuthenticationStatusMessage &
+  MultiFactorAuthenticationStep & {
+    authorize: AuthorizeUsingFallback<T>;
+    cancel: () => MultiFactorAuthenticationStatus<number | undefined>;
+  };
 
 /**
- * Base type for the register function that handles biometric setup.
- * Takes a validate code and additional params, returns a BiometricsStatus.
+ * Base type for the register function that handles multifactorial authentication setup.
+ * Takes a validate code and additional params, returns a MultiFactorAuthenticationStatus.
  */
 type RegisterFunction<T, R> = (
   params: { validateCode?: number } & T,
-) => Promise<BiometricsStatus<R>>;
+) => Promise<MultiFactorAuthenticationStatus<R>>;
 
 /**
- * Function to register biometrics on the device.
+ * Function to register multifactorial authentication on the device.
  * Returns different status types based on whether authorization is chained:
  * - With chained=true: Returns a string status for the next authorization step
  * - With chained=false: Returns a boolean indicating registration success
@@ -125,10 +132,10 @@ type Register = RegisterFunction<{ chainedWithAuthorization: true }, string> &
   RegisterFunction<{ chainedWithAuthorization?: boolean }, boolean | string>;
 
 /**
- * Information about the device's biometric capabilities and configuration state
+ * Information about the device's multifactorial authentication capabilities and configuration state
  */
-type BiometricsInfo = {
-  /** Whether the device supports biometric auth (fingerprint/face) or fallback (PIN/pattern) */
+type MultiFactorAuthenticationInfo = {
+  /** Whether the device supports biometric authentication (fingerprint/face) or fallback (PIN/pattern) */
   deviceSupportBiometrics: boolean;
 
   /** Whether biometrics is already set up with a stored public key */
@@ -136,9 +143,9 @@ type BiometricsInfo = {
 };
 
 /**
- * User-facing status messages for the current biometric state
+ * User-facing status messages for the current multifactorial authentication state
  */
-type BiometricsStatusMessage = {
+type MultiFactorAuthenticationStatusMessage = {
   /** Detailed message explaining the current state or required scenario */
   message: string;
 
@@ -148,53 +155,54 @@ type BiometricsStatusMessage = {
 
 /**
  * Authentication hook return type combining status information and available scenarios.
- * Returns a tuple with current state and methods to control the biometric setup flow.
+ * Returns a tuple with current state and methods to control the multifactorial authentication setup flow.
  */
-type UseBiometricsSetup = BiometricsStep &
-  BiometricsInfo &
-  BiometricsStatusMessage & {
-    /** Sets up biometrics by generating keys and registering with backend */
+type UseBiometricsSetup = MultiFactorAuthenticationStep &
+  MultiFactorAuthenticationInfo &
+  MultiFactorAuthenticationStatusMessage & {
+    /** Sets up multifactorial authentication by generating keys and registering with backend */
     register: Register;
 
-    /** Clears biometric configuration by removing stored keys */
-    revoke: () => Promise<BiometricsStatus<boolean>>;
+    /** Clears multifactorial authentication configuration by removing stored keys */
+    revoke: () => Promise<MultiFactorAuthenticationStatus<boolean>>;
 
     /** Completes current request and updates UI state accordingly */
-    cancel: () => BiometricsStatus<boolean>;
+    cancel: () => MultiFactorAuthenticationStatus<boolean>;
   };
 
 /**
- * Represents the step of the biometric operation.
+ * Represents the step of the multifactorial authentication operation.
  */
-type BiometricsStep = {
+type MultiFactorAuthenticationStep = {
   /** Whether the recent step was successful */
   wasRecentStepSuccessful: boolean | undefined;
 
   /** The required factor for the next step */
-  requiredFactorForNextStep: BiometricsFactor | undefined;
+  requiredFactorForNextStep: MultiFactorAuthenticationFactor | undefined;
 
   /** Whether the request has been fulfilled */
   isRequestFulfilled: boolean;
 };
 
-type BiometricsPartialStatusConditional<omitStep> = omitStep extends false
-  ? {
-      /** The status of the biometric operation */
-      step: BiometricsStep;
-    }
-  : object;
+type MultiFactorAuthenticationPartialStatusConditional<omitStep> =
+  omitStep extends false
+    ? {
+        /** The status of the multifactorial authentication operation */
+        step: MultiFactorAuthenticationStep;
+      }
+    : object;
 
 /**
- * Represents the core status information for biometric operations.
- * @template T - The type of the value of the biometric operation.
+ * Represents the core status information for multifactorial authentication operations.
+ * @template T - The type of the value of the multifactorial authentication operation.
  * @template omitStep - Whether to omit the step from the partial status.
  */
-type BiometricsPartialStatus<
+type MultiFactorAuthenticationPartialStatus<
   T,
   omitStep = false,
-> = BiometricsPartialStatusConditional<omitStep> & {
+> = MultiFactorAuthenticationPartialStatusConditional<omitStep> & {
   /**
-   * The result value of the biometric operation.
+   * The result value of the multifactorial authentication operation.
    * Can be of various types depending on the operation, commonly boolean or string.
    */
   value: T;
@@ -207,20 +215,20 @@ type BiometricsPartialStatus<
 
   /**
    * The numeric authentication type identifier from SecureStore.
-   * Indicates which authentication method was used (e.g. biometric, passcode).
+   * Indicates which authentication method was used (e.g. multifactorial authentication, passcode).
    */
   type?: ValueOf<typeof AUTH_TYPE>;
 };
 
 /**
- * Complete status object for biometric operations, extending the partial status.
- * Used to track and communicate the full state of biometric authentication/authorization,
+ * Complete status object for multifactorial authentication operations, extending the partial status.
+ * Used to track and communicate the full state of multifactorial authentication/authorization,
  * including user-facing messages and authentication details.
  */
-type BiometricsStatus<T, omitStatus = false> = BiometricsPartialStatus<
+type MultiFactorAuthenticationStatus<
   T,
-  omitStatus
-> & {
+  omitStatus = false,
+> = MultiFactorAuthenticationPartialStatus<T, omitStatus> & {
   /** Human-readable name of the authentication method used */
   typeName?: string;
 
@@ -237,44 +245,53 @@ type BiometricsStatus<T, omitStatus = false> = BiometricsPartialStatus<
   title: string;
 };
 
-/** Valid biometric scenario types as defined in constants */
-type BiometricsStatusKeyType = ValueOf<typeof CONST.BIOMETRICS.SCENARIO_TYPE>;
+/** Valid multifactorial authentication scenario types as defined in constants */
+type MultiFactorAuthenticationStatusKeyType = ValueOf<
+  typeof CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE
+>;
 
 /** Names of supported authentication types */
-type AuthTypeName = ValueOf<typeof CONST.BIOMETRICS.AUTH_TYPE>["NAME"];
+type AuthTypeName = ValueOf<
+  typeof CONST.MULTI_FACTOR_AUTHENTICATION.AUTH_TYPE
+>["NAME"];
 
 /**
- * Function to update the biometrics status.
+ * Function to update the multifactorial authentication status.
  * @param partialStatus - New status data or function to transform existing status
- * @returns Updated BiometricsStatus object
+ * @returns Updated MultiFactorAuthenticationStatus object
  */
-type SetBiometricsStatus<T> = (
+type SetMultiFactorAuthenticationStatus<T> = (
   partialStatus:
-    | BiometricsPartialStatus<T>
-    | ((prevStatus: BiometricsStatus<T>) => BiometricsStatus<T>),
-) => BiometricsStatus<T>;
+    | MultiFactorAuthenticationPartialStatus<T>
+    | ((
+        prevStatus: MultiFactorAuthenticationStatus<T>,
+      ) => MultiFactorAuthenticationStatus<T>),
+) => MultiFactorAuthenticationStatus<T>;
 
-/** Valid type for the useBiometricsStatus hook */
-type UseBiometricsStatus<T> = [BiometricsStatus<T>, SetBiometricsStatus<T>];
+/** Valid type for the useMultiFactorAuthenticationStatus hook */
+type UseMultiFactorAuthenticationStatus<T> = [
+  MultiFactorAuthenticationStatus<T>,
+  SetMultiFactorAuthenticationStatus<T>,
+];
 
 export type {
-  BiometricsStatus,
-  BiometricsStep,
-  SetBiometricsStatus,
-  BiometricsStatusKeyType,
+  MultiFactorAuthenticationStatus,
+  MultiFactorAuthenticationStep,
+  SetMultiFactorAuthenticationStatus,
+  MultiFactorAuthenticationStatusKeyType,
   AuthTypeName,
-  BiometricsPartialStatus,
-  UseBiometricsStatus,
+  MultiFactorAuthenticationPartialStatus,
+  UseMultiFactorAuthenticationStatus,
   UseBiometricsSetup,
   Register,
-  BiometricsAuthorizationMethod,
+  MultiFactorAuthorizationMethod,
   AuthorizeUsingFallback,
-  UseBiometricsAuthorizationFallback,
-  BiometricsAuthorization,
-  UseBiometricsAuthorization,
-  UseBiometrics,
-  BiometricsRecentStatus,
-  CreateBiometricsRecentStatus,
-  BiometricsMethods,
-  BiometricsState,
+  UseMultiFactorAuthorizationFallback,
+  MultiFactorAuthorization,
+  UseMultiFactorAuthentication,
+  UseMultiFactorAuthorization,
+  MultiFactorAuthenticationRecentStatus,
+  CreateMultiFactorAuthenticationRecentStatus,
+  MultiFactorAuthenticationMethods,
+  MultiFactorAuthenticationState,
 };

@@ -8,23 +8,27 @@ import CONST from "@src/CONST";
  */
 function decodeExpoMessage(error: unknown): TranslationPaths {
   const errorString = String(error);
-  const parts = errorString.split(CONST.BIOMETRICS.EXPO_ERRORS.SEPARATOR);
+  const parts = errorString.split(
+    CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEPARATOR,
+  );
   const searchString =
     parts.length > 1 ? parts.slice(1).join(";").trim() : errorString;
 
   const errorMappings = {
-    [CONST.BIOMETRICS.EXPO_ERRORS.SEARCH_STRING.CANCELED]:
-      "biometrics.reason.expoErrors.canceled",
-    [CONST.BIOMETRICS.EXPO_ERRORS.SEARCH_STRING.IN_PROGRESS]:
-      "biometrics.reason.expoErrors.alreadyInProgress",
-    [CONST.BIOMETRICS.EXPO_ERRORS.SEARCH_STRING.NOT_IN_FOREGROUND]:
-      "biometrics.reason.expoErrors.notInForeground",
-    [CONST.BIOMETRICS.EXPO_ERRORS.SEARCH_STRING.EXISTS]:
-      "biometrics.reason.expoErrors.keyExists",
-    [CONST.BIOMETRICS.EXPO_ERRORS.SEARCH_STRING.NO_AUTHENTICATION]:
-      "biometrics.reason.expoErrors.noAuthentication",
-    [CONST.BIOMETRICS.EXPO_ERRORS.SEARCH_STRING.OLD_ANDROID]:
-      "biometrics.reason.expoErrors.oldAndroid",
+    [CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEARCH_STRING.CANCELED]:
+      "multiFactorAuthentication.reason.expoErrors.canceled",
+    [CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEARCH_STRING.IN_PROGRESS]:
+      "multiFactorAuthentication.reason.expoErrors.alreadyInProgress",
+    [CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEARCH_STRING
+      .NOT_IN_FOREGROUND]:
+      "multiFactorAuthentication.reason.expoErrors.notInForeground",
+    [CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEARCH_STRING.EXISTS]:
+      "multiFactorAuthentication.reason.expoErrors.keyExists",
+    [CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEARCH_STRING
+      .NO_AUTHENTICATION]:
+      "multiFactorAuthentication.reason.expoErrors.noAuthentication",
+    [CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEARCH_STRING.OLD_ANDROID]:
+      "multiFactorAuthentication.reason.expoErrors.oldAndroid",
   } as const;
 
   for (const [searchKey, translationPath] of Object.entries(errorMappings)) {
@@ -33,7 +37,7 @@ function decodeExpoMessage(error: unknown): TranslationPaths {
     }
   }
 
-  return "biometrics.reason.expoErrors.generic";
+  return "multiFactorAuthentication.reason.expoErrors.generic";
 }
 
 /**
@@ -42,14 +46,15 @@ function decodeExpoMessage(error: unknown): TranslationPaths {
  * If the error maps to a generic message and a fallback is provided, returns the fallback instead.
  * This allows for more specific error messaging in known error scenarios.
  */
-const decodeBiometricsExpoMessage = (
+const decodeMultiFactorAuthenticationExpoMessage = (
   message: unknown,
   fallback?: TranslationPaths,
 ): TranslationPaths => {
   const decodedMessage = decodeExpoMessage(message);
-  return decodedMessage === "biometrics.reason.expoErrors.generic" && fallback
+  return decodedMessage ===
+    "multiFactorAuthentication.reason.expoErrors.generic" && fallback
     ? fallback
     : decodedMessage;
 };
 
-export default decodeBiometricsExpoMessage;
+export default decodeMultiFactorAuthenticationExpoMessage;

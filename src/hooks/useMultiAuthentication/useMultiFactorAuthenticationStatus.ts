@@ -2,42 +2,44 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import useLocalize from "@hooks/useLocalize";
 import CONST from "@src/CONST";
 import {
-  BiometricsStatus,
-  SetBiometricsStatus,
-  BiometricsStatusKeyType,
-  BiometricsPartialStatus,
-  UseBiometricsStatus,
+  MultiFactorAuthenticationStatus,
+  SetMultiFactorAuthenticationStatus,
+  MultiFactorAuthenticationStatusKeyType,
+  MultiFactorAuthenticationPartialStatus,
+  UseMultiFactorAuthenticationStatus,
 } from "./types";
 import { getAuthTypeName } from "./helpers";
 
 /**
- * A hook that manages biometrics status state and messaging.
+ * A hook that manages multifactorial authentication status state and messaging.
  *
- * Acts as middleware to format biometrics-related messages into a consistent, readable format.
- * This allows the main biometrics hook to focus solely on biometric operations.
+ * Acts as middleware to format multifactorial authentication-related messages into a consistent, readable format.
+ * This allows the main multifactorial authentication hook to focus solely on multifactorial authentication operations.
  *
- * Returns the current biometrics status and a setter function. The status includes
+ * Returns the current multifactorial authentication status and a setter function. The status includes
  * success/failure messages, titles, and authentication details for both challenge
  * and key-related scenarios.
  *
  * Must be implemented as a hook rather than a function to handle message translations.
  */
-export default function useBiometricsStatus<T>(
+export default function useMultiFactorAuthenticationStatus<T>(
   initialValue: T,
-  type: BiometricsStatusKeyType,
-  successSelector?: (prevStatus: BiometricsPartialStatus<T>) => boolean,
-): UseBiometricsStatus<T> {
+  type: MultiFactorAuthenticationStatusKeyType,
+  successSelector?: (
+    prevStatus: MultiFactorAuthenticationPartialStatus<T>,
+  ) => boolean,
+): UseMultiFactorAuthenticationStatus<T> {
   const { translate } = useLocalize();
 
   const notRequestedText = useMemo(
-    () => translate("biometrics.reason.generic.notRequested"),
+    () => translate("multiFactorAuthentication.reason.generic.notRequested"),
     [translate],
   );
 
-  /** Initial empty status used when no biometric scenario has been attempted */
-  const emptyAuth = useMemo<BiometricsStatus<T>>(
+  /** Initial empty status used when no multifactorial authentication scenario has been attempted */
+  const emptyAuth = useMemo<MultiFactorAuthenticationStatus<T>>(
     () => ({
-      reason: "biometrics.reason.generic.notRequested",
+      reason: "multiFactorAuthentication.reason.generic.notRequested",
       message: notRequestedText,
       title: notRequestedText,
       value: initialValue,
@@ -51,7 +53,7 @@ export default function useBiometricsStatus<T>(
   );
 
   /**
-   * State for the current biometrics status.
+   * State for the current multifactorial authentication status.
    */
   const [statusSource, setStatusSource] = useState(emptyAuth);
 
@@ -69,10 +71,10 @@ export default function useBiometricsStatus<T>(
   /** Creates a formatted status object based on authentication data and result */
   const createStatus = useCallback(
     (
-      partialStatus: BiometricsPartialStatus<T>,
+      partialStatus: MultiFactorAuthenticationPartialStatus<T>,
       success: boolean,
       authorize?: boolean,
-    ): BiometricsStatus<T> => {
+    ): MultiFactorAuthenticationStatus<T> => {
       const { reason } = partialStatus;
       const typeName = getAuthTypeName(partialStatus);
       const message = translate(reason);
@@ -82,12 +84,12 @@ export default function useBiometricsStatus<T>(
         ...partialStatus,
         typeName,
         message: translate(
-          `biometrics.statusMessage.${statusType}Message`,
+          `multiFactorAuthentication.statusMessage.${statusType}Message`,
           authorize,
           success ? typeName : message,
         ),
         title: translate(
-          `biometrics.statusMessage.${statusType}Title`,
+          `multiFactorAuthentication.statusMessage.${statusType}Title`,
           authorize,
         ),
       };
@@ -95,7 +97,7 @@ export default function useBiometricsStatus<T>(
     [translate],
   );
 
-  /** Current biometrics status with fallback to not-requested state if undefined */
+  /** Current multifactorial authentication status with fallback to not-requested state if undefined */
   const status = useMemo(
     () => ({
       ...statusSource,
@@ -106,14 +108,14 @@ export default function useBiometricsStatus<T>(
   );
 
   /**
-   * Updates the biometrics status state. Can accept either a new status object directly
+   * Updates the multifactorial authentication status state. Can accept either a new status object directly
    * or a function to transform the existing status. Returns the newly set status
    * for immediate use, though the status value from the hook can be used for reactive updates.
    */
-  const setStatus: SetBiometricsStatus<T> = useCallback(
+  const setStatus: SetMultiFactorAuthenticationStatus<T> = useCallback(
     (partialStatus) => {
       const isChallengeType =
-        type === CONST.BIOMETRICS.SCENARIO_TYPE.AUTHORIZATION;
+        type === CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION;
       const state =
         typeof partialStatus === "function"
           ? partialStatus(previousStatus.current)

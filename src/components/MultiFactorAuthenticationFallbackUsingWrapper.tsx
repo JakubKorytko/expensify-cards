@@ -7,20 +7,22 @@ import {
 import styles from "@/styles";
 import CONST from "@src/CONST";
 import useLocalize from "@hooks/useLocalize";
-import BiometricsFallback from "@/src/components/MultifactorAuthentication";
+import MultiFactorAuthentication from "./MultiFactorAuthentication";
 
-type BiometricsAuthenticationFallbackUsingWrapperProps = {
+type MultiFactorAuthorizationFallbackUsingWrapperProps = {
   transactionID: string;
 };
 
-function BiometricsAuthenticationFallbackUsingWrapper({
+function MultiFactorAuthorizationFallbackUsingWrapper({
   transactionID,
-}: BiometricsAuthenticationFallbackUsingWrapperProps) {
+}: MultiFactorAuthorizationFallbackUsingWrapperProps) {
   const { translate } = useLocalize();
 
   return (
-    <BiometricsFallback
-      scenario={CONST.BIOMETRICS.SCENARIO.AUTHORIZE_TRANSACTION}
+    <MultiFactorAuthentication
+      scenario={
+        CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION
+      }
       params={{ transactionID }}
     >
       {(shouldShowSecret, authorize, status) => (
@@ -39,7 +41,7 @@ function BiometricsAuthenticationFallbackUsingWrapper({
                 <View style={styles.content}>
                   <Text style={styles.title}>
                     {translate(
-                      "biometrics.title",
+                      "multiFactorAuthentication.title",
                       false /* isBiometryConfigured always false in fallback */,
                     )}
                   </Text>
@@ -62,11 +64,11 @@ function BiometricsAuthenticationFallbackUsingWrapper({
           </TouchableWithoutFeedback>
         </>
       )}
-    </BiometricsFallback>
+    </MultiFactorAuthentication>
   );
 }
 
-BiometricsAuthenticationFallbackUsingWrapper.displayName =
-  "BiometricsAuthenticationFallbackUsingWrapper";
+MultiFactorAuthorizationFallbackUsingWrapper.displayName =
+  "MultiFactorAuthorizationFallbackUsingWrapper";
 
-export default BiometricsAuthenticationFallbackUsingWrapper;
+export default MultiFactorAuthorizationFallbackUsingWrapper;

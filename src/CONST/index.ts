@@ -1,15 +1,15 @@
 import { AUTH_TYPE } from "expo-secure-store";
 
 /**
- * Defines the origin of the authentication factor, either from biometrics or fallback authentication.
+ * Defines the origin of the authentication factor, either from multifactorial authentication or fallback authentication.
  */
-const BIOMETRICS_FACTOR_ORIGIN = {
-  BIOMETRICS: "Biometrics",
+const MULTI_FACTOR_AUTHENTICATION_FACTOR_ORIGIN = {
+  MULTI_FACTOR_AUTHENTICATION: "MultiFactorAuthentication",
   FALLBACK: "Fallback",
 } as const;
 
-/** All possible authentication factors that can be used in the biometrics process */
-const BIOMETRICS_FACTORS = {
+/** All possible authentication factors that can be used in the multifactorial authentication process */
+const MULTI_FACTOR_AUTHENTICATION_FACTORS = {
   SIGNED_CHALLENGE: "SIGNED_CHALLENGE",
   VALIDATE_CODE: "VALIDATE_CODE",
   OTP: "OTP",
@@ -17,7 +17,7 @@ const BIOMETRICS_FACTORS = {
 
 const CONST = {
   // ...
-  BIOMETRICS: {
+  MULTI_FACTOR_AUTHENTICATION: {
     /** Name of the service associated with the keys in SecureStore */
     KEYCHAIN_SERVICE: "Expensify",
     /** Names that the keys are stored under in the SecureStore.  */
@@ -57,7 +57,7 @@ const CONST = {
         NAME: "OpticID",
       },
     },
-    /** What does scenario's status refer to? Which part of biometrics is impacted by it? */
+    /** What does scenario's status refer to? Which part of multifactorial authentication is impacted by it? */
     SCENARIO_TYPE: {
       NONE: "None",
       AUTHORIZATION: "Authorization",
@@ -79,53 +79,59 @@ const CONST = {
       },
     },
     /**
-     * Defines the requirements for each authentication factor used in the biometrics process.
+     * Defines the requirements for each authentication factor used in the multifactorial authentication process.
      * Each factor has:
      * - An identifier used internally
      * - A user-friendly display name
      * - The parameter name expected by the API
      * - The data type (string or number)
      * - Length requirements if applicable
-     * - Whether it originates from biometrics or fallback authentication
+     * - Whether it originates from multifactorial authentication or fallback authentication
      */
     FACTORS_REQUIREMENTS: {
       SIGNED_CHALLENGE: {
-        id: BIOMETRICS_FACTORS.SIGNED_CHALLENGE,
+        id: MULTI_FACTOR_AUTHENTICATION_FACTORS.SIGNED_CHALLENGE,
         name: "Signed Challenge",
         parameter: "signedChallenge",
         type: String(),
         length: undefined,
-        origin: BIOMETRICS_FACTOR_ORIGIN.BIOMETRICS,
+        origin:
+          MULTI_FACTOR_AUTHENTICATION_FACTOR_ORIGIN.MULTI_FACTOR_AUTHENTICATION,
       },
       OTP: {
-        id: BIOMETRICS_FACTORS.OTP,
+        id: MULTI_FACTOR_AUTHENTICATION_FACTORS.OTP,
         name: "Two-Factor Authentication or SMS One-Time Password",
         parameter: "otp",
         type: Number(),
         length: 6,
-        origin: BIOMETRICS_FACTOR_ORIGIN.FALLBACK,
+        origin: MULTI_FACTOR_AUTHENTICATION_FACTOR_ORIGIN.FALLBACK,
       },
       VALIDATE_CODE: {
-        id: BIOMETRICS_FACTORS.VALIDATE_CODE,
+        id: MULTI_FACTOR_AUTHENTICATION_FACTORS.VALIDATE_CODE,
         name: "Email One-Time Password",
         parameter: "validateCode",
         type: Number(),
         length: 6,
-        origin: BIOMETRICS_FACTOR_ORIGIN.FALLBACK,
+        origin: MULTI_FACTOR_AUTHENTICATION_FACTOR_ORIGIN.FALLBACK,
       },
     },
     FACTOR_COMBINATIONS: {
-      ONE_FACTOR: [BIOMETRICS_FACTORS.VALIDATE_CODE],
-      TWO_FACTOR: [BIOMETRICS_FACTORS.VALIDATE_CODE, BIOMETRICS_FACTORS.OTP],
-      BIOMETRICS: [BIOMETRICS_FACTORS.SIGNED_CHALLENGE],
+      ONE_FACTOR: [MULTI_FACTOR_AUTHENTICATION_FACTORS.VALIDATE_CODE],
+      TWO_FACTOR: [
+        MULTI_FACTOR_AUTHENTICATION_FACTORS.VALIDATE_CODE,
+        MULTI_FACTOR_AUTHENTICATION_FACTORS.OTP,
+      ],
+      MULTI_FACTOR_AUTHENTICATION: [
+        MULTI_FACTOR_AUTHENTICATION_FACTORS.SIGNED_CHALLENGE,
+      ],
     },
-    FACTORS_ORIGIN: BIOMETRICS_FACTOR_ORIGIN,
-    /** Defines the different scenarios that can be performed in the biometric process */
+    FACTORS_ORIGIN: MULTI_FACTOR_AUTHENTICATION_FACTOR_ORIGIN,
+    /** Defines the different scenarios that can be performed in the multifactorial authentication process */
     SCENARIO: {
       SETUP_BIOMETRICS: "SETUP_BIOMETRICS",
       AUTHORIZE_TRANSACTION: "AUTHORIZE_TRANSACTION",
     },
-    FACTORS: BIOMETRICS_FACTORS,
+    FACTORS: MULTI_FACTOR_AUTHENTICATION_FACTORS,
   },
   // ...
 } as const;

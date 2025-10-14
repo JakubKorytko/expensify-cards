@@ -1,7 +1,7 @@
-import BiometricsAuthenticationFallbackUsingWrapper from "@src/components/BiometricsAuthenticationFallbackUsingWrapper";
+import MultiFactorAuthenticationFallbackUsingWrapper from "@src/components/MultiFactorAuthenticationFallbackUsingWrapper";
 
 export default function Index() {
   return (
-    <BiometricsAuthenticationFallbackUsingWrapper transactionID="162953228" />
+    <MultiFactorAuthenticationFallbackUsingWrapper transactionID="162953228" />
   );
 }

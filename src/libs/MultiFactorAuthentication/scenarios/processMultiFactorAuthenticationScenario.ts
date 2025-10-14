@@ -1,14 +1,14 @@
 import {
-  BiometricsScenario,
-  BiometricsScenarioParams,
-  BiometricsScenarioResponseWithSuccess,
-  BiometricsFallbackScenarioParams,
-  BiometricsFallbackScenario,
-  AllBiometricsFactors,
-  BiometricsScenarioMap,
-} from "@libs/Biometrics/scenarios/types";
-import { BiometricsPartialStatus } from "@hooks/useMultiAuthentication/types";
-import { BIOMETRICS_SCENARIOS } from "@libs/Biometrics/scenarios";
+  MultiFactorAuthenticationScenario,
+  MultiFactorAuthenticationScenarioParams,
+  MultiFactorAuthenticationScenarioResponseWithSuccess,
+  MultiFactorAuthorizationFallbackScenarioParams,
+  MultiFactorAuthorizationFallbackScenario,
+  AllMultiFactorAuthenticationFactors,
+  MultiFactorAuthenticationScenarioMap,
+} from "@libs/MultiFactorAuthentication/scenarios/types";
+import { MultiFactorAuthenticationPartialStatus } from "@hooks/useMultiAuthentication/types";
+import { MULTI_FACTOR_AUTHENTICATION_SCENARIOS } from "@libs/MultiFactorAuthentication/scenarios";
 import CONST from "@src/CONST";
 
 /**
@@ -16,18 +16,18 @@ import CONST from "@src/CONST";
  * Checks each factor's presence, type, and length requirements.
  * Skips OTP validation if the validation code hasn't been verified yet.
  */
-function areBiometricsFactorsSufficient(
-  factors: Partial<AllBiometricsFactors>,
+function areMultiFactorAuthenticationFactorsSufficient(
+  factors: Partial<AllMultiFactorAuthenticationFactors>,
   isStoredFactorVerified = true,
-  biometrics: boolean = false,
-): BiometricsPartialStatus<true | string> {
-  const requiredFactors = CONST.BIOMETRICS.FACTOR_COMBINATIONS[
-    biometrics ? "BIOMETRICS" : "TWO_FACTOR"
-  ].map((id) => CONST.BIOMETRICS.FACTORS_REQUIREMENTS[id]);
+  multiFactorAuthentication: boolean = false,
+): MultiFactorAuthenticationPartialStatus<true | string> {
+  const requiredFactors = CONST.MULTI_FACTOR_AUTHENTICATION.FACTOR_COMBINATIONS[
+    multiFactorAuthentication ? "MULTI_FACTOR_AUTHENTICATION" : "TWO_FACTOR"
+  ].map((id) => CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS_REQUIREMENTS[id]);
 
   for (const { id, parameter, name, type, length } of requiredFactors) {
     if (
-      id !== CONST.BIOMETRICS.FACTORS.VALIDATE_CODE &&
+      id !== CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE &&
       !isStoredFactorVerified
     ) {
       continue;
@@ -43,17 +43,18 @@ function areBiometricsFactorsSufficient(
       return {
         value: `Missing required factor: ${name} (${parameter})`,
         step: unsuccessfulStep,
-        reason: "biometrics.reason.generic.authFactorsError",
+        reason: "multiFactorAuthentication.reason.generic.authFactorsError",
       };
     }
 
-    const value = factors[parameter as keyof Partial<AllBiometricsFactors>];
+    const value =
+      factors[parameter as keyof Partial<AllMultiFactorAuthenticationFactors>];
 
     if (typeof value !== typeof type) {
       return {
         value: `Invalid type for factor: ${name} (${parameter}). Expected ${typeof type}, got ${typeof value}`,
         step: unsuccessfulStep,
-        reason: "biometrics.reason.generic.authFactorsError",
+        reason: "multiFactorAuthentication.reason.generic.authFactorsError",
       };
     }
 
@@ -61,7 +62,7 @@ function areBiometricsFactorsSufficient(
       return {
         value: `Invalid length for factor: ${name} (${parameter}). Expected length ${length}, got length ${String(value).length}`,
         step: unsuccessfulStep,
-        reason: "biometrics.reason.generic.authFactorsError",
+        reason: "multiFactorAuthentication.reason.generic.authFactorsError",
       };
     }
   }
@@ -73,12 +74,12 @@ function areBiometricsFactorsSufficient(
       wasRecentStepSuccessful: undefined,
       isRequestFulfilled: false,
     },
-    reason: "biometrics.reason.generic.authFactorsSufficient",
+    reason: "multiFactorAuthentication.reason.generic.authFactorsSufficient",
   };
 }
 
 /**
- * Handles the post-processing of an authorization attempt when biometrics is not available.
+ * Handles the post-processing of an authorization attempt when multifactorial authentication is not available.
  * Takes the authorization result and request parameters and determines:
  * - If an OTP (one-time password) is required based on the HTTP response code
  * - The appropriate error message to display based on which codes were invalid
@@ -86,26 +87,31 @@ function areBiometricsFactorsSufficient(
  * - The next required authentication factor (OTP if needed)
  * - Whether the overall request was successful and is now complete
  */
-const authorizeBiometricsPostMethodFallback = <
-  T extends BiometricsFallbackScenario,
+const authorizeMultiFactorAuthenticationPostMethodFallback = <
+  T extends MultiFactorAuthorizationFallbackScenario,
 >(
-  status: BiometricsPartialStatus<BiometricsScenarioResponseWithSuccess, true>,
-  params: BiometricsFallbackScenarioParams<T>,
+  status: MultiFactorAuthenticationPartialStatus<
+    MultiFactorAuthenticationScenarioResponseWithSuccess,
+    true
+  >,
+  params: MultiFactorAuthorizationFallbackScenarioParams<T>,
 ) => {
   const { successful, httpCode } = status.value;
   const { otp, validateCode } = params;
 
   const isOTPRequired =
-    httpCode === CONST.BIOMETRICS.NEED_SECOND_FACTOR_HTTP_CODE;
+    httpCode === CONST.MULTI_FACTOR_AUTHENTICATION.NEED_SECOND_FACTOR_HTTP_CODE;
 
   let reason = status.reason;
 
-  if (status.reason !== "biometrics.apiResponse.unableToAuthorize") {
+  if (
+    status.reason !== "multiFactorAuthentication.apiResponse.unableToAuthorize"
+  ) {
     reason = status.reason;
   } else if (!!otp && !!validateCode) {
-    reason = "biometrics.apiResponse.otpCodeInvalid";
+    reason = "multiFactorAuthentication.apiResponse.otpCodeInvalid";
   } else if (!otp && !!validateCode) {
-    reason = "biometrics.apiResponse.validationCodeInvalid";
+    reason = "multiFactorAuthentication.apiResponse.validationCodeInvalid";
   }
 
   return {
@@ -114,7 +120,7 @@ const authorizeBiometricsPostMethodFallback = <
       validateCode && isOTPRequired && successful ? validateCode : undefined,
     step: {
       requiredFactorForNextStep: isOTPRequired
-        ? CONST.BIOMETRICS.FACTORS.OTP
+        ? CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.OTP
         : undefined,
       wasRecentStepSuccessful: successful,
       isRequestFulfilled: !successful || !isOTPRequired,
@@ -124,30 +130,32 @@ const authorizeBiometricsPostMethodFallback = <
 };
 
 /**
- * Main authorization function that handles different biometric scenarios.
+ * Main authorization function that handles different multifactorial authentication scenarios.
  * First validates that all required factors are present and valid.
  * Then sends the authorization request to the server.
  * Finally, post-processes the result based on the scenario type.
  * Returns a status object containing the authorization result and any additional information needed.
  */
-async function processBiometricsScenario<T extends BiometricsScenario>(
+async function processMultiFactorAuthenticationScenario<
+  T extends MultiFactorAuthenticationScenario,
+>(
   scenario: T,
-  params: BiometricsScenarioParams<T>,
+  params: MultiFactorAuthenticationScenarioParams<T>,
   isStoredFactorVerified?: boolean,
-  biometrics: boolean = false,
-): Promise<BiometricsPartialStatus<number | undefined>> {
-  const factorsCheckResult = areBiometricsFactorsSufficient(
+  multiFactorAuthentication: boolean = false,
+): Promise<MultiFactorAuthenticationPartialStatus<number | undefined>> {
+  const factorsCheckResult = areMultiFactorAuthenticationFactorsSufficient(
     params,
     isStoredFactorVerified,
-    biometrics,
+    multiFactorAuthentication,
   );
 
-  const currentScenario = BIOMETRICS_SCENARIOS[
+  const currentScenario = MULTI_FACTOR_AUTHENTICATION_SCENARIOS[
     scenario
-  ] as BiometricsScenarioMap[T];
+  ] as MultiFactorAuthenticationScenarioMap[T];
 
   if (factorsCheckResult.value !== true) {
-    return authorizeBiometricsPostMethodFallback(
+    return authorizeMultiFactorAuthenticationPostMethodFallback(
       {
         ...factorsCheckResult,
         value: { httpCode: undefined, successful: false },
@@ -158,7 +166,7 @@ async function processBiometricsScenario<T extends BiometricsScenario>(
 
   const { httpCode, reason } = await currentScenario.action(params);
 
-  return authorizeBiometricsPostMethodFallback(
+  return authorizeMultiFactorAuthenticationPostMethodFallback(
     {
       value: {
         successful: String(httpCode).startsWith("2"),
@@ -170,5 +178,5 @@ async function processBiometricsScenario<T extends BiometricsScenario>(
   );
 }
 
-export default processBiometricsScenario;
-export { areBiometricsFactorsSufficient };
+export default processMultiFactorAuthenticationScenario;
+export { areMultiFactorAuthenticationFactorsSufficient };

@@ -6,13 +6,13 @@ import {
   View,
 } from "react-native";
 import styles from "@/styles";
-import BiometricsInfoModal from "@src/components/Modals/BiometricsInfoModal";
+import InfoModal from "@src/components/Modals/InfoModal";
 import CONST from "@src/CONST";
-import BiometricsInputModal from "@src/components/Modals/BiometricsInputModal";
+import InputModal from "@src/components/Modals/InputModal";
 import useLocalize from "@hooks/useLocalize";
-import useBiometricsSetup from "../hooks/useMultiAuthentication/useBiometricsSetup";
+import useBiometricsSetup from "@hooks/useMultiAuthentication/useBiometricsSetup";
 
-function BiometricsAuthenticationSetup() {
+function BiometricsSetup() {
   const { translate } = useLocalize();
   const BiometricsSetup = useBiometricsSetup();
   const [showModal, setShowModal] = useState<boolean>(false);
@@ -43,7 +43,7 @@ function BiometricsAuthenticationSetup() {
             <View style={styles.content}>
               <Text style={styles.title}>
                 {translate(
-                  "biometrics.title",
+                  "multiFactorAuthentication.title",
                   BiometricsSetup.isBiometryConfigured,
                 )}
               </Text>
@@ -69,7 +69,7 @@ function BiometricsAuthenticationSetup() {
         </View>
       </TouchableWithoutFeedback>
       {showModal && BiometricsSetup.isRequestFulfilled && (
-        <BiometricsInfoModal
+        <InfoModal
           message={BiometricsSetup.message}
           title={BiometricsSetup.title}
           success={BiometricsSetup.wasRecentStepSuccessful}
@@ -77,16 +77,16 @@ function BiometricsAuthenticationSetup() {
         />
       )}
       {BiometricsSetup.requiredFactorForNextStep ===
-        CONST.BIOMETRICS.FACTORS.VALIDATE_CODE && (
-        <BiometricsInputModal
+        CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE && (
+        <InputModal
           onSubmit={(validateCode) => authorizeWithModal(validateCode)}
-          title={translate("biometrics.provideValidateCode")}
+          title={translate("multiFactorAuthentication.provideValidateCode")}
         />
       )}
     </>
   );
 }
 
-BiometricsAuthenticationSetup.displayName = "BiometricsAuthenticationSetup";
+BiometricsSetup.displayName = "BiometricsSetup";
 
-export default BiometricsAuthenticationSetup;
+export default BiometricsSetup;

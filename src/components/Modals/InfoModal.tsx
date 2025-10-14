@@ -1,19 +1,19 @@
 import { Text, TouchableOpacity, View } from "react-native";
 import styles from "@/styles";
 
-type BiometricsInfoModalProps = {
+type InfoModalProps = {
   onClose?: () => void;
   title?: string;
   message?: string;
   success?: boolean;
 };
 
-function BiometricsInfoModal({
+function InfoModal({
   success = true,
   title,
   message,
   onClose,
-}: BiometricsInfoModalProps) {
+}: InfoModalProps) {
   return (
     <View style={styles.callbackContainer}>
       <View style={styles.gap15}>
@@ -34,6 +34,6 @@ function BiometricsInfoModal({
   );
 }
 
-BiometricsInfoModal.displayName = "BiometricsInfoModal";
+InfoModal.displayName = "InfoModal";
 
-export default BiometricsInfoModal;
+export default InfoModal;

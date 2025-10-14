@@ -1,38 +1,41 @@
 import {
-  BiometricsPrivateKeyStore,
-  BiometricsPublicKeyStore,
-} from "@libs/Biometrics/BiometricsKeyStore";
+  MultiFactorAuthenticationPrivateKeyStore,
+  MultiFactorAuthenticationPublicKeyStore,
+} from "@libs/MultiFactorAuthentication/MultiFactorAuthenticationKeyStore";
 import {
-  BiometricsStatus,
-  BiometricsPartialStatus,
+  MultiFactorAuthenticationStatus,
+  MultiFactorAuthenticationPartialStatus,
   AuthTypeName,
-  CreateBiometricsRecentStatus,
+  CreateMultiFactorAuthenticationRecentStatus,
 } from "./types";
 import CONST from "@src/CONST";
 import {
-  BiometricsFactor,
-  BiometricsFallbackScenarioParams,
-  BiometricsScenario,
-} from "@libs/Biometrics/scenarios/types";
+  MultiFactorAuthenticationFactor,
+  MultiFactorAuthorizationFallbackScenarioParams,
+  MultiFactorAuthenticationScenario,
+} from "@libs/MultiFactorAuthentication/scenarios/types";
 
 /**
- * Creates a BiometricsRecentStatus object that contains both the status and cancel method.
- * The status includes whether the most recent biometric step was successful.
- * The cancel method is used to cancel the biometric operation.
+ * Creates a MultiFactorAuthenticationRecentStatus object that contains both the status and cancel method.
+ * The status includes whether the most recent multifactorial authentication step was successful.
+ * The cancel method is used to cancel the multifactorial authentication operation.
  */
-const createRecentStatus: CreateBiometricsRecentStatus = (result, cancel) => ({
+const createRecentStatus: CreateMultiFactorAuthenticationRecentStatus = (
+  result,
+  cancel,
+) => ({
   status: { ...result, value: !!result.step.wasRecentStepSuccessful },
   cancel,
 });
 
 /**
- * Creates a status object for failed biometric authorization attempts.
- * Takes the error status from a failed biometric operation and merges it with the previous status,
+ * Creates a status object for failed multifactorial authentication authorization attempts.
+ * Takes the error status from a failed multifactorial authentication operation and merges it with the previous status,
  * marking the attempt as unsuccessful while fulfilling the request to prevent retries.
  */
 const createAuthorizeErrorStatus =
-  (errorStatus: BiometricsPartialStatus<boolean, true>) =>
-  (prevStatus: BiometricsStatus<boolean>) => ({
+  (errorStatus: MultiFactorAuthenticationPartialStatus<boolean, true>) =>
+  (prevStatus: MultiFactorAuthenticationStatus<boolean>) => ({
     ...prevStatus,
     ...errorStatus,
     step: {
@@ -42,44 +45,47 @@ const createAuthorizeErrorStatus =
     },
   });
 
-function areBiometricsFallbackParamsValid<T extends BiometricsScenario>(
+function areMultiFactorAuthorizationFallbackParamsValid<
+  T extends MultiFactorAuthenticationScenario,
+>(
   scenario: T,
   params: Record<string, unknown>,
-): params is BiometricsFallbackScenarioParams<T> {
+): params is MultiFactorAuthorizationFallbackScenarioParams<T> {
   return Object.keys(params).every((key) => {
-    return CONST.BIOMETRICS.FACTOR_COMBINATIONS.TWO_FACTOR.find(
+    return CONST.MULTI_FACTOR_AUTHENTICATION.FACTOR_COMBINATIONS.TWO_FACTOR.find(
       (factor) =>
-        CONST.BIOMETRICS.FACTORS_REQUIREMENTS[factor].parameter === key,
+        CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS_REQUIREMENTS[factor]
+          .parameter === key,
     );
   });
 }
 
 /**
- * Checks if the device supports either biometric authentication (like fingerprint/face)
+ * Checks if the device supports either multifactorial authentication (like fingerprint/face)
  * or device credentials (like PIN/pattern) by querying the key store capabilities.
  */
 function doesDeviceSupportBiometrics() {
   const { biometrics, credentials } =
-    BiometricsPublicKeyStore.supportedAuthentication;
+    MultiFactorAuthenticationPublicKeyStore.supportedAuthentication;
   return biometrics || credentials;
 }
 
 /**
- * Checks if biometrics is already set up by looking for a public key in secure storage.
+ * Checks if multifactorial authentication is already set up by looking for a public key in secure storage.
  * A stored public key indicates successful prior configuration.
  */
 async function isBiometryConfigured() {
-  return !!(await BiometricsPublicKeyStore.get()).value;
+  return !!(await MultiFactorAuthenticationPublicKeyStore.get()).value;
 }
 
 /**
- * Cleans up biometrics configuration by removing both private and public keys
+ * Cleans up multifactorial authentication configuration by removing both private and public keys
  * from secure storage. Used when resetting or recovering from failed setup.
  */
 async function resetKeys() {
   await Promise.all([
-    BiometricsPrivateKeyStore.delete(),
-    BiometricsPublicKeyStore.delete(),
+    MultiFactorAuthenticationPrivateKeyStore.delete(),
+    MultiFactorAuthenticationPublicKeyStore.delete(),
   ]);
 }
 
@@ -90,7 +96,7 @@ async function resetKeys() {
 const createBaseStep = (
   wasSuccessful: boolean,
   isRequestFulfilled: boolean,
-  requiredFactor?: BiometricsFactor,
+  requiredFactor?: MultiFactorAuthenticationFactor,
 ) => ({
   wasRecentStepSuccessful: wasSuccessful,
   isRequestFulfilled,
@@ -98,10 +104,12 @@ const createBaseStep = (
 });
 
 /**
- * Creates a status indicating the device lacks biometric capability.
+ * Creates a status indicating the device lacks multifactorial authentication capability.
  * Sets success to false but marks request as fulfilled since no further scenario is possible.
  */
-function createUnsupportedDeviceStatus(prevStatus: BiometricsStatus<boolean>) {
+function createUnsupportedDeviceStatus(
+  prevStatus: MultiFactorAuthenticationStatus<boolean>,
+) {
   return {
     ...prevStatus,
     value: false,
@@ -114,12 +122,16 @@ function createUnsupportedDeviceStatus(prevStatus: BiometricsStatus<boolean>) {
  * Sets success to false and unfulfilled since user input is required.
  */
 function createValidateCodeMissingStatus(
-  prevStatus: BiometricsStatus<boolean>,
-): BiometricsStatus<boolean> {
+  prevStatus: MultiFactorAuthenticationStatus<boolean>,
+): MultiFactorAuthenticationStatus<boolean> {
   return {
     ...prevStatus,
-    step: createBaseStep(false, false, CONST.BIOMETRICS.FACTORS.VALIDATE_CODE),
-    reason: "biometrics.reason.error.validateCodeMissing",
+    step: createBaseStep(
+      false,
+      false,
+      CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE,
+    ),
+    reason: "multiFactorAuthentication.reason.error.validateCodeMissing",
   };
 }
 
@@ -130,10 +142,10 @@ function createValidateCodeMissingStatus(
 function createKeyErrorStatus({
   reason,
   type,
-}: BiometricsPartialStatus<boolean, true>) {
+}: MultiFactorAuthenticationPartialStatus<boolean, true>) {
   return (
-    prevStatus: BiometricsStatus<boolean>,
-  ): BiometricsStatus<boolean> => ({
+    prevStatus: MultiFactorAuthenticationStatus<boolean>,
+  ): MultiFactorAuthenticationStatus<boolean> => ({
     ...prevStatus,
     reason,
     type,
@@ -146,11 +158,11 @@ function createKeyErrorStatus({
  * Success is based on the API response but always marks as fulfilled.
  */
 function createRegistrationResultStatus(
-  partialStatus: Partial<BiometricsPartialStatus<boolean>>,
+  partialStatus: Partial<MultiFactorAuthenticationPartialStatus<boolean>>,
 ) {
   return (
-    prevStatus: BiometricsStatus<boolean>,
-  ): BiometricsStatus<boolean> => ({
+    prevStatus: MultiFactorAuthenticationStatus<boolean>,
+  ): MultiFactorAuthenticationStatus<boolean> => ({
     ...prevStatus,
     ...partialStatus,
     step: createBaseStep(!!partialStatus.step?.wasRecentStepSuccessful, true),
@@ -163,8 +175,8 @@ function createRegistrationResultStatus(
  * Returns unchanged status if already fulfilled.
  */
 function createFulfillStatus(
-  prevStatus: BiometricsStatus<boolean>,
-): BiometricsStatus<boolean> {
+  prevStatus: MultiFactorAuthenticationStatus<boolean>,
+): MultiFactorAuthenticationStatus<boolean> {
   if (prevStatus.step.isRequestFulfilled) {
     return prevStatus;
   }
@@ -180,20 +192,22 @@ function createFulfillStatus(
 }
 
 /**
- * Creates a status reflecting whether biometrics is configured.
+ * Creates a status reflecting whether multifactorial authentication is configured.
  * Only updates the configuration flag while preserving other status fields.
  */
-function createRefreshStatusStatus(isBiometricsConfiguredValue: boolean) {
+function createRefreshStatusStatus(
+  isMultiFactorAuthenticationConfiguredValue: boolean,
+) {
   return (
-    prevStatus: BiometricsStatus<boolean>,
-  ): BiometricsStatus<boolean> => ({
+    prevStatus: MultiFactorAuthenticationStatus<boolean>,
+  ): MultiFactorAuthenticationStatus<boolean> => ({
     ...prevStatus,
-    value: isBiometricsConfiguredValue,
+    value: isMultiFactorAuthenticationConfiguredValue,
   });
 }
 
 /**
- * Collection of status creator functions for handling different biometric states.
+ * Collection of status creator functions for handling different multifactorial authentication states.
  * Each function builds a properly formatted status object for its specific case.
  */
 const Status = {
@@ -211,12 +225,13 @@ const Status = {
  */
 const getAuthTypeName = <T>({
   type,
-}: BiometricsPartialStatus<T>): AuthTypeName | undefined =>
-  Object.values(CONST.BIOMETRICS.AUTH_TYPE).find(({ CODE }) => CODE === type)
-    ?.NAME;
+}: MultiFactorAuthenticationPartialStatus<T>): AuthTypeName | undefined =>
+  Object.values(CONST.MULTI_FACTOR_AUTHENTICATION.AUTH_TYPE).find(
+    ({ CODE }) => CODE === type,
+  )?.NAME;
 
 export {
-  areBiometricsFallbackParamsValid,
+  areMultiFactorAuthorizationFallbackParamsValid,
   createRecentStatus,
   getAuthTypeName,
   doesDeviceSupportBiometrics,

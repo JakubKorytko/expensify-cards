@@ -7,7 +7,7 @@ type InputModalProps = {
   title: string;
 };
 
-function BiometricsInputModal({ onSubmit, title }: InputModalProps) {
+function InputModal({ onSubmit, title }: InputModalProps) {
   const [inputValue, setInputValue] = useState("");
 
   return (
@@ -33,6 +33,6 @@ function BiometricsInputModal({ onSubmit, title }: InputModalProps) {
   );
 }
 
-BiometricsInputModal.displayName = "BiometricsInputModal";
+InputModal.displayName = "InputModal";
 
-export default BiometricsInputModal;
+export default InputModal;

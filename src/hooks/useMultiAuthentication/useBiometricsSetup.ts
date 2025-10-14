@@ -1,20 +1,24 @@
 import { useCallback, useEffect, useMemo } from "react";
 import {
-  BiometricsPrivateKeyStore,
-  BiometricsPublicKeyStore,
-} from "@libs/Biometrics/BiometricsKeyStore";
+  MultiFactorAuthenticationPrivateKeyStore,
+  MultiFactorAuthenticationPublicKeyStore,
+} from "@libs/MultiFactorAuthentication/MultiFactorAuthenticationKeyStore";
 import { generateKeyPair } from "@libs/ED25519";
 import { requestValidateCodeAction } from "@libs/actions/User";
 import CONST from "@src/CONST";
-import { BiometricsStatus, Register, UseBiometricsSetup } from "./types";
-import useBiometricsStatus from "./useBiometricsStatus";
+import {
+  MultiFactorAuthenticationStatus,
+  Register,
+  UseBiometricsSetup,
+} from "./types";
+import useMultiFactorAuthenticationStatus from "./useMultiFactorAuthenticationStatus";
 import {
   Status,
   resetKeys,
   isBiometryConfigured,
   doesDeviceSupportBiometrics,
 } from "./helpers";
-import processBiometricsScenario from "@libs/Biometrics/scenarios/processBiometricsScenario";
+import processMultiFactorAuthenticationScenario from "@libs/MultiFactorAuthentication/scenarios/processMultiFactorAuthenticationScenario";
 
 /**
  * Core hook that manages biometric authentication setup and state.
@@ -29,9 +33,9 @@ import processBiometricsScenario from "@libs/Biometrics/scenarios/processBiometr
  */
 function useBiometricsSetup(): UseBiometricsSetup {
   /** Tracks whether biometrics is properly configured and ready for authentication */
-  const [status, setStatus] = useBiometricsStatus<boolean>(
+  const [status, setStatus] = useMultiFactorAuthenticationStatus<boolean>(
     false,
-    CONST.BIOMETRICS.SCENARIO_TYPE.AUTHENTICATION,
+    CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION,
   );
 
   /**
@@ -100,9 +104,11 @@ function useBiometricsSetup(): UseBiometricsSetup {
       const { privateKey, publicKey } = generateKeyPair();
 
       /** Save private key (handles existing/conflict cases) */
-      const privateKeyResult = await BiometricsPrivateKeyStore.set(privateKey);
+      const privateKeyResult =
+        await MultiFactorAuthenticationPrivateKeyStore.set(privateKey);
       const privateKeyExists =
-        privateKeyResult.reason === "biometrics.reason.expoErrors.keyExists";
+        privateKeyResult.reason ===
+        "multiFactorAuthentication.reason.expoErrors.keyExists";
 
       if (!privateKeyResult.value) {
         if (privateKeyExists && !status.value) {
@@ -111,13 +117,14 @@ function useBiometricsSetup(): UseBiometricsSetup {
            * Remove private key to unblock authentication rather than trying recovery.
            * This should never happen in the real app.
            */
-          await BiometricsPrivateKeyStore.delete();
+          await MultiFactorAuthenticationPrivateKeyStore.delete();
         }
         return setStatus(Status.createKeyErrorStatus(privateKeyResult));
       }
 
       /** Save public key */
-      const publicKeyResult = await BiometricsPublicKeyStore.set(publicKey);
+      const publicKeyResult =
+        await MultiFactorAuthenticationPublicKeyStore.set(publicKey);
       if (!publicKeyResult.value) {
         return setStatus(Status.createKeyErrorStatus(publicKeyResult));
       }
@@ -126,15 +133,16 @@ function useBiometricsSetup(): UseBiometricsSetup {
       const {
         step: { wasRecentStepSuccessful, isRequestFulfilled },
         reason,
-      } = await processBiometricsScenario(
-        CONST.BIOMETRICS.SCENARIO.SETUP_BIOMETRICS,
+      } = await processMultiFactorAuthenticationScenario(
+        CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS,
         {
           publicKey,
           validateCode,
         },
       );
 
-      const successMessage = "biometrics.reason.success.keyPairGenerated";
+      const successMessage =
+        "multiFactorAuthentication.reason.success.keyPairGenerated";
       const isCallSuccessful = wasRecentStepSuccessful && isRequestFulfilled;
 
       /** Cleanup keys on failure to avoid partial state */
@@ -164,7 +172,7 @@ function useBiometricsSetup(): UseBiometricsSetup {
         return {
           ...privateKeyResult,
           value: privateKey,
-        } as BiometricsStatus<string>;
+        } as MultiFactorAuthenticationStatus<string>;
       }
 
       return statusResult;

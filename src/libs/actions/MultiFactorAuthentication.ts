@@ -3,10 +3,10 @@ import { SIDE_EFFECT_REQUEST_COMMANDS } from "@libs/API/types";
 import type { TranslationPaths } from "@src/languages/types";
 import type { ValueOf } from "type-fest";
 
-/** HTTP codes returned by the API, mapped to the biometrics translation paths */
+/** HTTP codes returned by the API, mapped to the multifactorial authentication translation paths */
 const RESPONSE_TRANSLATION_PATH = {
   UNKNOWN: "unknownResponse",
-  REQUEST_BIOMETRIC_CHALLENGE: {
+  REQUEST_MULTI_FACTOR_AUTHENTICATION_CHALLENGE: {
     401: "registrationRequired",
     200: "challengeGenerated",
   },
@@ -15,7 +15,7 @@ const RESPONSE_TRANSLATION_PATH = {
     409: "keyAlreadyRegistered",
     401: "validationCodeRequired",
     400: "validationCodeInvalid",
-    200: "biometricsSuccess",
+    200: "multiFactorAuthenticationSuccess",
   },
   AUTHORIZE_TRANSACTION: {
     422: "noTransactionID",
@@ -40,14 +40,14 @@ function parseHttpCode(
 
   return {
     httpCode,
-    reason: `biometrics.apiResponse.${translation || RESPONSE_TRANSLATION_PATH.UNKNOWN}`,
+    reason: `multiFactorAuthentication.apiResponse.${translation || RESPONSE_TRANSLATION_PATH.UNKNOWN}`,
   };
 }
 
 /**
  * To keep the code clean and readable, these functions return parsed data in order to:
  *
- * - Check whether biometrics scenario was successful as we need to know it as fast as possible
+ * - Check whether multifactorial authentication scenario was successful as we need to know it as fast as possible
  *   to make the usage of authentication seamless and to tell if we should abort the process
  *   if an error occurred.
  *
@@ -60,7 +60,7 @@ function parseHttpCode(
  * Please consult before using this pattern.
  */
 
-/** Send biometrics public key to the API along with the validation code if required. */
+/** Send multifactorial authentication public key to the API along with the validation code if required. */
 async function registerBiometrics({
   publicKey,
   validateCode,
@@ -76,8 +76,8 @@ async function registerBiometrics({
   return parseHttpCode(jsonCode, RESPONSE_TRANSLATION_PATH.REGISTER_BIOMETRICS);
 }
 
-/** Ask API for the biometrics challenge. */
-async function requestBiometricsChallenge() {
+/** Ask API for the multifactorial authentication challenge. */
+async function requestMultiFactorAuthenticationChallenge() {
   const { jsonCode, challenge } = await API.makeRequestWithSideEffects(
     SIDE_EFFECT_REQUEST_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE,
     {},
@@ -86,7 +86,7 @@ async function requestBiometricsChallenge() {
   return {
     ...parseHttpCode(
       jsonCode,
-      RESPONSE_TRANSLATION_PATH.REQUEST_BIOMETRIC_CHALLENGE,
+      RESPONSE_TRANSLATION_PATH.REQUEST_MULTI_FACTOR_AUTHENTICATION_CHALLENGE,
     ),
     challenge,
   };
@@ -94,9 +94,9 @@ async function requestBiometricsChallenge() {
 
 /**
  * Authorize transaction using:
- * - signedChallenge when biometrics is available and configured
- * - signedChallenge and validateCode when biometrics is available but not configured
- * - or validateCode and otp when biometrics is not available or not configured
+ * - signedChallenge when multifactorial authentication is available and configured
+ * - signedChallenge and validateCode when multifactorial authentication is available but not configured
+ * - or validateCode and otp when multifactorial authentication is not available or not configured
  * All parameters except transactionID are optional,
  * but at least one of the combinations listed above must be provided.
  *
@@ -126,4 +126,8 @@ async function authorizeTransaction({
   );
 }
 
-export { registerBiometrics, requestBiometricsChallenge, authorizeTransaction };
+export {
+  registerBiometrics,
+  requestMultiFactorAuthenticationChallenge,
+  authorizeTransaction,
+};
