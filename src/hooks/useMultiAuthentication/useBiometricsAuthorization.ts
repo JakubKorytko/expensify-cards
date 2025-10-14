@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import CONST from "@src/CONST";
 import BiometricsChallenge from "@libs/Biometrics/BiometricsChallenge";
-import useBiometricsStatus from "../useBiometricsStatus";
+import useBiometricsStatus from "./useBiometricsStatus";
 import { BiometricsAuthorization } from "./types";
 import { createAuthorizeErrorStatus } from "./helpers";
 
@@ -30,7 +30,7 @@ function useBiometricsAuthorization() {
    * Will trigger a biometric authentication prompt if no private key status is provided.
    */
   const authorize: BiometricsAuthorization = useCallback(
-    async ({ transactionID, validateCode, chainedPrivateKeyStatus }) => {
+    async ({ transactionID, chainedPrivateKeyStatus }) => {
       const challenge = new BiometricsChallenge(transactionID);
 
       const requestStatus = await challenge.request();
@@ -40,7 +40,7 @@ function useBiometricsAuthorization() {
       const signature = await challenge.sign(chainedPrivateKeyStatus);
       if (!signature.value) setStatus(createAuthorizeErrorStatus(signature));
 
-      const result = await challenge.send(validateCode);
+      const result = await challenge.send();
 
       return setStatus({
         ...result,

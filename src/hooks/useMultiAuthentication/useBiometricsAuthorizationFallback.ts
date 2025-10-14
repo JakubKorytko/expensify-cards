@@ -1,7 +1,6 @@
 import { useCallback, useMemo } from "react";
 import CONST from "@src/CONST";
-import { convertBiometricsFactorToParameterName } from "./helpers";
-import useBiometricsStatus from "../useBiometricsStatus";
+import useBiometricsStatus from "./useBiometricsStatus";
 import {
   AuthorizeUsingFallback,
   UseBiometricsAuthorizationFallback,
@@ -9,14 +8,11 @@ import {
 import {
   BiometricsFallbackScenario,
   BiometricsFallbackScenarioParams,
-  BiometricsFallbackFactor,
-  BiometricsFallbackFactors,
-  BiometricsScenarioStoredValueType,
 } from "@libs/Biometrics/scenarios/types";
-import { biometricsScenarios } from "@libs/Biometrics/scenarios";
 import processBiometricsScenario, {
   areBiometricsFactorsSufficient,
 } from "@libs/Biometrics/scenarios/processBiometricsScenario";
+import { requestValidateCodeAction } from "@libs/actions/User";
 
 /**
  * Hook that provides fallback authorization flow when biometrics is not available.
@@ -25,9 +21,10 @@ import processBiometricsScenario, {
 function useBiometricsAuthorizationFallback<
   T extends BiometricsFallbackScenario,
 >(scenario: T): UseBiometricsAuthorizationFallback<T> {
-  const [status, setStatus] = useBiometricsStatus<
-    BiometricsScenarioStoredValueType<T> | undefined
-  >(undefined, CONST.BIOMETRICS.SCENARIO_TYPE.AUTHORIZATION);
+  const [status, setStatus] = useBiometricsStatus<number | undefined>(
+    undefined,
+    CONST.BIOMETRICS.SCENARIO_TYPE.AUTHORIZATION,
+  );
 
   /**
    * Verifies that all required authentication factors are provided.
@@ -35,11 +32,14 @@ function useBiometricsAuthorizationFallback<
    */
   const verifyFactors = useCallback(
     (params: BiometricsFallbackScenarioParams<T>) =>
-      areBiometricsFactorsSufficient(scenario, {
-        ...params,
-        isStoredFactorVerified: !!status.value,
-      }),
-    [scenario, status.value],
+      areBiometricsFactorsSufficient(
+        {
+          ...params,
+        },
+        !!status.value,
+        false,
+      ),
+    [status.value],
   );
 
   /**
@@ -49,21 +49,10 @@ function useBiometricsAuthorizationFallback<
    */
   const authorize: AuthorizeUsingFallback<T> = useCallback(
     async (params) => {
-      const valueToStore =
-        "factorToStore" in biometricsScenarios[scenario] &&
-        biometricsScenarios[scenario].factorToStore;
-
+      const valueToStore = CONST.BIOMETRICS.FACTORS.VALIDATE_CODE;
       const parameterName =
-        valueToStore &&
-        CONST.BIOMETRICS.FACTORS_REQUIREMENTS[valueToStore].origin ===
-          CONST.BIOMETRICS.FACTORS_ORIGIN.FALLBACK &&
-        (convertBiometricsFactorToParameterName(
-          valueToStore as BiometricsFallbackFactor,
-        ) as keyof BiometricsFallbackFactors<T>);
-
-      const storedValue =
-        parameterName &&
-        (params[parameterName] as BiometricsScenarioStoredValueType<T>);
+        CONST.BIOMETRICS.FACTORS_REQUIREMENTS[valueToStore].parameter;
+      const storedValue = params[parameterName];
 
       const providedOrStoredFactor = storedValue || status.value;
       const { reason: factorsCheckReason, step: factorsCheckStep } =
@@ -73,10 +62,11 @@ function useBiometricsAuthorizationFallback<
         });
 
       if (factorsCheckStep.requiredFactorForNextStep) {
-        if ("missingFactorMiddleware" in biometricsScenarios[scenario]) {
-          await biometricsScenarios[scenario].missingFactorMiddleware?.(
-            factorsCheckStep.requiredFactorForNextStep,
-          );
+        if (
+          factorsCheckStep.requiredFactorForNextStep ===
+          CONST.BIOMETRICS.FACTORS.VALIDATE_CODE
+        ) {
+          requestValidateCodeAction();
         }
 
         return setStatus((prevStatus) => ({
@@ -86,11 +76,14 @@ function useBiometricsAuthorizationFallback<
         }));
       }
 
-      const processResult = await processBiometricsScenario(scenario, {
-        ...params,
-        ...(parameterName ? { [parameterName]: providedOrStoredFactor } : {}),
-        isStoredFactorVerified: !!status.value,
-      });
+      const processResult = await processBiometricsScenario(
+        scenario,
+        {
+          ...params,
+          ...(parameterName ? { [parameterName]: providedOrStoredFactor } : {}),
+        },
+        !!status.value,
+      );
 
       const { step } = processResult;
 

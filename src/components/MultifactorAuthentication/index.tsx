@@ -4,30 +4,20 @@ import useBiometricsAuthorizationFallback from "@hooks/useMultiAuthentication/us
 import CONST from "@src/CONST";
 import BiometricsInputModal from "@src/components/Modals/BiometricsInputModal";
 import useLocalize from "@hooks/useLocalize";
-import { BiometricsScenarioParameters } from "@libs/Biometrics/scenarios";
 import { areBiometricsFallbackParamsValid } from "@hooks/useMultiAuthentication/helpers";
 import BiometricsInfoModal from "@src/components/Modals/BiometricsInfoModal";
-import { UseBiometricsAuthorizationFallback } from "@hooks/useMultiAuthentication/types";
+import {
+  BiometricsFallbackProps,
+  ExtendedBiometricsStatus,
+} from "@src/components/MultifactorAuthentication/types";
 
-// Base type for biometrics status including modal state
-type BiometricsStatus<T extends BiometricsFallbackScenario> =
-  UseBiometricsAuthorizationFallback<T> & {
-    isModalShown: boolean;
-  };
+type MultifactorConfig = {
+  allowBiometrics?: boolean;
+  allowTwoFactor?: boolean;
+  allowSetup?: boolean;
+};
 
-// Main component props
-type BiometricsFallbackProps<T extends BiometricsFallbackScenario> = {
-  scenario: T;
-  children: (
-    shouldShowSecret: boolean,
-    authorize: (props?: Record<string, unknown>) => Promise<void>,
-    status: BiometricsStatus<T>,
-  ) => React.ReactNode;
-} & (T extends keyof BiometricsScenarioParameters
-  ? { params: BiometricsScenarioParameters[T] }
-  : { params?: undefined });
-
-function BiometricsFallback<T extends BiometricsFallbackScenario>({
+function MultifactorAuthentication<T extends BiometricsFallbackScenario>({
   children,
   scenario,
   params,
@@ -55,10 +45,10 @@ function BiometricsFallback<T extends BiometricsFallbackScenario>({
   // Handle successful authentication
   const hasAccess =
     !!BiometricsFallback.wasRecentStepSuccessful &&
-    !!BiometricsFallback.isRequestFulfilled;
+    BiometricsFallback.isRequestFulfilled;
   const shouldShowSecret = hasAccess && !showModal;
 
-  const status: BiometricsStatus<T> = {
+  const status: ExtendedBiometricsStatus<T> = {
     ...BiometricsFallback,
     isModalShown: showModal,
   };
@@ -98,4 +88,4 @@ function BiometricsFallback<T extends BiometricsFallbackScenario>({
   );
 }
 
-export default BiometricsFallback;
+export default MultifactorAuthentication;

@@ -5,9 +5,54 @@ import {
 import {
   BiometricsStatus,
   BiometricsPartialStatus,
-} from "@hooks/useBiometricsStatus/types";
+  AuthTypeName,
+  CreateBiometricsRecentStatus,
+} from "./types";
 import CONST from "@src/CONST";
-import { BiometricsFactor } from "@libs/Biometrics/scenarios/types";
+import {
+  BiometricsFactor,
+  BiometricsFallbackScenarioParams,
+  BiometricsScenario,
+} from "@libs/Biometrics/scenarios/types";
+
+/**
+ * Creates a BiometricsRecentStatus object that contains both the status and cancel method.
+ * The status includes whether the most recent biometric step was successful.
+ * The cancel method is used to cancel the biometric operation.
+ */
+const createRecentStatus: CreateBiometricsRecentStatus = (result, cancel) => ({
+  status: { ...result, value: !!result.step.wasRecentStepSuccessful },
+  cancel,
+});
+
+/**
+ * Creates a status object for failed biometric authorization attempts.
+ * Takes the error status from a failed biometric operation and merges it with the previous status,
+ * marking the attempt as unsuccessful while fulfilling the request to prevent retries.
+ */
+const createAuthorizeErrorStatus =
+  (errorStatus: BiometricsPartialStatus<boolean, true>) =>
+  (prevStatus: BiometricsStatus<boolean>) => ({
+    ...prevStatus,
+    ...errorStatus,
+    step: {
+      wasRecentStepSuccessful: false,
+      isRequestFulfilled: true,
+      requiredFactorForNextStep: undefined,
+    },
+  });
+
+function areBiometricsFallbackParamsValid<T extends BiometricsScenario>(
+  scenario: T,
+  params: Record<string, unknown>,
+): params is BiometricsFallbackScenarioParams<T> {
+  return Object.keys(params).every((key) => {
+    return CONST.BIOMETRICS.FACTOR_COMBINATIONS.TWO_FACTOR.find(
+      (factor) =>
+        CONST.BIOMETRICS.FACTORS_REQUIREMENTS[factor].parameter === key,
+    );
+  });
+}
 
 /**
  * Checks if the device supports either biometric authentication (like fingerprint/face)
@@ -160,4 +205,23 @@ const Status = {
   createRefreshStatusStatus,
 } as const;
 
-export { doesDeviceSupportBiometrics, isBiometryConfigured, resetKeys, Status };
+/**
+ * Helper function that converts a numeric authentication type from SecureStore into
+ * a human-readable string name.
+ */
+const getAuthTypeName = <T>({
+  type,
+}: BiometricsPartialStatus<T>): AuthTypeName | undefined =>
+  Object.values(CONST.BIOMETRICS.AUTH_TYPE).find(({ CODE }) => CODE === type)
+    ?.NAME;
+
+export {
+  areBiometricsFallbackParamsValid,
+  createRecentStatus,
+  getAuthTypeName,
+  doesDeviceSupportBiometrics,
+  isBiometryConfigured,
+  resetKeys,
+  createAuthorizeErrorStatus,
+  Status,
+};

@@ -4,7 +4,7 @@ import { signToken as signTokenED25519 } from "@libs/ED25519";
 import { requestBiometricsChallenge } from "@libs/actions/Biometrics";
 import processBiometricsScenario from "@libs/Biometrics/scenarios/processBiometricsScenario";
 import CONST from "@src/CONST";
-import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
+import { BiometricsPartialStatus } from "@hooks/useMultiAuthentication/types";
 
 /**
  * Handles the biometric authentication challenge flow for a specific transaction.
@@ -102,35 +102,21 @@ class BiometricsChallenge {
    * Handles both configured and unconfigured device states.
    * For unconfigured devices or re-registration, requires a validation code.
    */
-  public async send(
-    validateCode?: number,
-  ): Promise<BiometricsPartialStatus<boolean, true>> {
+  public async send(): Promise<BiometricsPartialStatus<boolean, true>> {
     if (!this.auth.value) {
       return this.createErrorReturnValue(
         "biometrics.reason.error.signatureMissing",
       );
     }
 
-    let authorizationResult;
+    const authorizationResult = processBiometricsScenario(
+      CONST.BIOMETRICS.SCENARIO.AUTHORIZE_TRANSACTION,
+      {
+        signedChallenge: this.auth.value,
 
-    if (validateCode) {
-      authorizationResult = processBiometricsScenario(
-        CONST.BIOMETRICS.SCENARIO.AUTHORIZE_TRANSACTION_WITH_VALIDATE_CODE,
-        {
-          signedChallenge: this.auth.value,
-          validateCode,
-          transactionID: this.transactionID,
-        },
-      );
-    } else {
-      authorizationResult = processBiometricsScenario(
-        CONST.BIOMETRICS.SCENARIO.AUTHORIZE_TRANSACTION,
-        {
-          signedChallenge: this.auth.value,
-          transactionID: this.transactionID,
-        },
-      );
-    }
+        transactionID: this.transactionID,
+      },
+    );
 
     const {
       reason,

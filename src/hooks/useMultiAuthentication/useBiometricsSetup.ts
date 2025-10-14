@@ -6,15 +6,14 @@ import {
 import { generateKeyPair } from "@libs/ED25519";
 import { requestValidateCodeAction } from "@libs/actions/User";
 import CONST from "@src/CONST";
-import { BiometricsStatus } from "@hooks/useBiometricsStatus/types";
-import useBiometricsStatus from "../useBiometricsStatus";
+import { BiometricsStatus, Register, UseBiometricsSetup } from "./types";
+import useBiometricsStatus from "./useBiometricsStatus";
 import {
   Status,
   resetKeys,
   isBiometryConfigured,
   doesDeviceSupportBiometrics,
 } from "./helpers";
-import { Register, UseBiometricsSetup } from "./types";
 import processBiometricsScenario from "@libs/Biometrics/scenarios/processBiometricsScenario";
 
 /**

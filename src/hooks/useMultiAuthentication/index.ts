@@ -1,14 +1,14 @@
 import { useCallback, useMemo, useRef } from "react";
 import type {
   UseBiometrics,
-  BiometricsAuthorization,
+  BiometricsAuthorizationMethod,
   BiometricsRecentStatus,
-  BiometricsScenarios,
+  BiometricsMethods,
   BiometricsState,
 } from "./types";
-import useBiometricsSetup from "../useBiometricsSetup";
-import useBiometricsAuthorizationFallback from "@hooks/useBiometricsAuthorizationFallback";
-import useBiometricsAuthorization from "@hooks/useBiometricsAuthorization";
+import useBiometricsSetup from "./useBiometricsSetup";
+import useBiometricsAuthorizationFallback from "./useBiometricsAuthorizationFallback";
+import useBiometricsAuthorization from "./useBiometricsAuthorization";
 import { createRecentStatus } from "./helpers";
 
 /**
@@ -19,7 +19,7 @@ import { createRecentStatus } from "./helpers";
 function useBiometrics(): UseBiometrics {
   const BiometricsSetup = useBiometricsSetup();
   const BiometricsFallback = useBiometricsAuthorizationFallback(
-    "AUTHORIZE_TRANSACTION_FALLBACK",
+    "AUTHORIZE_TRANSACTION",
   );
   const BiometricsAuthorization = useBiometricsAuthorization();
 
@@ -47,7 +47,7 @@ function useBiometrics(): UseBiometrics {
       transactionID,
       validateCode,
       otp,
-    }: Parameters<BiometricsAuthorization>[0]): Promise<BiometricsRecentStatus> => {
+    }: Parameters<BiometricsAuthorizationMethod>[0]): Promise<BiometricsRecentStatus> => {
       if (!BiometricsSetup.deviceSupportBiometrics) {
         const result = await BiometricsFallback.authorize({
           otp,
@@ -94,14 +94,15 @@ function useBiometrics(): UseBiometrics {
    * Wrapper around authorize that saves the authorization result to current status
    * before returning it.
    */
-  const authorizeAndSaveRecentStatus: BiometricsAuthorization = useCallback(
-    async (params: Parameters<BiometricsAuthorization>[0]) => {
-      const result = await authorize(params);
-      recentStatus.current = result;
-      return result.status;
-    },
-    [authorize],
-  );
+  const authorizeAndSaveRecentStatus: BiometricsAuthorizationMethod =
+    useCallback(
+      async (params: Parameters<BiometricsAuthorizationMethod>[0]) => {
+        const result = await authorize(params);
+        recentStatus.current = result;
+        return result.status;
+      },
+      [authorize],
+    );
 
   /**
    * Cancels the current biometric operation by calling the stored cancel method
@@ -131,8 +132,8 @@ function useBiometrics(): UseBiometrics {
     [BiometricsSetup.isBiometryConfigured],
   );
 
-  /** Memoized scenarios exposed to consumers */
-  const scenarios: BiometricsScenarios = useMemo(
+  /** Memoized methods exposed to consumers */
+  const methods: BiometricsMethods = useMemo(
     () => ({
       register: BiometricsSetup.register,
       resetSetup: BiometricsSetup.revoke,
@@ -147,7 +148,7 @@ function useBiometrics(): UseBiometrics {
     ],
   );
 
-  return [state, scenarios];
+  return [state, methods];
 }
 
 export default useBiometrics;

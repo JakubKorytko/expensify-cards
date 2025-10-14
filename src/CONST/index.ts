@@ -8,6 +8,13 @@ const BIOMETRICS_FACTOR_ORIGIN = {
   FALLBACK: "Fallback",
 } as const;
 
+/** All possible authentication factors that can be used in the biometrics process */
+const BIOMETRICS_FACTORS = {
+  SIGNED_CHALLENGE: "SIGNED_CHALLENGE",
+  VALIDATE_CODE: "VALIDATE_CODE",
+  OTP: "OTP",
+} as const;
+
 const CONST = {
   // ...
   BIOMETRICS: {
@@ -83,7 +90,7 @@ const CONST = {
      */
     FACTORS_REQUIREMENTS: {
       SIGNED_CHALLENGE: {
-        id: "SIGNED_CHALLENGE",
+        id: BIOMETRICS_FACTORS.SIGNED_CHALLENGE,
         name: "Signed Challenge",
         parameter: "signedChallenge",
         type: String(),
@@ -91,7 +98,7 @@ const CONST = {
         origin: BIOMETRICS_FACTOR_ORIGIN.BIOMETRICS,
       },
       OTP: {
-        id: "OTP",
+        id: BIOMETRICS_FACTORS.OTP,
         name: "Two-Factor Authentication or SMS One-Time Password",
         parameter: "otp",
         type: Number(),
@@ -99,7 +106,7 @@ const CONST = {
         origin: BIOMETRICS_FACTOR_ORIGIN.FALLBACK,
       },
       VALIDATE_CODE: {
-        id: "VALIDATE_CODE",
+        id: BIOMETRICS_FACTORS.VALIDATE_CODE,
         name: "Email One-Time Password",
         parameter: "validateCode",
         type: Number(),
@@ -107,22 +114,18 @@ const CONST = {
         origin: BIOMETRICS_FACTOR_ORIGIN.FALLBACK,
       },
     },
+    FACTOR_COMBINATIONS: {
+      ONE_FACTOR: [BIOMETRICS_FACTORS.VALIDATE_CODE],
+      TWO_FACTOR: [BIOMETRICS_FACTORS.VALIDATE_CODE, BIOMETRICS_FACTORS.OTP],
+      BIOMETRICS: [BIOMETRICS_FACTORS.SIGNED_CHALLENGE],
+    },
     FACTORS_ORIGIN: BIOMETRICS_FACTOR_ORIGIN,
     /** Defines the different scenarios that can be performed in the biometric process */
     SCENARIO: {
       SETUP_BIOMETRICS: "SETUP_BIOMETRICS",
-      AUTHORIZE_TRANSACTION_FALLBACK: "AUTHORIZE_TRANSACTION_FALLBACK",
-      AUTHORIZE_TRANSACTION_WITH_VALIDATE_CODE:
-        "AUTHORIZE_TRANSACTION_WITH_VALIDATE_CODE",
       AUTHORIZE_TRANSACTION: "AUTHORIZE_TRANSACTION",
-      TEST_OTP_FIRST: "TEST_OTP_FIRST",
     },
-    /** All possible authentication factors that can be used in the biometrics process */
-    FACTORS: {
-      SIGNED_CHALLENGE: "SIGNED_CHALLENGE",
-      VALIDATE_CODE: "VALIDATE_CODE",
-      OTP: "OTP",
-    },
+    FACTORS: BIOMETRICS_FACTORS,
   },
   // ...
 } as const;

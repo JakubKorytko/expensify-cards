@@ -3,13 +3,13 @@ import CONST from "@src/CONST";
 import type { TranslationPaths } from "@src/languages/types";
 import type { ValueOf } from "type-fest";
 import decodeBiometricsExpoMessage from "@libs/Biometrics/decodeBiometricsExpoMessage";
-import { BiometricsPartialStatus } from "@hooks/useBiometricsStatus/types";
+import { BiometricsPartialStatus } from "@hooks/useMultiAuthentication/types";
 
 /**
  * Provides secure storage for biometric keys with authentication controls.
  * Handles CRUD operations on the SecureStore with error handling and feedback support.
  * Returns standardized response objects containing operation status, reason messages, and auth type.
- * 
+ *
  * The class is used internally to create two specialized stores:
  * - BiometricsPrivateKeyStore: Requires biometric/credential auth for access
  * - BiometricsPublicKeyStore: Allows access without authentication
@@ -51,18 +51,28 @@ class BiometricsKeyStore {
    * Stores a value in SecureStore. For private keys, this will trigger an auth prompt.
    * Returns success/failure status with a reason message and auth type used.
    */
-  public async set(value: string): Promise<BiometricsPartialStatus<boolean, true>> {
+  public async set(
+    value: string,
+  ): Promise<BiometricsPartialStatus<boolean, true>> {
     try {
-      const type = await SecureStore.setItemAsync(this.key, value, this.options);
+      const type = await SecureStore.setItemAsync(
+        this.key,
+        value,
+        this.options,
+      );
       return {
         value: true,
-        reason: "biometrics.reason.success.keySavedInSecureStore" as TranslationPaths,
+        reason:
+          "biometrics.reason.success.keySavedInSecureStore" as TranslationPaths,
         type,
       };
     } catch (error) {
       return {
         value: false,
-        reason: decodeBiometricsExpoMessage(error, "biometrics.reason.error.unableToSaveKey"),
+        reason: decodeBiometricsExpoMessage(
+          error,
+          "biometrics.reason.error.unableToSaveKey",
+        ),
       };
     }
   }
@@ -78,12 +88,16 @@ class BiometricsKeyStore {
       });
       return {
         value: true,
-        reason: "biometrics.reason.success.keyDeletedFromSecureStore" as TranslationPaths,
+        reason:
+          "biometrics.reason.success.keyDeletedFromSecureStore" as TranslationPaths,
       };
     } catch (error) {
       return {
         value: false,
-        reason: decodeBiometricsExpoMessage(error, "biometrics.reason.error.unableToDelete"),
+        reason: decodeBiometricsExpoMessage(
+          error,
+          "biometrics.reason.error.unableToDelete",
+        ),
       };
     }
   }
@@ -94,16 +108,23 @@ class BiometricsKeyStore {
    */
   public async get(): Promise<BiometricsPartialStatus<string | null, true>> {
     try {
-      const [key, type] = await SecureStore.getItemAsync(this.key, this.options);
+      const [key, type] = await SecureStore.getItemAsync(
+        this.key,
+        this.options,
+      );
       return {
         value: key,
-        reason: `biometrics.reason.success.${key ? "keyRetrievedFromSecureStore" : "keyNotInSecureStore"}` as TranslationPaths,
+        reason:
+          `biometrics.reason.success.${key ? "keyRetrievedFromSecureStore" : "keyNotInSecureStore"}` as TranslationPaths,
         type,
       };
     } catch (error) {
       return {
         value: null,
-        reason: decodeBiometricsExpoMessage(error, "biometrics.reason.error.unableToRetrieve"),
+        reason: decodeBiometricsExpoMessage(
+          error,
+          "biometrics.reason.error.unableToRetrieve",
+        ),
       };
     }
   }

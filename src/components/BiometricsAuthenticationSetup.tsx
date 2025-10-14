@@ -6,11 +6,11 @@ import {
   View,
 } from "react-native";
 import styles from "@/styles";
-import BiometricsInfoModal from "@src/components/BiometricsInfoModal";
+import BiometricsInfoModal from "@src/components/Modals/BiometricsInfoModal";
 import CONST from "@src/CONST";
-import BiometricsInputModal from "@src/components/BiometricsInputModal";
+import BiometricsInputModal from "@src/components/Modals/BiometricsInputModal";
 import useLocalize from "@hooks/useLocalize";
-import useBiometricsSetup from "../hooks/useBiometricsSetup";
+import useBiometricsSetup from "../hooks/useMultiAuthentication/useBiometricsSetup";
 
 function BiometricsAuthenticationSetup() {
   const { translate } = useLocalize();
