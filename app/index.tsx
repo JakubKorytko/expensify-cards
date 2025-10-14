@@ -1,4 +1,4 @@
-import MultiFactorAuthenticationFallbackUsingWrapper from "@src/components/MultiFactorAuthenticationFallbackUsingWrapper";
+import MultiFactorAuthenticationFallbackUsingWrapper from "@src/components/AuthorizeTransaction";
 
 export default function Index() {
   return (
