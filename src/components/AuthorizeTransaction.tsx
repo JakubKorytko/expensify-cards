@@ -7,19 +7,19 @@ import {
 import styles from "@/styles";
 import CONST from "@src/CONST";
 import useLocalize from "@hooks/useLocalize";
-import MultiFactorAuthentication from "./MultiFactorAuthentication";
+import MultifactorAuthentication from "./MultifactorAuthentication";
 
-type MultiFactorAuthorizationFallbackUsingWrapperProps = {
+type MultifactorAuthorizationFallbackUsingWrapperProps = {
   transactionID: string;
 };
 
-function MultiFactorAuthorizationFallbackUsingWrapper({
+function MultifactorAuthorizationFallbackUsingWrapper({
   transactionID,
-}: MultiFactorAuthorizationFallbackUsingWrapperProps) {
+}: MultifactorAuthorizationFallbackUsingWrapperProps) {
   const { translate } = useLocalize();
 
   return (
-    <MultiFactorAuthentication
+    <MultifactorAuthentication
       scenario={
         CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION
       }
@@ -41,7 +41,7 @@ function MultiFactorAuthorizationFallbackUsingWrapper({
                 <View style={styles.content}>
                   <Text style={styles.title}>
                     {translate(
-                      "multiFactorAuthentication.title",
+                      "multifactorAuthentication.title",
                       false /* isBiometryConfigured always false in fallback */,
                     )}
                   </Text>
@@ -64,11 +64,11 @@ function MultiFactorAuthorizationFallbackUsingWrapper({
           </TouchableWithoutFeedback>
         </>
       )}
-    </MultiFactorAuthentication>
+    </MultifactorAuthentication>
   );
 }
 
-MultiFactorAuthorizationFallbackUsingWrapper.displayName =
-  "MultiFactorAuthorizationFallbackUsingWrapper";
+MultifactorAuthorizationFallbackUsingWrapper.displayName =
+  "MultifactorAuthorizationFallbackUsingWrapper";
 
-export default MultiFactorAuthorizationFallbackUsingWrapper;
+export default MultifactorAuthorizationFallbackUsingWrapper;

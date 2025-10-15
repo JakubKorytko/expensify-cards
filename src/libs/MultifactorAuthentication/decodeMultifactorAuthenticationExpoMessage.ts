@@ -16,19 +16,19 @@ function decodeExpoMessage(error: unknown): TranslationPaths {
 
   const errorMappings = {
     [CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEARCH_STRING.CANCELED]:
-      "multiFactorAuthentication.reason.expoErrors.canceled",
+      "multifactorAuthentication.reason.expoErrors.canceled",
     [CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEARCH_STRING.IN_PROGRESS]:
-      "multiFactorAuthentication.reason.expoErrors.alreadyInProgress",
+      "multifactorAuthentication.reason.expoErrors.alreadyInProgress",
     [CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEARCH_STRING
       .NOT_IN_FOREGROUND]:
-      "multiFactorAuthentication.reason.expoErrors.notInForeground",
+      "multifactorAuthentication.reason.expoErrors.notInForeground",
     [CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEARCH_STRING.EXISTS]:
-      "multiFactorAuthentication.reason.expoErrors.keyExists",
+      "multifactorAuthentication.reason.expoErrors.keyExists",
     [CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEARCH_STRING
       .NO_AUTHENTICATION]:
-      "multiFactorAuthentication.reason.expoErrors.noAuthentication",
+      "multifactorAuthentication.reason.expoErrors.noAuthentication",
     [CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEARCH_STRING.OLD_ANDROID]:
-      "multiFactorAuthentication.reason.expoErrors.oldAndroid",
+      "multifactorAuthentication.reason.expoErrors.oldAndroid",
   } as const;
 
   for (const [searchKey, translationPath] of Object.entries(errorMappings)) {
@@ -37,7 +37,7 @@ function decodeExpoMessage(error: unknown): TranslationPaths {
     }
   }
 
-  return "multiFactorAuthentication.reason.expoErrors.generic";
+  return "multifactorAuthentication.reason.expoErrors.generic";
 }
 
 /**
@@ -46,15 +46,15 @@ function decodeExpoMessage(error: unknown): TranslationPaths {
  * If the error maps to a generic message and a fallback is provided, returns the fallback instead.
  * This allows for more specific error messaging in known error scenarios.
  */
-const decodeMultiFactorAuthenticationExpoMessage = (
+const decodeMultifactorAuthenticationExpoMessage = (
   message: unknown,
   fallback?: TranslationPaths,
 ): TranslationPaths => {
   const decodedMessage = decodeExpoMessage(message);
   return decodedMessage ===
-    "multiFactorAuthentication.reason.expoErrors.generic" && fallback
+    "multifactorAuthentication.reason.expoErrors.generic" && fallback
     ? fallback
     : decodedMessage;
 };
 
-export default decodeMultiFactorAuthenticationExpoMessage;
+export default decodeMultifactorAuthenticationExpoMessage;

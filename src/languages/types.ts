@@ -3,6 +3,6 @@
  * Mock implementation of the TranslationPaths type.
  */
 
-type TranslationPaths = `multiFactorAuthentication.${string}`;
+type TranslationPaths = `multifactorAuthentication.${string}`;
 
 export type { TranslationPaths };

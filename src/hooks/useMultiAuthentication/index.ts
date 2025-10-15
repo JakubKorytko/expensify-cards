@@ -1,14 +1,14 @@
 import { useCallback, useMemo, useRef } from "react";
 import type {
-  UseMultiFactorAuthentication,
-  MultiFactorAuthorizationMethod,
-  MultiFactorAuthenticationRecentStatus,
-  MultiFactorAuthenticationMethods,
-  MultiFactorAuthenticationState,
+  UseMultifactorAuthentication,
+  MultifactorAuthorizationMethod,
+  MultifactorAuthenticationRecentStatus,
+  MultifactorAuthenticationMethods,
+  MultifactorAuthenticationState,
 } from "./types";
-import useMultiFactorAuthenticationSetup from "./useBiometricsSetup";
-import useMultiFactorAuthorizationFallback from "./useMultiFactorAuthorizationFallback";
-import useMultiFactorAuthorization from "./useMultiFactorAuthorization";
+import useMultifactorAuthenticationSetup from "./useBiometricsSetup";
+import useMultifactorAuthorizationFallback from "./useMultifactorAuthorizationFallback";
+import useMultifactorAuthorization from "./useMultifactorAuthorization";
 import { createRecentStatus } from "./helpers";
 
 /**
@@ -16,16 +16,16 @@ import { createRecentStatus } from "./helpers";
  * authorization and fallback mechanisms. Returns current multifactorial authentication state and
  * available scenarios.
  */
-function useMultiFactorAuthentication(): UseMultiFactorAuthentication {
-  const MultiFactorAuthenticationSetup = useMultiFactorAuthenticationSetup();
-  const MultiFactorAuthorizationFallback = useMultiFactorAuthorizationFallback(
+function useMultifactorAuthentication(): UseMultifactorAuthentication {
+  const MultifactorAuthenticationSetup = useMultifactorAuthenticationSetup();
+  const MultifactorAuthorizationFallback = useMultifactorAuthorizationFallback(
     "AUTHORIZE_TRANSACTION",
   );
-  const MultiFactorAuthorization = useMultiFactorAuthorization();
+  const MultifactorAuthorization = useMultifactorAuthorization();
 
-  const recentStatus = useRef<MultiFactorAuthenticationRecentStatus>({
-    status: MultiFactorAuthorization.status,
-    cancel: MultiFactorAuthorization.cancel,
+  const recentStatus = useRef<MultifactorAuthenticationRecentStatus>({
+    status: MultifactorAuthorization.status,
+    cancel: MultifactorAuthorization.cancel,
   });
 
   /**
@@ -47,56 +47,56 @@ function useMultiFactorAuthentication(): UseMultiFactorAuthentication {
       transactionID,
       validateCode,
       otp,
-    }: Parameters<MultiFactorAuthorizationMethod>[0]): Promise<MultiFactorAuthenticationRecentStatus> => {
-      if (!MultiFactorAuthenticationSetup.deviceSupportBiometrics) {
-        const result = await MultiFactorAuthorizationFallback.authorize({
+    }: Parameters<MultifactorAuthorizationMethod>[0]): Promise<MultifactorAuthenticationRecentStatus> => {
+      if (!MultifactorAuthenticationSetup.deviceSupportBiometrics) {
+        const result = await MultifactorAuthorizationFallback.authorize({
           otp,
           validateCode: validateCode!,
           transactionID,
         });
         return createRecentStatus(
           result,
-          MultiFactorAuthorizationFallback.cancel,
+          MultifactorAuthorizationFallback.cancel,
         );
       }
 
-      if (!MultiFactorAuthenticationSetup.isBiometryConfigured) {
+      if (!MultifactorAuthenticationSetup.isBiometryConfigured) {
         /** Multi-factor authentication is not configured, let's do that first */
         /** Run the setup method */
-        const requestStatus = await MultiFactorAuthenticationSetup.register({
+        const requestStatus = await MultifactorAuthenticationSetup.register({
           validateCode,
           chainedWithAuthorization: true,
         });
 
         /** Setup was successful and auto run was not disabled, let's run the challenge right away */
-        const result = await MultiFactorAuthorization.authorize({
+        const result = await MultifactorAuthorization.authorize({
           transactionID,
           validateCode,
           chainedPrivateKeyStatus: requestStatus,
         });
 
-        return createRecentStatus(result, MultiFactorAuthorization.cancel);
+        return createRecentStatus(result, MultifactorAuthorization.cancel);
       }
 
       /** Multi-factor authentication is configured already, let's do the challenge logic */
-      const result = await MultiFactorAuthorization.authorize({
+      const result = await MultifactorAuthorization.authorize({
         transactionID,
         validateCode,
       });
 
       if (
         result.reason ===
-        "multiFactorAuthentication.reason.error.keyMissingOnTheBE"
+        "multifactorAuthentication.reason.error.keyMissingOnTheBE"
       ) {
-        await MultiFactorAuthenticationSetup.revoke();
+        await MultifactorAuthenticationSetup.revoke();
       }
 
-      return createRecentStatus(result, MultiFactorAuthorization.cancel);
+      return createRecentStatus(result, MultifactorAuthorization.cancel);
     },
     [
-      MultiFactorAuthenticationSetup,
-      MultiFactorAuthorization,
-      MultiFactorAuthorizationFallback,
+      MultifactorAuthenticationSetup,
+      MultifactorAuthorization,
+      MultifactorAuthorizationFallback,
     ],
   );
 
@@ -104,9 +104,9 @@ function useMultiFactorAuthentication(): UseMultiFactorAuthentication {
    * Wrapper around authorize that saves the authorization result to current status
    * before returning it.
    */
-  const authorizeAndSaveRecentStatus: MultiFactorAuthorizationMethod =
+  const authorizeAndSaveRecentStatus: MultifactorAuthorizationMethod =
     useCallback(
-      async (params: Parameters<MultiFactorAuthorizationMethod>[0]) => {
+      async (params: Parameters<MultifactorAuthorizationMethod>[0]) => {
         const result = await authorize(params);
         recentStatus.current = result;
         return result.status;
@@ -134,25 +134,25 @@ function useMultiFactorAuthentication(): UseMultiFactorAuthentication {
   }, []);
 
   /** Memoized state values exposed to consumers */
-  const state: MultiFactorAuthenticationState = useMemo(
+  const state: MultifactorAuthenticationState = useMemo(
     () => ({
-      isBiometryConfigured: MultiFactorAuthenticationSetup.isBiometryConfigured,
+      isBiometryConfigured: MultifactorAuthenticationSetup.isBiometryConfigured,
       ...recentStatus.current.status,
     }),
-    [MultiFactorAuthenticationSetup.isBiometryConfigured],
+    [MultifactorAuthenticationSetup.isBiometryConfigured],
   );
 
   /** Memoized methods exposed to consumers */
-  const methods: MultiFactorAuthenticationMethods = useMemo(
+  const methods: MultifactorAuthenticationMethods = useMemo(
     () => ({
-      register: MultiFactorAuthenticationSetup.register,
-      resetSetup: MultiFactorAuthenticationSetup.revoke,
+      register: MultifactorAuthenticationSetup.register,
+      resetSetup: MultifactorAuthenticationSetup.revoke,
       authorize: authorizeAndSaveRecentStatus,
       cancel,
     }),
     [
-      MultiFactorAuthenticationSetup.register,
-      MultiFactorAuthenticationSetup.revoke,
+      MultifactorAuthenticationSetup.register,
+      MultifactorAuthenticationSetup.revoke,
       authorizeAndSaveRecentStatus,
       cancel,
     ],
@@ -161,4 +161,4 @@ function useMultiFactorAuthentication(): UseMultiFactorAuthentication {
   return [state, methods];
 }
 
-export default useMultiFactorAuthentication;
+export default useMultifactorAuthentication;

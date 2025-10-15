@@ -2,11 +2,11 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import useLocalize from "@hooks/useLocalize";
 import CONST from "@src/CONST";
 import {
-  MultiFactorAuthenticationStatus,
-  SetMultiFactorAuthenticationStatus,
-  MultiFactorAuthenticationStatusKeyType,
-  MultiFactorAuthenticationPartialStatus,
-  UseMultiFactorAuthenticationStatus,
+  MultifactorAuthenticationStatus,
+  SetMultifactorAuthenticationStatus,
+  MultifactorAuthenticationStatusKeyType,
+  MultifactorAuthenticationPartialStatus,
+  UseMultifactorAuthenticationStatus,
 } from "./types";
 import { getAuthTypeName } from "./helpers";
 
@@ -22,24 +22,24 @@ import { getAuthTypeName } from "./helpers";
  *
  * Must be implemented as a hook rather than a function to handle message translations.
  */
-export default function useMultiFactorAuthenticationStatus<T>(
+export default function useMultifactorAuthenticationStatus<T>(
   initialValue: T,
-  type: MultiFactorAuthenticationStatusKeyType,
+  type: MultifactorAuthenticationStatusKeyType,
   successSelector?: (
-    prevStatus: MultiFactorAuthenticationPartialStatus<T>,
+    prevStatus: MultifactorAuthenticationPartialStatus<T>,
   ) => boolean,
-): UseMultiFactorAuthenticationStatus<T> {
+): UseMultifactorAuthenticationStatus<T> {
   const { translate } = useLocalize();
 
   const notRequestedText = useMemo(
-    () => translate("multiFactorAuthentication.reason.generic.notRequested"),
+    () => translate("multifactorAuthentication.reason.generic.notRequested"),
     [translate],
   );
 
   /** Initial empty status used when no multifactorial authentication scenario has been attempted */
-  const emptyAuth = useMemo<MultiFactorAuthenticationStatus<T>>(
+  const emptyAuth = useMemo<MultifactorAuthenticationStatus<T>>(
     () => ({
-      reason: "multiFactorAuthentication.reason.generic.notRequested",
+      reason: "multifactorAuthentication.reason.generic.notRequested",
       message: notRequestedText,
       title: notRequestedText,
       value: initialValue,
@@ -71,10 +71,10 @@ export default function useMultiFactorAuthenticationStatus<T>(
   /** Creates a formatted status object based on authentication data and result */
   const createStatus = useCallback(
     (
-      partialStatus: MultiFactorAuthenticationPartialStatus<T>,
+      partialStatus: MultifactorAuthenticationPartialStatus<T>,
       success: boolean,
       authorize?: boolean,
-    ): MultiFactorAuthenticationStatus<T> => {
+    ): MultifactorAuthenticationStatus<T> => {
       const { reason } = partialStatus;
       const typeName = getAuthTypeName(partialStatus);
       const message = translate(reason);
@@ -84,12 +84,12 @@ export default function useMultiFactorAuthenticationStatus<T>(
         ...partialStatus,
         typeName,
         message: translate(
-          `multiFactorAuthentication.statusMessage.${statusType}Message`,
+          `multifactorAuthentication.statusMessage.${statusType}Message`,
           authorize,
           success ? typeName : message,
         ),
         title: translate(
-          `multiFactorAuthentication.statusMessage.${statusType}Title`,
+          `multifactorAuthentication.statusMessage.${statusType}Title`,
           authorize,
         ),
       };
@@ -112,7 +112,7 @@ export default function useMultiFactorAuthenticationStatus<T>(
    * or a function to transform the existing status. Returns the newly set status
    * for immediate use, though the status value from the hook can be used for reactive updates.
    */
-  const setStatus: SetMultiFactorAuthenticationStatus<T> = useCallback(
+  const setStatus: SetMultifactorAuthenticationStatus<T> = useCallback(
     (partialStatus) => {
       const isChallengeType =
         type === CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION;

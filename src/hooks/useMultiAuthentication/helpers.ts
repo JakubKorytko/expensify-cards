@@ -1,26 +1,26 @@
 import {
-  MultiFactorAuthenticationPrivateKeyStore,
-  MultiFactorAuthenticationPublicKeyStore,
-} from "@libs/MultiFactorAuthentication/MultiFactorAuthenticationKeyStore";
+  MultifactorAuthenticationPrivateKeyStore,
+  MultifactorAuthenticationPublicKeyStore,
+} from "@libs/MultifactorAuthentication/MultifactorAuthenticationKeyStore";
 import {
-  MultiFactorAuthenticationStatus,
-  MultiFactorAuthenticationPartialStatus,
+  MultifactorAuthenticationStatus,
+  MultifactorAuthenticationPartialStatus,
   AuthTypeName,
-  CreateMultiFactorAuthenticationRecentStatus,
+  CreateMultifactorAuthenticationRecentStatus,
 } from "./types";
 import CONST from "@src/CONST";
 import {
-  MultiFactorAuthenticationFactor,
-  MultiFactorAuthorizationFallbackScenarioParams,
-  MultiFactorAuthenticationScenario,
-} from "@libs/MultiFactorAuthentication/scenarios/types";
+  MultifactorAuthenticationFactor,
+  MultifactorAuthorizationFallbackScenarioParams,
+  MultifactorAuthenticationScenario,
+} from "@libs/MultifactorAuthentication/scenarios/types";
 
 /**
- * Creates a MultiFactorAuthenticationRecentStatus object that contains both the status and cancel method.
+ * Creates a MultifactorAuthenticationRecentStatus object that contains both the status and cancel method.
  * The status includes whether the most recent multifactorial authentication step was successful.
  * The cancel method is used to cancel the multifactorial authentication operation.
  */
-const createRecentStatus: CreateMultiFactorAuthenticationRecentStatus = (
+const createRecentStatus: CreateMultifactorAuthenticationRecentStatus = (
   result,
   cancel,
 ) => ({
@@ -34,8 +34,8 @@ const createRecentStatus: CreateMultiFactorAuthenticationRecentStatus = (
  * marking the attempt as unsuccessful while fulfilling the request to prevent retries.
  */
 const createAuthorizeErrorStatus =
-  (errorStatus: MultiFactorAuthenticationPartialStatus<boolean, true>) =>
-  (prevStatus: MultiFactorAuthenticationStatus<boolean>) => ({
+  (errorStatus: MultifactorAuthenticationPartialStatus<boolean, true>) =>
+  (prevStatus: MultifactorAuthenticationStatus<boolean>) => ({
     ...prevStatus,
     ...errorStatus,
     step: {
@@ -45,12 +45,12 @@ const createAuthorizeErrorStatus =
     },
   });
 
-function areMultiFactorAuthorizationFallbackParamsValid<
-  T extends MultiFactorAuthenticationScenario,
+function areMultifactorAuthorizationFallbackParamsValid<
+  T extends MultifactorAuthenticationScenario,
 >(
   scenario: T,
   params: Record<string, unknown>,
-): params is MultiFactorAuthorizationFallbackScenarioParams<T> {
+): params is MultifactorAuthorizationFallbackScenarioParams<T> {
   return Object.keys(params).every((key) => {
     return CONST.MULTI_FACTOR_AUTHENTICATION.FACTOR_COMBINATIONS.TWO_FACTOR.find(
       (factor) =>
@@ -66,7 +66,7 @@ function areMultiFactorAuthorizationFallbackParamsValid<
  */
 function doesDeviceSupportBiometrics() {
   const { biometrics, credentials } =
-    MultiFactorAuthenticationPublicKeyStore.supportedAuthentication;
+    MultifactorAuthenticationPublicKeyStore.supportedAuthentication;
   return biometrics || credentials;
 }
 
@@ -75,7 +75,7 @@ function doesDeviceSupportBiometrics() {
  * A stored public key indicates successful prior configuration.
  */
 async function isBiometryConfigured() {
-  return !!(await MultiFactorAuthenticationPublicKeyStore.get()).value;
+  return !!(await MultifactorAuthenticationPublicKeyStore.get()).value;
 }
 
 /**
@@ -84,8 +84,8 @@ async function isBiometryConfigured() {
  */
 async function resetKeys() {
   await Promise.all([
-    MultiFactorAuthenticationPrivateKeyStore.delete(),
-    MultiFactorAuthenticationPublicKeyStore.delete(),
+    MultifactorAuthenticationPrivateKeyStore.delete(),
+    MultifactorAuthenticationPublicKeyStore.delete(),
   ]);
 }
 
@@ -96,7 +96,7 @@ async function resetKeys() {
 const createBaseStep = (
   wasSuccessful: boolean,
   isRequestFulfilled: boolean,
-  requiredFactor?: MultiFactorAuthenticationFactor,
+  requiredFactor?: MultifactorAuthenticationFactor,
 ) => ({
   wasRecentStepSuccessful: wasSuccessful,
   isRequestFulfilled,
@@ -108,7 +108,7 @@ const createBaseStep = (
  * Sets success to false but marks request as fulfilled since no further scenario is possible.
  */
 function createUnsupportedDeviceStatus(
-  prevStatus: MultiFactorAuthenticationStatus<boolean>,
+  prevStatus: MultifactorAuthenticationStatus<boolean>,
 ) {
   return {
     ...prevStatus,
@@ -122,8 +122,8 @@ function createUnsupportedDeviceStatus(
  * Sets success to false and unfulfilled since user input is required.
  */
 function createValidateCodeMissingStatus(
-  prevStatus: MultiFactorAuthenticationStatus<boolean>,
-): MultiFactorAuthenticationStatus<boolean> {
+  prevStatus: MultifactorAuthenticationStatus<boolean>,
+): MultifactorAuthenticationStatus<boolean> {
   return {
     ...prevStatus,
     step: createBaseStep(
@@ -131,7 +131,7 @@ function createValidateCodeMissingStatus(
       false,
       CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE,
     ),
-    reason: "multiFactorAuthentication.reason.error.validateCodeMissing",
+    reason: "multifactorAuthentication.reason.error.validateCodeMissing",
   };
 }
 
@@ -142,10 +142,10 @@ function createValidateCodeMissingStatus(
 function createKeyErrorStatus({
   reason,
   type,
-}: MultiFactorAuthenticationPartialStatus<boolean, true>) {
+}: MultifactorAuthenticationPartialStatus<boolean, true>) {
   return (
-    prevStatus: MultiFactorAuthenticationStatus<boolean>,
-  ): MultiFactorAuthenticationStatus<boolean> => ({
+    prevStatus: MultifactorAuthenticationStatus<boolean>,
+  ): MultifactorAuthenticationStatus<boolean> => ({
     ...prevStatus,
     reason,
     type,
@@ -158,11 +158,11 @@ function createKeyErrorStatus({
  * Success is based on the API response but always marks as fulfilled.
  */
 function createRegistrationResultStatus(
-  partialStatus: Partial<MultiFactorAuthenticationPartialStatus<boolean>>,
+  partialStatus: Partial<MultifactorAuthenticationPartialStatus<boolean>>,
 ) {
   return (
-    prevStatus: MultiFactorAuthenticationStatus<boolean>,
-  ): MultiFactorAuthenticationStatus<boolean> => ({
+    prevStatus: MultifactorAuthenticationStatus<boolean>,
+  ): MultifactorAuthenticationStatus<boolean> => ({
     ...prevStatus,
     ...partialStatus,
     step: createBaseStep(!!partialStatus.step?.wasRecentStepSuccessful, true),
@@ -175,8 +175,8 @@ function createRegistrationResultStatus(
  * Returns unchanged status if already fulfilled.
  */
 function createFulfillStatus(
-  prevStatus: MultiFactorAuthenticationStatus<boolean>,
-): MultiFactorAuthenticationStatus<boolean> {
+  prevStatus: MultifactorAuthenticationStatus<boolean>,
+): MultifactorAuthenticationStatus<boolean> {
   if (prevStatus.step.isRequestFulfilled) {
     return prevStatus;
   }
@@ -196,13 +196,13 @@ function createFulfillStatus(
  * Only updates the configuration flag while preserving other status fields.
  */
 function createRefreshStatusStatus(
-  isMultiFactorAuthenticationConfiguredValue: boolean,
+  isMultifactorAuthenticationConfiguredValue: boolean,
 ) {
   return (
-    prevStatus: MultiFactorAuthenticationStatus<boolean>,
-  ): MultiFactorAuthenticationStatus<boolean> => ({
+    prevStatus: MultifactorAuthenticationStatus<boolean>,
+  ): MultifactorAuthenticationStatus<boolean> => ({
     ...prevStatus,
-    value: isMultiFactorAuthenticationConfiguredValue,
+    value: isMultifactorAuthenticationConfiguredValue,
   });
 }
 
@@ -225,13 +225,13 @@ const Status = {
  */
 const getAuthTypeName = <T>({
   type,
-}: MultiFactorAuthenticationPartialStatus<T>): AuthTypeName | undefined =>
+}: MultifactorAuthenticationPartialStatus<T>): AuthTypeName | undefined =>
   Object.values(CONST.MULTI_FACTOR_AUTHENTICATION.AUTH_TYPE).find(
     ({ CODE }) => CODE === type,
   )?.NAME;
 
 export {
-  areMultiFactorAuthorizationFallbackParamsValid,
+  areMultifactorAuthorizationFallbackParamsValid,
   createRecentStatus,
   getAuthTypeName,
   doesDeviceSupportBiometrics,

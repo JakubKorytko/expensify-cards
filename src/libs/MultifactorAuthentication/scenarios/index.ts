@@ -3,12 +3,12 @@
  * It maps each scenario type to its corresponding implementation method and any post-processing logic.
  * The scenarios include setting up multifactorial authentication and authorizing transactions with different authentication flows.
  */
-import { MultiFactorAuthenticationScenarioMap } from "@libs/MultiFactorAuthentication/scenarios/types";
+import { MultifactorAuthenticationScenarioMap } from "@libs/MultifactorAuthentication/scenarios/types";
 import CONST from "@src/CONST";
 import {
   authorizeTransaction,
   registerBiometrics,
-} from "@libs/actions/MultiFactorAuthentication";
+} from "@libs/actions/MultifactorAuthentication";
 
 /**
  * Defines the required parameters for each multifactorial authentication scenario type.
@@ -18,7 +18,7 @@ import {
  * - Fallback authorization needs a transaction ID
  * - Multi-factor authentication setup needs a public key
  */
-type MultiFactorAuthenticationScenarioParameters = {
+type MultifactorAuthenticationScenarioParameters = {
   [CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION]: {
     transactionID: string;
   };
@@ -43,7 +43,7 @@ const MULTI_FACTOR_AUTHENTICATION_SCENARIOS = {
     allow2FA: true,
     action: registerBiometrics,
   },
-} as const satisfies MultiFactorAuthenticationScenarioMap;
+} as const satisfies MultifactorAuthenticationScenarioMap;
 
 export { MULTI_FACTOR_AUTHENTICATION_SCENARIOS };
-export type { MultiFactorAuthenticationScenarioParameters };
+export type { MultifactorAuthenticationScenarioParameters };

@@ -43,7 +43,7 @@ function BiometricsSetup() {
             <View style={styles.content}>
               <Text style={styles.title}>
                 {translate(
-                  "multiFactorAuthentication.title",
+                  "multifactorAuthentication.title",
                   BiometricsSetup.isBiometryConfigured,
                 )}
               </Text>
@@ -80,7 +80,7 @@ function BiometricsSetup() {
         CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE && (
         <InputModal
           onSubmit={(validateCode) => authorizeWithModal(validateCode)}
-          title={translate("multiFactorAuthentication.provideValidateCode")}
+          title={translate("multifactorAuthentication.provideValidateCode")}
         />
       )}
     </>

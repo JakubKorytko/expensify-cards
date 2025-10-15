@@ -1,27 +1,27 @@
 import { useCallback, useMemo } from "react";
 import CONST from "@src/CONST";
-import useMultiFactorAuthenticationStatus from "./useMultiFactorAuthenticationStatus";
+import useMultifactorAuthenticationStatus from "./useMultifactorAuthenticationStatus";
 import {
   AuthorizeUsingFallback,
-  UseMultiFactorAuthorizationFallback,
+  UseMultifactorAuthorizationFallback,
 } from "./types";
 import {
-  MultiFactorAuthorizationFallbackScenario,
-  MultiFactorAuthorizationFallbackScenarioParams,
-} from "@libs/MultiFactorAuthentication/scenarios/types";
-import processMultiFactorAuthenticationScenario, {
-  areMultiFactorAuthenticationFactorsSufficient,
-} from "@libs/MultiFactorAuthentication/scenarios/processMultiFactorAuthenticationScenario";
+  MultifactorAuthorizationFallbackScenario,
+  MultifactorAuthorizationFallbackScenarioParams,
+} from "@libs/MultifactorAuthentication/scenarios/types";
+import processMultifactorAuthenticationScenario, {
+  areMultifactorAuthenticationFactorsSufficient,
+} from "@libs/MultifactorAuthentication/scenarios/processMultifactorAuthenticationScenario";
 import { requestValidateCodeAction } from "@libs/actions/User";
 
 /**
  * Hook that provides fallback authorization flow when multifactorial authentication is not available.
  * Uses validate code and OTP for transaction authorization instead.
  */
-function useMultiFactorAuthorizationFallback<
-  T extends MultiFactorAuthorizationFallbackScenario,
->(scenario: T): UseMultiFactorAuthorizationFallback<T> {
-  const [status, setStatus] = useMultiFactorAuthenticationStatus<
+function useMultifactorAuthorizationFallback<
+  T extends MultifactorAuthorizationFallbackScenario,
+>(scenario: T): UseMultifactorAuthorizationFallback<T> {
+  const [status, setStatus] = useMultifactorAuthenticationStatus<
     number | undefined
   >(undefined, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION);
 
@@ -30,8 +30,8 @@ function useMultiFactorAuthorizationFallback<
    * Checks both OTP and validate code against the requirements for non-multifactorial authentication devices.
    */
   const verifyFactors = useCallback(
-    (params: MultiFactorAuthorizationFallbackScenarioParams<T>) =>
-      areMultiFactorAuthenticationFactorsSufficient(
+    (params: MultifactorAuthorizationFallbackScenarioParams<T>) =>
+      areMultifactorAuthenticationFactorsSufficient(
         {
           ...params,
         },
@@ -77,7 +77,7 @@ function useMultiFactorAuthorizationFallback<
         }));
       }
 
-      const processResult = await processMultiFactorAuthenticationScenario(
+      const processResult = await processMultifactorAuthenticationScenario(
         scenario,
         {
           ...params,
@@ -132,4 +132,4 @@ function useMultiFactorAuthorizationFallback<
   return { ...values, ...scenarios };
 }
 
-export default useMultiFactorAuthorizationFallback;
+export default useMultifactorAuthorizationFallback;

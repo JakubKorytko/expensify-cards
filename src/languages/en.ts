@@ -5,7 +5,7 @@
  */
 const translations = {
   // ...
-  multiFactorAuthentication: {
+  multifactorAuthentication: {
     /** Messages and titles displayed after multifactorial authentication operations */
     statusMessage: {
       successMessage: (authorization?: boolean, using?: string) =>
@@ -19,7 +19,7 @@ const translations = {
     },
     /** Title indicating multifactorial authentication registration status */
     title: (registered: boolean = true) =>
-      `Multi-Factor Authentication (${registered ? "Registered" : "Not registered"})`,
+      `Multifactor Authentication (${registered ? "Registered" : "Not registered"})`,
     reason: {
       /** Success messages for multifactorial authentication operations */
       success: {
@@ -46,7 +46,7 @@ const translations = {
         validateCodeMissing: "Validation code is missing",
         otpMissing: "OTP code is missing",
         keyMissingOnTheBE: "Key is stored locally but not found on server",
-        multiFactorAuthenticationNotSupported:
+        multifactorAuthenticationNotSupported:
           "This device does not support multifactorial authentication",
       },
       /** Error messages specific to Expo's SecureStore */
@@ -77,7 +77,7 @@ const translations = {
       validationCodeInvalid: "Invalid validation code",
       otpCodeInvalid: "Invalid OTP code",
       otpCodeRequired: "Please provide an OTP code",
-      multiFactorAuthenticationSuccess:
+      multifactorAuthenticationSuccess:
         "Multi-factor authentication registration successful",
       noTransactionID: "Transaction ID not provided",
       userNotRegistered: "User registration not found",

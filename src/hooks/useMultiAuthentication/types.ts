@@ -3,17 +3,17 @@ import { TranslationPaths } from "@src/languages/types";
 import { AUTH_TYPE } from "expo-secure-store";
 import CONST from "@src/CONST";
 import {
-  MultiFactorAuthorizationFallbackScenario,
-  MultiFactorAuthorizationFallbackScenarioParams,
-  MultiFactorAuthenticationFactor,
-} from "@libs/MultiFactorAuthentication/scenarios/types";
+  MultifactorAuthorizationFallbackScenario,
+  MultifactorAuthorizationFallbackScenarioParams,
+  MultifactorAuthenticationFactor,
+} from "@libs/MultifactorAuthentication/scenarios/types";
 
 /**
  * Represents the most recent multifactorial authentication status and method to cancel it
  */
-type MultiFactorAuthenticationRecentStatus = {
-  status: MultiFactorAuthenticationStatus<boolean>;
-  cancel: () => MultiFactorAuthenticationStatus<unknown>;
+type MultifactorAuthenticationRecentStatus = {
+  status: MultifactorAuthenticationStatus<boolean>;
+  cancel: () => MultifactorAuthenticationStatus<unknown>;
 };
 
 /**
@@ -28,64 +28,64 @@ type AuthorizationParams = {
 /**
  * Function type for performing multifactorial authentication authorization
  */
-type MultiFactorAuthorizationMethod = (
+type MultifactorAuthorizationMethod = (
   params: AuthorizationParams,
-) => Promise<MultiFactorAuthenticationStatus<boolean>>;
+) => Promise<MultifactorAuthenticationStatus<boolean>>;
 
 /**
  * Available multifactorial authentication scenarios including registration, authorization, reset and cancel
  */
-type MultiFactorAuthenticationMethods = {
+type MultifactorAuthenticationMethods = {
   register: Register;
-  authorize: MultiFactorAuthorization;
-  resetSetup: () => Promise<MultiFactorAuthenticationStatus<boolean>>;
-  cancel: () => MultiFactorAuthenticationStatus<boolean>;
+  authorize: MultifactorAuthorization;
+  resetSetup: () => Promise<MultifactorAuthenticationStatus<boolean>>;
+  cancel: () => MultifactorAuthenticationStatus<boolean>;
 };
 
 /**
  * Current state of multifactorial authentication including status and configuration state
  */
-type MultiFactorAuthenticationState =
-  MultiFactorAuthenticationStatus<boolean> & {
+type MultifactorAuthenticationState =
+  MultifactorAuthenticationStatus<boolean> & {
     isBiometryConfigured: boolean;
   };
 
 /**
  * Hook return type containing multifactorial authentication state and available scenarios
  */
-type UseMultiFactorAuthentication = [
-  MultiFactorAuthenticationState,
-  MultiFactorAuthenticationMethods,
+type UseMultifactorAuthentication = [
+  MultifactorAuthenticationState,
+  MultifactorAuthenticationMethods,
 ];
 
 /**
- * Factory function type for creating a MultiFactorAuthenticationRecentStatus object
+ * Factory function type for creating a MultifactorAuthenticationRecentStatus object
  */
-type CreateMultiFactorAuthenticationRecentStatus = (
-  result: MultiFactorAuthenticationStatus<unknown>,
-  cancel: () => MultiFactorAuthenticationStatus<unknown>,
-) => MultiFactorAuthenticationRecentStatus;
+type CreateMultifactorAuthenticationRecentStatus = (
+  result: MultifactorAuthenticationStatus<unknown>,
+  cancel: () => MultifactorAuthenticationStatus<unknown>,
+) => MultifactorAuthenticationRecentStatus;
 
 /**
  * Function that handles multifactorial authentication authorization of transactions.
  * Takes a transaction ID, optional validate code, and optional chained private key status.
  * Returns a promise resolving to the authorization status.
  */
-type MultiFactorAuthorization = (params: {
+type MultifactorAuthorization = (params: {
   transactionID: string;
   validateCode?: number;
-  chainedPrivateKeyStatus?: MultiFactorAuthenticationStatus<string | null>;
-}) => Promise<MultiFactorAuthenticationStatus<boolean>>;
+  chainedPrivateKeyStatus?: MultifactorAuthenticationStatus<string | null>;
+}) => Promise<MultifactorAuthenticationStatus<boolean>>;
 
 /**
  * Hook return type for multifactorial authentication transaction authorization.
  * Provides current authorization status, authorize function to initiate authorization,
  * and cancel function to cancel the current authorization flow.
  */
-type UseMultiFactorAuthorization = {
-  status: MultiFactorAuthenticationStatus<boolean>;
-  authorize: MultiFactorAuthorization;
-  cancel: () => MultiFactorAuthenticationStatus<boolean>;
+type UseMultifactorAuthorization = {
+  status: MultifactorAuthenticationStatus<boolean>;
+  authorize: MultifactorAuthorization;
+  cancel: () => MultifactorAuthenticationStatus<boolean>;
 };
 
 /**
@@ -94,31 +94,31 @@ type UseMultiFactorAuthorization = {
  * Returns a status containing the first verified factor.
  */
 type AuthorizeUsingFallback<
-  T extends MultiFactorAuthorizationFallbackScenario,
+  T extends MultifactorAuthorizationFallbackScenario,
 > = (
-  params: MultiFactorAuthorizationFallbackScenarioParams<T>,
-) => Promise<MultiFactorAuthenticationStatus<number | undefined>>;
+  params: MultifactorAuthorizationFallbackScenarioParams<T>,
+) => Promise<MultifactorAuthenticationStatus<number | undefined>>;
 
 /**
  * Hook return type for multifactorial authentication fallback authorization.
  * Provides status tracking, authorization function, and request canceling.
  * Status tracks the current verified factor and authorization state.
  */
-type UseMultiFactorAuthorizationFallback<
-  T extends MultiFactorAuthorizationFallbackScenario,
-> = MultiFactorAuthenticationStatusMessage &
-  MultiFactorAuthenticationStep & {
+type UseMultifactorAuthorizationFallback<
+  T extends MultifactorAuthorizationFallbackScenario,
+> = MultifactorAuthenticationStatusMessage &
+  MultifactorAuthenticationStep & {
     authorize: AuthorizeUsingFallback<T>;
-    cancel: () => MultiFactorAuthenticationStatus<number | undefined>;
+    cancel: () => MultifactorAuthenticationStatus<number | undefined>;
   };
 
 /**
  * Base type for the register function that handles multifactorial authentication setup.
- * Takes a validate code and additional params, returns a MultiFactorAuthenticationStatus.
+ * Takes a validate code and additional params, returns a MultifactorAuthenticationStatus.
  */
 type RegisterFunction<T, R> = (
   params: { validateCode?: number } & T,
-) => Promise<MultiFactorAuthenticationStatus<R>>;
+) => Promise<MultifactorAuthenticationStatus<R>>;
 
 /**
  * Function to register multifactorial authentication on the device.
@@ -134,7 +134,7 @@ type Register = RegisterFunction<{ chainedWithAuthorization: true }, string> &
 /**
  * Information about the device's multifactorial authentication capabilities and configuration state
  */
-type MultiFactorAuthenticationInfo = {
+type MultifactorAuthenticationInfo = {
   /** Whether the device supports biometric authentication (fingerprint/face) or fallback (PIN/pattern) */
   deviceSupportBiometrics: boolean;
 
@@ -145,7 +145,7 @@ type MultiFactorAuthenticationInfo = {
 /**
  * User-facing status messages for the current multifactorial authentication state
  */
-type MultiFactorAuthenticationStatusMessage = {
+type MultifactorAuthenticationStatusMessage = {
   /** Detailed message explaining the current state or required scenario */
   message: string;
 
@@ -157,38 +157,38 @@ type MultiFactorAuthenticationStatusMessage = {
  * Authentication hook return type combining status information and available scenarios.
  * Returns a tuple with current state and methods to control the multifactorial authentication setup flow.
  */
-type UseBiometricsSetup = MultiFactorAuthenticationStep &
-  MultiFactorAuthenticationInfo &
-  MultiFactorAuthenticationStatusMessage & {
+type UseBiometricsSetup = MultifactorAuthenticationStep &
+  MultifactorAuthenticationInfo &
+  MultifactorAuthenticationStatusMessage & {
     /** Sets up multifactorial authentication by generating keys and registering with backend */
     register: Register;
 
     /** Clears multifactorial authentication configuration by removing stored keys */
-    revoke: () => Promise<MultiFactorAuthenticationStatus<boolean>>;
+    revoke: () => Promise<MultifactorAuthenticationStatus<boolean>>;
 
     /** Completes current request and updates UI state accordingly */
-    cancel: () => MultiFactorAuthenticationStatus<boolean>;
+    cancel: () => MultifactorAuthenticationStatus<boolean>;
   };
 
 /**
  * Represents the step of the multifactorial authentication operation.
  */
-type MultiFactorAuthenticationStep = {
+type MultifactorAuthenticationStep = {
   /** Whether the recent step was successful */
   wasRecentStepSuccessful: boolean | undefined;
 
   /** The required factor for the next step */
-  requiredFactorForNextStep: MultiFactorAuthenticationFactor | undefined;
+  requiredFactorForNextStep: MultifactorAuthenticationFactor | undefined;
 
   /** Whether the request has been fulfilled */
   isRequestFulfilled: boolean;
 };
 
-type MultiFactorAuthenticationPartialStatusConditional<omitStep> =
+type MultifactorAuthenticationPartialStatusConditional<omitStep> =
   omitStep extends false
     ? {
         /** The status of the multifactorial authentication operation */
-        step: MultiFactorAuthenticationStep;
+        step: MultifactorAuthenticationStep;
       }
     : object;
 
@@ -197,10 +197,10 @@ type MultiFactorAuthenticationPartialStatusConditional<omitStep> =
  * @template T - The type of the value of the multifactorial authentication operation.
  * @template omitStep - Whether to omit the step from the partial status.
  */
-type MultiFactorAuthenticationPartialStatus<
+type MultifactorAuthenticationPartialStatus<
   T,
   omitStep = false,
-> = MultiFactorAuthenticationPartialStatusConditional<omitStep> & {
+> = MultifactorAuthenticationPartialStatusConditional<omitStep> & {
   /**
    * The result value of the multifactorial authentication operation.
    * Can be of various types depending on the operation, commonly boolean or string.
@@ -225,10 +225,10 @@ type MultiFactorAuthenticationPartialStatus<
  * Used to track and communicate the full state of multifactorial authentication/authorization,
  * including user-facing messages and authentication details.
  */
-type MultiFactorAuthenticationStatus<
+type MultifactorAuthenticationStatus<
   T,
   omitStatus = false,
-> = MultiFactorAuthenticationPartialStatus<T, omitStatus> & {
+> = MultifactorAuthenticationPartialStatus<T, omitStatus> & {
   /** Human-readable name of the authentication method used */
   typeName?: string;
 
@@ -246,7 +246,7 @@ type MultiFactorAuthenticationStatus<
 };
 
 /** Valid multifactorial authentication scenario types as defined in constants */
-type MultiFactorAuthenticationStatusKeyType = ValueOf<
+type MultifactorAuthenticationStatusKeyType = ValueOf<
   typeof CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE
 >;
 
@@ -258,40 +258,40 @@ type AuthTypeName = ValueOf<
 /**
  * Function to update the multifactorial authentication status.
  * @param partialStatus - New status data or function to transform existing status
- * @returns Updated MultiFactorAuthenticationStatus object
+ * @returns Updated MultifactorAuthenticationStatus object
  */
-type SetMultiFactorAuthenticationStatus<T> = (
+type SetMultifactorAuthenticationStatus<T> = (
   partialStatus:
-    | MultiFactorAuthenticationPartialStatus<T>
+    | MultifactorAuthenticationPartialStatus<T>
     | ((
-        prevStatus: MultiFactorAuthenticationStatus<T>,
-      ) => MultiFactorAuthenticationStatus<T>),
-) => MultiFactorAuthenticationStatus<T>;
+        prevStatus: MultifactorAuthenticationStatus<T>,
+      ) => MultifactorAuthenticationStatus<T>),
+) => MultifactorAuthenticationStatus<T>;
 
-/** Valid type for the useMultiFactorAuthenticationStatus hook */
-type UseMultiFactorAuthenticationStatus<T> = [
-  MultiFactorAuthenticationStatus<T>,
-  SetMultiFactorAuthenticationStatus<T>,
+/** Valid type for the useMultifactorAuthenticationStatus hook */
+type UseMultifactorAuthenticationStatus<T> = [
+  MultifactorAuthenticationStatus<T>,
+  SetMultifactorAuthenticationStatus<T>,
 ];
 
 export type {
-  MultiFactorAuthenticationStatus,
-  MultiFactorAuthenticationStep,
-  SetMultiFactorAuthenticationStatus,
-  MultiFactorAuthenticationStatusKeyType,
+  MultifactorAuthenticationStatus,
+  MultifactorAuthenticationStep,
+  SetMultifactorAuthenticationStatus,
+  MultifactorAuthenticationStatusKeyType,
   AuthTypeName,
-  MultiFactorAuthenticationPartialStatus,
-  UseMultiFactorAuthenticationStatus,
+  MultifactorAuthenticationPartialStatus,
+  UseMultifactorAuthenticationStatus,
   UseBiometricsSetup,
   Register,
-  MultiFactorAuthorizationMethod,
+  MultifactorAuthorizationMethod,
   AuthorizeUsingFallback,
-  UseMultiFactorAuthorizationFallback,
-  MultiFactorAuthorization,
-  UseMultiFactorAuthentication,
-  UseMultiFactorAuthorization,
-  MultiFactorAuthenticationRecentStatus,
-  CreateMultiFactorAuthenticationRecentStatus,
-  MultiFactorAuthenticationMethods,
-  MultiFactorAuthenticationState,
+  UseMultifactorAuthorizationFallback,
+  MultifactorAuthorization,
+  UseMultifactorAuthentication,
+  UseMultifactorAuthorization,
+  MultifactorAuthenticationRecentStatus,
+  CreateMultifactorAuthenticationRecentStatus,
+  MultifactorAuthenticationMethods,
+  MultifactorAuthenticationState,
 };

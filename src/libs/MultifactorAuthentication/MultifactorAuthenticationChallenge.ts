@@ -1,10 +1,10 @@
 import type { TranslationPaths } from "@src/languages/types";
-import { MultiFactorAuthenticationPrivateKeyStore } from "@libs/MultiFactorAuthentication/MultiFactorAuthenticationKeyStore";
+import { MultifactorAuthenticationPrivateKeyStore } from "@libs/MultifactorAuthentication/MultifactorAuthenticationKeyStore";
 import { signToken as signTokenED25519 } from "@libs/ED25519";
-import { requestMultiFactorAuthenticationChallenge } from "@libs/actions/MultiFactorAuthentication";
-import processMultiFactorAuthenticationScenario from "@libs/MultiFactorAuthentication/scenarios/processMultiFactorAuthenticationScenario";
+import { requestMultifactorAuthenticationChallenge } from "@libs/actions/MultifactorAuthentication";
+import processMultifactorAuthenticationScenario from "@libs/MultifactorAuthentication/scenarios/processMultifactorAuthenticationScenario";
 import CONST from "@src/CONST";
-import { MultiFactorAuthenticationPartialStatus } from "@hooks/useMultiAuthentication/types";
+import { MultifactorAuthenticationPartialStatus } from "@hooks/useMultiAuthentication/types";
 
 /**
  * Handles the multifactorial authentication challenge flow for a specific transaction.
@@ -15,16 +15,16 @@ import { MultiFactorAuthenticationPartialStatus } from "@hooks/useMultiAuthentic
  * 2. Sign the challenge using multifactorial authentication
  * 3. Send the signed challenge back for verification
  *
- * Each step provides detailed status feedback through MultiFactorAuthenticationPartialStatus objects.
+ * Each step provides detailed status feedback through MultifactorAuthenticationPartialStatus objects.
  */
-class MultiFactorAuthenticationChallenge {
+class MultifactorAuthenticationChallenge {
   /** Tracks the current state and status of the authentication process */
-  private auth: MultiFactorAuthenticationPartialStatus<
+  private auth: MultifactorAuthenticationPartialStatus<
     string | undefined,
     true
   > = {
     value: undefined,
-    reason: "multiFactorAuthentication.reason.generic.notRequested",
+    reason: "multifactorAuthentication.reason.generic.notRequested",
   };
 
   constructor(private readonly transactionID: string) {}
@@ -32,7 +32,7 @@ class MultiFactorAuthenticationChallenge {
   /** Creates a standardized error response with the given reason key */
   private createErrorReturnValue(
     reasonKey: TranslationPaths,
-  ): MultiFactorAuthenticationPartialStatus<boolean, true> {
+  ): MultifactorAuthenticationPartialStatus<boolean, true> {
     return { value: false, reason: reasonKey };
   }
 
@@ -41,30 +41,30 @@ class MultiFactorAuthenticationChallenge {
    * Verifies the backend is properly synced and handles the challenge response.
    */
   public async request(): Promise<
-    MultiFactorAuthenticationPartialStatus<boolean, true>
+    MultifactorAuthenticationPartialStatus<boolean, true>
   > {
     const {
       httpCode,
       challenge,
       reason: apiReason,
-    } = await requestMultiFactorAuthenticationChallenge();
+    } = await requestMultifactorAuthenticationChallenge();
     const syncedBE = httpCode !== 401;
 
     if (!syncedBE) {
       return this.createErrorReturnValue(
-        "multiFactorAuthentication.reason.error.keyMissingOnTheBE",
+        "multifactorAuthentication.reason.error.keyMissingOnTheBE",
       );
     }
 
     const challengeString = challenge ? JSON.stringify(challenge) : undefined;
     const reason = apiReason.endsWith("unknownResponse")
-      ? "multiFactorAuthentication.reason.error.badToken"
+      ? "multifactorAuthentication.reason.error.badToken"
       : apiReason;
 
     this.auth = {
       value: challengeString,
       reason: challenge
-        ? "multiFactorAuthentication.reason.success.tokenReceived"
+        ? "multifactorAuthentication.reason.success.tokenReceived"
         : reason,
     };
 
@@ -77,30 +77,30 @@ class MultiFactorAuthenticationChallenge {
    * Can reuse a previously fetched private key status to avoid multiple auth prompts.
    */
   public async sign(
-    chainedPrivateKeyStatus?: MultiFactorAuthenticationPartialStatus<
+    chainedPrivateKeyStatus?: MultifactorAuthenticationPartialStatus<
       string | null,
       true
     >,
-  ): Promise<MultiFactorAuthenticationPartialStatus<boolean, true>> {
+  ): Promise<MultifactorAuthenticationPartialStatus<boolean, true>> {
     if (!this.auth.value) {
       return this.createErrorReturnValue(
-        "multiFactorAuthentication.reason.error.tokenMissing",
+        "multifactorAuthentication.reason.error.tokenMissing",
       );
     }
 
     const { value, type, reason } = chainedPrivateKeyStatus?.value
       ? chainedPrivateKeyStatus
-      : await MultiFactorAuthenticationPrivateKeyStore.get();
+      : await MultifactorAuthenticationPrivateKeyStore.get();
 
     if (!value) {
       return this.createErrorReturnValue(
-        reason || "multiFactorAuthentication.reason.error.keyMissing",
+        reason || "multifactorAuthentication.reason.error.keyMissing",
       );
     }
 
     this.auth = {
       value: signTokenED25519(this.auth.value, value),
-      reason: "multiFactorAuthentication.reason.success.tokenSigned",
+      reason: "multifactorAuthentication.reason.success.tokenSigned",
       type,
     };
 
@@ -113,15 +113,15 @@ class MultiFactorAuthenticationChallenge {
    * For unconfigured devices or re-registration, requires a validation code.
    */
   public async send(): Promise<
-    MultiFactorAuthenticationPartialStatus<boolean, true>
+    MultifactorAuthenticationPartialStatus<boolean, true>
   > {
     if (!this.auth.value) {
       return this.createErrorReturnValue(
-        "multiFactorAuthentication.reason.error.signatureMissing",
+        "multifactorAuthentication.reason.error.signatureMissing",
       );
     }
 
-    const authorizationResult = processMultiFactorAuthenticationScenario(
+    const authorizationResult = processMultifactorAuthenticationScenario(
       CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION,
       {
         signedChallenge: this.auth.value,
@@ -138,17 +138,17 @@ class MultiFactorAuthenticationChallenge {
     if (!wasRecentStepSuccessful || !isRequestFulfilled) {
       return this.createErrorReturnValue(
         reason.endsWith("unknownResponse")
-          ? "multiFactorAuthentication.reason.error.challengeRejected"
+          ? "multifactorAuthentication.reason.error.challengeRejected"
           : reason,
       );
     }
 
     return {
       value: true,
-      reason: "multiFactorAuthentication.reason.success.verificationSuccess",
+      reason: "multifactorAuthentication.reason.success.verificationSuccess",
       type: this.auth.type,
     };
   }
 }
 
-export default MultiFactorAuthenticationChallenge;
+export default MultifactorAuthenticationChallenge;

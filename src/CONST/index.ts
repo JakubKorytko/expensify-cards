@@ -4,7 +4,7 @@ import { AUTH_TYPE } from "expo-secure-store";
  * Defines the origin of the authentication factor, either from multifactorial authentication or fallback authentication.
  */
 const MULTI_FACTOR_AUTHENTICATION_FACTOR_ORIGIN = {
-  MULTI_FACTOR_AUTHENTICATION: "MultiFactorAuthentication",
+  MULTI_FACTOR_AUTHENTICATION: "MultifactorAuthentication",
   FALLBACK: "Fallback",
 } as const;
 

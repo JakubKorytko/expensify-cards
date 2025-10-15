@@ -1,8 +1,8 @@
 import { useCallback } from "react";
 import CONST from "@src/CONST";
-import MultiFactorAuthenticationChallenge from "@libs/MultiFactorAuthentication/MultiFactorAuthenticationChallenge";
-import useMultiFactorAuthenticationStatus from "./useMultiFactorAuthenticationStatus";
-import { MultiFactorAuthorization, UseMultiFactorAuthorization } from "./types";
+import MultifactorAuthenticationChallenge from "@libs/MultifactorAuthentication/MultifactorAuthenticationChallenge";
+import useMultifactorAuthenticationStatus from "./useMultifactorAuthenticationStatus";
+import { MultifactorAuthorization, UseMultifactorAuthorization } from "./types";
 import { createAuthorizeErrorStatus } from "./helpers";
 
 /**
@@ -15,8 +15,8 @@ import { createAuthorizeErrorStatus } from "./helpers";
  *
  * Returns current authorization status and methods to control the flow.
  */
-function useMultiFactorAuthorization(): UseMultiFactorAuthorization {
-  const [status, setStatus] = useMultiFactorAuthenticationStatus(
+function useMultifactorAuthorization(): UseMultifactorAuthorization {
+  const [status, setStatus] = useMultifactorAuthenticationStatus(
     false,
     CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION,
   );
@@ -29,9 +29,9 @@ function useMultiFactorAuthorization(): UseMultiFactorAuthorization {
    *
    * Will trigger a multifactorial authentication prompt if no private key status is provided.
    */
-  const authorize: MultiFactorAuthorization = useCallback(
+  const authorize: MultifactorAuthorization = useCallback(
     async ({ transactionID, chainedPrivateKeyStatus }) => {
-      const challenge = new MultiFactorAuthenticationChallenge(transactionID);
+      const challenge = new MultifactorAuthenticationChallenge(transactionID);
 
       const requestStatus = await challenge.request();
       if (!requestStatus.value)
@@ -74,4 +74,4 @@ function useMultiFactorAuthorization(): UseMultiFactorAuthorization {
   return { status, authorize, cancel };
 }
 
-export default useMultiFactorAuthorization;
+export default useMultifactorAuthorization;

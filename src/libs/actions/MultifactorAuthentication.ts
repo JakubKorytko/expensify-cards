@@ -15,7 +15,7 @@ const RESPONSE_TRANSLATION_PATH = {
     409: "keyAlreadyRegistered",
     401: "validationCodeRequired",
     400: "validationCodeInvalid",
-    200: "multiFactorAuthenticationSuccess",
+    200: "multifactorAuthenticationSuccess",
   },
   AUTHORIZE_TRANSACTION: {
     422: "noTransactionID",
@@ -40,7 +40,7 @@ function parseHttpCode(
 
   return {
     httpCode,
-    reason: `multiFactorAuthentication.apiResponse.${translation || RESPONSE_TRANSLATION_PATH.UNKNOWN}`,
+    reason: `multifactorAuthentication.apiResponse.${translation || RESPONSE_TRANSLATION_PATH.UNKNOWN}`,
   };
 }
 
@@ -77,7 +77,7 @@ async function registerBiometrics({
 }
 
 /** Ask API for the multifactorial authentication challenge. */
-async function requestMultiFactorAuthenticationChallenge() {
+async function requestMultifactorAuthenticationChallenge() {
   const { jsonCode, challenge } = await API.makeRequestWithSideEffects(
     SIDE_EFFECT_REQUEST_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE,
     {},
@@ -128,6 +128,6 @@ async function authorizeTransaction({
 
 export {
   registerBiometrics,
-  requestMultiFactorAuthenticationChallenge,
+  requestMultifactorAuthenticationChallenge,
   authorizeTransaction,
 };

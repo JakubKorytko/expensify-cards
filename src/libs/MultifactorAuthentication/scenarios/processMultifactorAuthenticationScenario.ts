@@ -1,14 +1,14 @@
 import {
-  MultiFactorAuthenticationScenario,
-  MultiFactorAuthenticationScenarioParams,
-  MultiFactorAuthenticationScenarioResponseWithSuccess,
-  MultiFactorAuthorizationFallbackScenarioParams,
-  MultiFactorAuthorizationFallbackScenario,
-  AllMultiFactorAuthenticationFactors,
-  MultiFactorAuthenticationScenarioMap,
-} from "@libs/MultiFactorAuthentication/scenarios/types";
-import { MultiFactorAuthenticationPartialStatus } from "@hooks/useMultiAuthentication/types";
-import { MULTI_FACTOR_AUTHENTICATION_SCENARIOS } from "@libs/MultiFactorAuthentication/scenarios";
+  MultifactorAuthenticationScenario,
+  MultifactorAuthenticationScenarioParams,
+  MultifactorAuthenticationScenarioResponseWithSuccess,
+  MultifactorAuthorizationFallbackScenarioParams,
+  MultifactorAuthorizationFallbackScenario,
+  AllMultifactorAuthenticationFactors,
+  MultifactorAuthenticationScenarioMap,
+} from "@libs/MultifactorAuthentication/scenarios/types";
+import { MultifactorAuthenticationPartialStatus } from "@hooks/useMultiAuthentication/types";
+import { MULTI_FACTOR_AUTHENTICATION_SCENARIOS } from "@libs/MultifactorAuthentication/scenarios";
 import CONST from "@src/CONST";
 
 /**
@@ -16,13 +16,13 @@ import CONST from "@src/CONST";
  * Checks each factor's presence, type, and length requirements.
  * Skips OTP validation if the validation code hasn't been verified yet.
  */
-function areMultiFactorAuthenticationFactorsSufficient(
-  factors: Partial<AllMultiFactorAuthenticationFactors>,
+function areMultifactorAuthenticationFactorsSufficient(
+  factors: Partial<AllMultifactorAuthenticationFactors>,
   isStoredFactorVerified = true,
-  multiFactorAuthentication: boolean = false,
-): MultiFactorAuthenticationPartialStatus<true | string> {
+  multifactorAuthentication: boolean = false,
+): MultifactorAuthenticationPartialStatus<true | string> {
   const requiredFactors = CONST.MULTI_FACTOR_AUTHENTICATION.FACTOR_COMBINATIONS[
-    multiFactorAuthentication ? "MULTI_FACTOR_AUTHENTICATION" : "TWO_FACTOR"
+    multifactorAuthentication ? "MULTI_FACTOR_AUTHENTICATION" : "TWO_FACTOR"
   ].map((id) => CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS_REQUIREMENTS[id]);
 
   for (const { id, parameter, name, type, length } of requiredFactors) {
@@ -43,18 +43,18 @@ function areMultiFactorAuthenticationFactorsSufficient(
       return {
         value: `Missing required factor: ${name} (${parameter})`,
         step: unsuccessfulStep,
-        reason: "multiFactorAuthentication.reason.generic.authFactorsError",
+        reason: "multifactorAuthentication.reason.generic.authFactorsError",
       };
     }
 
     const value =
-      factors[parameter as keyof Partial<AllMultiFactorAuthenticationFactors>];
+      factors[parameter as keyof Partial<AllMultifactorAuthenticationFactors>];
 
     if (typeof value !== typeof type) {
       return {
         value: `Invalid type for factor: ${name} (${parameter}). Expected ${typeof type}, got ${typeof value}`,
         step: unsuccessfulStep,
-        reason: "multiFactorAuthentication.reason.generic.authFactorsError",
+        reason: "multifactorAuthentication.reason.generic.authFactorsError",
       };
     }
 
@@ -62,7 +62,7 @@ function areMultiFactorAuthenticationFactorsSufficient(
       return {
         value: `Invalid length for factor: ${name} (${parameter}). Expected length ${length}, got length ${String(value).length}`,
         step: unsuccessfulStep,
-        reason: "multiFactorAuthentication.reason.generic.authFactorsError",
+        reason: "multifactorAuthentication.reason.generic.authFactorsError",
       };
     }
   }
@@ -74,7 +74,7 @@ function areMultiFactorAuthenticationFactorsSufficient(
       wasRecentStepSuccessful: undefined,
       isRequestFulfilled: false,
     },
-    reason: "multiFactorAuthentication.reason.generic.authFactorsSufficient",
+    reason: "multifactorAuthentication.reason.generic.authFactorsSufficient",
   };
 }
 
@@ -87,14 +87,14 @@ function areMultiFactorAuthenticationFactorsSufficient(
  * - The next required authentication factor (OTP if needed)
  * - Whether the overall request was successful and is now complete
  */
-const authorizeMultiFactorAuthenticationPostMethodFallback = <
-  T extends MultiFactorAuthorizationFallbackScenario,
+const authorizeMultifactorAuthenticationPostMethodFallback = <
+  T extends MultifactorAuthorizationFallbackScenario,
 >(
-  status: MultiFactorAuthenticationPartialStatus<
-    MultiFactorAuthenticationScenarioResponseWithSuccess,
+  status: MultifactorAuthenticationPartialStatus<
+    MultifactorAuthenticationScenarioResponseWithSuccess,
     true
   >,
-  params: MultiFactorAuthorizationFallbackScenarioParams<T>,
+  params: MultifactorAuthorizationFallbackScenarioParams<T>,
 ) => {
   const { successful, httpCode } = status.value;
   const { otp, validateCode } = params;
@@ -105,13 +105,13 @@ const authorizeMultiFactorAuthenticationPostMethodFallback = <
   let reason = status.reason;
 
   if (
-    status.reason !== "multiFactorAuthentication.apiResponse.unableToAuthorize"
+    status.reason !== "multifactorAuthentication.apiResponse.unableToAuthorize"
   ) {
     reason = status.reason;
   } else if (!!otp && !!validateCode) {
-    reason = "multiFactorAuthentication.apiResponse.otpCodeInvalid";
+    reason = "multifactorAuthentication.apiResponse.otpCodeInvalid";
   } else if (!otp && !!validateCode) {
-    reason = "multiFactorAuthentication.apiResponse.validationCodeInvalid";
+    reason = "multifactorAuthentication.apiResponse.validationCodeInvalid";
   }
 
   return {
@@ -136,26 +136,26 @@ const authorizeMultiFactorAuthenticationPostMethodFallback = <
  * Finally, post-processes the result based on the scenario type.
  * Returns a status object containing the authorization result and any additional information needed.
  */
-async function processMultiFactorAuthenticationScenario<
-  T extends MultiFactorAuthenticationScenario,
+async function processMultifactorAuthenticationScenario<
+  T extends MultifactorAuthenticationScenario,
 >(
   scenario: T,
-  params: MultiFactorAuthenticationScenarioParams<T>,
+  params: MultifactorAuthenticationScenarioParams<T>,
   isStoredFactorVerified?: boolean,
-  multiFactorAuthentication: boolean = false,
-): Promise<MultiFactorAuthenticationPartialStatus<number | undefined>> {
-  const factorsCheckResult = areMultiFactorAuthenticationFactorsSufficient(
+  multifactorAuthentication: boolean = false,
+): Promise<MultifactorAuthenticationPartialStatus<number | undefined>> {
+  const factorsCheckResult = areMultifactorAuthenticationFactorsSufficient(
     params,
     isStoredFactorVerified,
-    multiFactorAuthentication,
+    multifactorAuthentication,
   );
 
   const currentScenario = MULTI_FACTOR_AUTHENTICATION_SCENARIOS[
     scenario
-  ] as MultiFactorAuthenticationScenarioMap[T];
+  ] as MultifactorAuthenticationScenarioMap[T];
 
   if (factorsCheckResult.value !== true) {
-    return authorizeMultiFactorAuthenticationPostMethodFallback(
+    return authorizeMultifactorAuthenticationPostMethodFallback(
       {
         ...factorsCheckResult,
         value: { httpCode: undefined, successful: false },
@@ -166,7 +166,7 @@ async function processMultiFactorAuthenticationScenario<
 
   const { httpCode, reason } = await currentScenario.action(params);
 
-  return authorizeMultiFactorAuthenticationPostMethodFallback(
+  return authorizeMultifactorAuthenticationPostMethodFallback(
     {
       value: {
         successful: String(httpCode).startsWith("2"),
@@ -178,5 +178,5 @@ async function processMultiFactorAuthenticationScenario<
   );
 }
 
-export default processMultiFactorAuthenticationScenario;
-export { areMultiFactorAuthenticationFactorsSufficient };
+export default processMultifactorAuthenticationScenario;
+export { areMultifactorAuthenticationFactorsSufficient };

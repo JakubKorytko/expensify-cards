@@ -1,7 +1,7 @@
-import MultiFactorAuthenticationFallbackUsingWrapper from "@src/components/AuthorizeTransaction";
+import MultifactorAuthenticationFallbackUsingWrapper from "@src/components/AuthorizeTransaction";
 
 export default function Index() {
   return (
-    <MultiFactorAuthenticationFallbackUsingWrapper transactionID="162953228" />
+    <MultifactorAuthenticationFallbackUsingWrapper transactionID="162953228" />
   );
 }
