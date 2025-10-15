@@ -6,10 +6,10 @@ import {
   MultifactorAuthorizationFallbackScenario,
   AllMultifactorAuthenticationFactors,
   MultifactorAuthenticationScenarioMap,
-} from "@libs/MultifactorAuthentication/scenarios/types";
-import { MultifactorAuthenticationPartialStatus } from "@hooks/useMultiAuthentication/types";
-import { MULTI_FACTOR_AUTHENTICATION_SCENARIOS } from "@libs/MultifactorAuthentication/scenarios";
-import CONST from "@src/CONST";
+  MultifactorAuthenticationPartialStatus,
+} from "./types";
+import { MULTI_FACTOR_AUTHENTICATION_SCENARIOS } from "./scenarios";
+import MultifactorAuthenticationValues from "./MultifactorAuthenticationValues";
 
 /**
  * Validates that all required authentication factors are present and of the correct type/format.
@@ -21,13 +21,13 @@ function areMultifactorAuthenticationFactorsSufficient(
   isStoredFactorVerified = true,
   multifactorAuthentication: boolean = false,
 ): MultifactorAuthenticationPartialStatus<true | string> {
-  const requiredFactors = CONST.MULTI_FACTOR_AUTHENTICATION.FACTOR_COMBINATIONS[
+  const requiredFactors = MultifactorAuthenticationValues.FACTOR_COMBINATIONS[
     multifactorAuthentication ? "MULTI_FACTOR_AUTHENTICATION" : "TWO_FACTOR"
-  ].map((id) => CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS_REQUIREMENTS[id]);
+  ].map((id) => MultifactorAuthenticationValues.FACTORS_REQUIREMENTS[id]);
 
   for (const { id, parameter, name, type, length } of requiredFactors) {
     if (
-      id !== CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE &&
+      id !== MultifactorAuthenticationValues.FACTORS.VALIDATE_CODE &&
       !isStoredFactorVerified
     ) {
       continue;
@@ -100,7 +100,7 @@ const authorizeMultifactorAuthenticationPostMethodFallback = <
   const { otp, validateCode } = params;
 
   const isOTPRequired =
-    httpCode === CONST.MULTI_FACTOR_AUTHENTICATION.NEED_SECOND_FACTOR_HTTP_CODE;
+    httpCode === MultifactorAuthenticationValues.NEED_SECOND_FACTOR_HTTP_CODE;
 
   let reason = status.reason;
 
@@ -120,7 +120,7 @@ const authorizeMultifactorAuthenticationPostMethodFallback = <
       validateCode && isOTPRequired && successful ? validateCode : undefined,
     step: {
       requiredFactorForNextStep: isOTPRequired
-        ? CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.OTP
+        ? MultifactorAuthenticationValues.FACTORS.OTP
         : undefined,
       wasRecentStepSuccessful: successful,
       isRequestFulfilled: !successful || !isOTPRequired,

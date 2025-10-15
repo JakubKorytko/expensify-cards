@@ -2,12 +2,15 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import useLocalize from "@hooks/useLocalize";
 import CONST from "@src/CONST";
 import {
-  MultifactorAuthenticationStatus,
   SetMultifactorAuthenticationStatus,
   MultifactorAuthenticationStatusKeyType,
-  MultifactorAuthenticationPartialStatus,
   UseMultifactorAuthenticationStatus,
 } from "./types";
+import type {
+  MultifactorAuthenticationStatus,
+  MultifactorAuthenticationPartialStatus,
+} from "@libs/MultifactorAuthentication";
+
 import { getAuthTypeName } from "./helpers";
 
 /**

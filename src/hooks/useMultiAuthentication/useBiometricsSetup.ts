@@ -1,16 +1,9 @@
 import { useCallback, useEffect, useMemo } from "react";
-import {
-  MultifactorAuthenticationPrivateKeyStore,
-  MultifactorAuthenticationPublicKeyStore,
-} from "@libs/MultifactorAuthentication/MultifactorAuthenticationKeyStore";
-import { generateKeyPair } from "@libs/ED25519";
+import MultifactorAuthentication from "@libs/MultifactorAuthentication";
+import type { MultifactorAuthenticationStatus } from "@libs/MultifactorAuthentication";
 import { requestValidateCodeAction } from "@libs/actions/User";
 import CONST from "@src/CONST";
-import {
-  MultifactorAuthenticationStatus,
-  Register,
-  UseBiometricsSetup,
-} from "./types";
+import { Register, UseBiometricsSetup } from "./types";
 import useMultifactorAuthenticationStatus from "./useMultifactorAuthenticationStatus";
 import {
   Status,
@@ -18,7 +11,6 @@ import {
   isBiometryConfigured,
   doesDeviceSupportBiometrics,
 } from "./helpers";
-import processMultifactorAuthenticationScenario from "@libs/MultifactorAuthentication/scenarios/processMultifactorAuthenticationScenario";
 
 /**
  * Core hook that manages biometric authentication setup and state.
@@ -101,11 +93,12 @@ function useBiometricsSetup(): UseBiometricsSetup {
       }
 
       /** Generate a new ED25519 keypair */
-      const { privateKey, publicKey } = generateKeyPair();
+      const { privateKey, publicKey } =
+        MultifactorAuthentication.generateKeyPair();
 
       /** Save private key (handles existing/conflict cases) */
       const privateKeyResult =
-        await MultifactorAuthenticationPrivateKeyStore.set(privateKey);
+        await MultifactorAuthentication.privateKeyStore.set(privateKey);
       const privateKeyExists =
         privateKeyResult.reason ===
         "multifactorAuthentication.reason.expoErrors.keyExists";
@@ -117,14 +110,14 @@ function useBiometricsSetup(): UseBiometricsSetup {
            * Remove private key to unblock authentication rather than trying recovery.
            * This should never happen in the real app.
            */
-          await MultifactorAuthenticationPrivateKeyStore.delete();
+          await MultifactorAuthentication.privateKeyStore.delete();
         }
         return setStatus(Status.createKeyErrorStatus(privateKeyResult));
       }
 
       /** Save public key */
       const publicKeyResult =
-        await MultifactorAuthenticationPublicKeyStore.set(publicKey);
+        await MultifactorAuthentication.publicKeyStore.set(publicKey);
       if (!publicKeyResult.value) {
         return setStatus(Status.createKeyErrorStatus(publicKeyResult));
       }
@@ -133,7 +126,7 @@ function useBiometricsSetup(): UseBiometricsSetup {
       const {
         step: { wasRecentStepSuccessful, isRequestFulfilled },
         reason,
-      } = await processMultifactorAuthenticationScenario(
+      } = await MultifactorAuthentication.processScenario(
         CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS,
         {
           publicKey,

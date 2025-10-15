@@ -1,19 +1,16 @@
 import {
-  MultifactorAuthenticationPrivateKeyStore,
-  MultifactorAuthenticationPublicKeyStore,
-} from "@libs/MultifactorAuthentication/MultifactorAuthenticationKeyStore";
-import {
-  MultifactorAuthenticationStatus,
-  MultifactorAuthenticationPartialStatus,
   AuthTypeName,
   CreateMultifactorAuthenticationRecentStatus,
 } from "./types";
 import CONST from "@src/CONST";
-import {
+import type {
   MultifactorAuthenticationFactor,
   MultifactorAuthorizationFallbackScenarioParams,
   MultifactorAuthenticationScenario,
-} from "@libs/MultifactorAuthentication/scenarios/types";
+  MultifactorAuthenticationStatus,
+  MultifactorAuthenticationPartialStatus,
+} from "@libs/MultifactorAuthentication";
+import MultifactorAuthentication from "@libs/MultifactorAuthentication";
 
 /**
  * Creates a MultifactorAuthenticationRecentStatus object that contains both the status and cancel method.
@@ -66,7 +63,7 @@ function areMultifactorAuthorizationFallbackParamsValid<
  */
 function doesDeviceSupportBiometrics() {
   const { biometrics, credentials } =
-    MultifactorAuthenticationPublicKeyStore.supportedAuthentication;
+    MultifactorAuthentication.supportedAuthentication;
   return biometrics || credentials;
 }
 
@@ -75,7 +72,7 @@ function doesDeviceSupportBiometrics() {
  * A stored public key indicates successful prior configuration.
  */
 async function isBiometryConfigured() {
-  return !!(await MultifactorAuthenticationPublicKeyStore.get()).value;
+  return !!(await MultifactorAuthentication.publicKeyStore.get()).value;
 }
 
 /**
@@ -84,8 +81,8 @@ async function isBiometryConfigured() {
  */
 async function resetKeys() {
   await Promise.all([
-    MultifactorAuthenticationPrivateKeyStore.delete(),
-    MultifactorAuthenticationPublicKeyStore.delete(),
+    MultifactorAuthentication.privateKeyStore.delete(),
+    MultifactorAuthentication.publicKeyStore.delete(),
   ]);
 }
 

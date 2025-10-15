@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import CONST from "@src/CONST";
-import MultifactorAuthenticationChallenge from "@libs/MultifactorAuthentication/MultifactorAuthenticationChallenge";
+import MultifactorAuthentication from "@libs/MultifactorAuthentication";
 import useMultifactorAuthenticationStatus from "./useMultifactorAuthenticationStatus";
 import { MultifactorAuthorization, UseMultifactorAuthorization } from "./types";
 import { createAuthorizeErrorStatus } from "./helpers";
@@ -31,7 +31,7 @@ function useMultifactorAuthorization(): UseMultifactorAuthorization {
    */
   const authorize: MultifactorAuthorization = useCallback(
     async ({ transactionID, chainedPrivateKeyStatus }) => {
-      const challenge = new MultifactorAuthenticationChallenge(transactionID);
+      const challenge = new MultifactorAuthentication.challenge(transactionID);
 
       const requestStatus = await challenge.request();
       if (!requestStatus.value)

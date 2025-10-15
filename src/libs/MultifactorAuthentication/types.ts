@@ -1,10 +1,72 @@
 import { ValueOf } from "type-fest";
-import CONST from "@src/CONST";
+import MultifactorAuthenticationValues from "./MultifactorAuthenticationValues";
 import { TranslationPaths } from "@src/languages/types";
 import {
   MULTI_FACTOR_AUTHENTICATION_SCENARIOS,
   MultifactorAuthenticationScenarioParameters,
-} from "@libs/MultifactorAuthentication/scenarios";
+} from "./scenarios";
+import MultifactorAuthenticationStore from "./MultifactorAuthenticationStore";
+
+type MultifactorAuthenticationPartialStatusConditional<omitStep> =
+  omitStep extends false
+    ? {
+        /** The status of the multifactorial authentication operation */
+        step: MultifactorAuthenticationStep;
+      }
+    : object;
+
+/**
+ * Represents the core status information for multifactorial authentication operations.
+ * @template T - The type of the value of the multifactorial authentication operation.
+ * @template omitStep - Whether to omit the step from the partial status.
+ */
+type MultifactorAuthenticationPartialStatus<
+  T,
+  omitStep = false,
+> = MultifactorAuthenticationPartialStatusConditional<omitStep> & {
+  /**
+   * The result value of the multifactorial authentication operation.
+   * Can be of various types depending on the operation, commonly boolean or string.
+   */
+  value: T;
+
+  /**
+   * Translation key explaining the current status or error condition.
+   * Used to provide user feedback about what happened.
+   */
+  reason: TranslationPaths;
+
+  /**
+   * The numeric authentication type identifier from SecureStore.
+   * Indicates which authentication method was used (e.g. multifactorial authentication, passcode).
+   */
+  type?: ValueOf<typeof MultifactorAuthenticationStore.authTypes>;
+};
+
+/**
+ * Complete status object for multifactorial authentication operations, extending the partial status.
+ * Used to track and communicate the full state of multifactorial authentication/authorization,
+ * including user-facing messages and authentication details.
+ */
+type MultifactorAuthenticationStatus<
+  T,
+  omitStatus = false,
+> = MultifactorAuthenticationPartialStatus<T, omitStatus> & {
+  /** Human-readable name of the authentication method used */
+  typeName?: string;
+
+  /**
+   * Formatted message combining status, reason, and authentication type
+   * for displaying detailed feedback to users
+   */
+  message: string;
+
+  /**
+   * Concise status message suitable for headers or brief notifications
+   * Examples: "Authorization Successful", "Authentication Failed"
+   */
+  title: string;
+};
 
 type MultifactorAuthenticationScenarioConfig =
   typeof MULTI_FACTOR_AUTHENTICATION_SCENARIOS;
@@ -27,6 +89,10 @@ type MultifactorAuthenticationScenarioResponseWithSuccess = {
 
 type Simplify<T> = T extends object ? { [K in keyof T]: Simplify<T[K]> } : T;
 
+type MultifactorAuthenticationKeyType = ValueOf<
+  typeof MultifactorAuthenticationValues.KEY_ALIASES
+>;
+
 /**
  * Core type definitions for multifactorial authentication functionality
  */
@@ -35,7 +101,7 @@ type Simplify<T> = T extends object ? { [K in keyof T]: Simplify<T[K]> } : T;
  * Represents a specific multifactorial authentication scenario from the constants
  */
 type MultifactorAuthenticationScenario = ValueOf<
-  typeof CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO
+  typeof MultifactorAuthenticationValues.SCENARIO
 >;
 
 /**
@@ -53,12 +119,12 @@ type MultifactorAuthorizationFallbackScenario = ValueOf<{
  * Represents a specific multifactorial authentication factor from the constants
  */
 type MultifactorAuthenticationFactor = ValueOf<
-  typeof CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS
+  typeof MultifactorAuthenticationValues.FACTORS
 >;
 
 type MultifactorAuthenticationFactors = {
   [K in MultifactorAuthenticationFactorsRequirements[keyof MultifactorAuthenticationFactorsRequirements] as K extends {
-    origin: typeof CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS_ORIGIN.FALLBACK;
+    origin: typeof MultifactorAuthenticationValues.FACTORS_ORIGIN.FALLBACK;
   }
     ? never
     : K["parameter"]]: K["type"];
@@ -69,7 +135,7 @@ type MultifactorAuthenticationFactors = {
  */
 type MultifactorAuthorizationFallbackFactors = {
   [K in MultifactorAuthenticationFactorsRequirements[keyof MultifactorAuthenticationFactorsRequirements] as K extends {
-    origin: typeof CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS_ORIGIN.FALLBACK;
+    origin: typeof MultifactorAuthenticationValues.FACTORS_ORIGIN.FALLBACK;
   }
     ? K["parameter"]
     : never]?: K["type"];
@@ -78,6 +144,20 @@ type MultifactorAuthorizationFallbackFactors = {
 type AllMultifactorAuthenticationFactors = Simplify<
   MultifactorAuthenticationFactors & MultifactorAuthorizationFallbackFactors
 >;
+
+/**
+ * Represents the step of the multifactorial authentication operation.
+ */
+type MultifactorAuthenticationStep = {
+  /** Whether the recent step was successful */
+  wasRecentStepSuccessful: boolean | undefined;
+
+  /** The required factor for the next step */
+  requiredFactorForNextStep: MultifactorAuthenticationFactor | undefined;
+
+  /** Whether the request has been fulfilled */
+  isRequestFulfilled: boolean;
+};
 
 type MultifactorAuthenticationScenarioAdditionalParams<
   T extends MultifactorAuthenticationScenario,
@@ -125,10 +205,11 @@ type MultifactorAuthenticationScenarioMap = {
  * Defines the requirements for each multifactorial authentication factor
  */
 type MultifactorAuthenticationFactorsRequirements =
-  typeof CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS_REQUIREMENTS;
+  typeof MultifactorAuthenticationValues.FACTORS_REQUIREMENTS;
 
 export type {
   MultifactorAuthenticationFactor,
+  MultifactorAuthenticationStep,
   MultifactorAuthenticationScenarioParams,
   MultifactorAuthorizationFallbackFactors,
   MultifactorAuthorizationFallbackScenario,
@@ -138,5 +219,8 @@ export type {
   MultifactorAuthenticationScenarioMethod,
   MultifactorAuthenticationScenarioMap,
   AllMultifactorAuthenticationFactors,
+  MultifactorAuthenticationKeyType,
   MultifactorAuthenticationScenarioResponseWithSuccess,
+  MultifactorAuthenticationStatus,
+  MultifactorAuthenticationPartialStatus,
 };

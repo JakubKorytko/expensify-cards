@@ -1,5 +1,5 @@
 import type { TranslationPaths } from "@src/languages/types";
-import CONST from "@src/CONST";
+import MultifactorAuthenticationValues from "./MultifactorAuthenticationValues";
 
 /**
  * Takes an error from SecureStore and maps it to a translation path based on the error message.
@@ -9,25 +9,25 @@ import CONST from "@src/CONST";
 function decodeExpoMessage(error: unknown): TranslationPaths {
   const errorString = String(error);
   const parts = errorString.split(
-    CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEPARATOR,
+    MultifactorAuthenticationValues.EXPO_ERRORS.SEPARATOR,
   );
   const searchString =
     parts.length > 1 ? parts.slice(1).join(";").trim() : errorString;
 
   const errorMappings = {
-    [CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEARCH_STRING.CANCELED]:
+    [MultifactorAuthenticationValues.EXPO_ERRORS.SEARCH_STRING.CANCELED]:
       "multifactorAuthentication.reason.expoErrors.canceled",
-    [CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEARCH_STRING.IN_PROGRESS]:
+    [MultifactorAuthenticationValues.EXPO_ERRORS.SEARCH_STRING.IN_PROGRESS]:
       "multifactorAuthentication.reason.expoErrors.alreadyInProgress",
-    [CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEARCH_STRING
+    [MultifactorAuthenticationValues.EXPO_ERRORS.SEARCH_STRING
       .NOT_IN_FOREGROUND]:
       "multifactorAuthentication.reason.expoErrors.notInForeground",
-    [CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEARCH_STRING.EXISTS]:
+    [MultifactorAuthenticationValues.EXPO_ERRORS.SEARCH_STRING.EXISTS]:
       "multifactorAuthentication.reason.expoErrors.keyExists",
-    [CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEARCH_STRING
+    [MultifactorAuthenticationValues.EXPO_ERRORS.SEARCH_STRING
       .NO_AUTHENTICATION]:
       "multifactorAuthentication.reason.expoErrors.noAuthentication",
-    [CONST.MULTI_FACTOR_AUTHENTICATION.EXPO_ERRORS.SEARCH_STRING.OLD_ANDROID]:
+    [MultifactorAuthenticationValues.EXPO_ERRORS.SEARCH_STRING.OLD_ANDROID]:
       "multifactorAuthentication.reason.expoErrors.oldAndroid",
   } as const;
 

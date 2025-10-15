@@ -5,13 +5,11 @@ import {
   AuthorizeUsingFallback,
   UseMultifactorAuthorizationFallback,
 } from "./types";
-import {
+import type {
   MultifactorAuthorizationFallbackScenario,
   MultifactorAuthorizationFallbackScenarioParams,
-} from "@libs/MultifactorAuthentication/scenarios/types";
-import processMultifactorAuthenticationScenario, {
-  areMultifactorAuthenticationFactorsSufficient,
-} from "@libs/MultifactorAuthentication/scenarios/processMultifactorAuthenticationScenario";
+} from "@libs/MultifactorAuthentication";
+import MultifactorAuthentication from "@libs/MultifactorAuthentication";
 import { requestValidateCodeAction } from "@libs/actions/User";
 
 /**
@@ -31,7 +29,7 @@ function useMultifactorAuthorizationFallback<
    */
   const verifyFactors = useCallback(
     (params: MultifactorAuthorizationFallbackScenarioParams<T>) =>
-      areMultifactorAuthenticationFactorsSufficient(
+      MultifactorAuthentication.areFactorsSufficient(
         {
           ...params,
         },
@@ -77,7 +75,7 @@ function useMultifactorAuthorizationFallback<
         }));
       }
 
-      const processResult = await processMultifactorAuthenticationScenario(
+      const processResult = await MultifactorAuthentication.processScenario(
         scenario,
         {
           ...params,

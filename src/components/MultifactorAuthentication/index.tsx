@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { MultifactorAuthorizationFallbackScenario } from "@libs/MultifactorAuthentication/scenarios/types";
+import type { MultifactorAuthorizationFallbackScenario } from "@libs/MultifactorAuthentication";
 import useMultifactorAuthorizationFallback from "@hooks/useMultiAuthentication/useMultifactorAuthorizationFallback";
 import CONST from "@src/CONST";
 import InputModal from "@src/components/Modals/InputModal";

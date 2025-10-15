@@ -1,9 +1,11 @@
-import * as SecureStore from "expo-secure-store";
-import CONST from "@src/CONST";
+import MultifactorAuthenticationValues from "./MultifactorAuthenticationValues";
 import type { TranslationPaths } from "@src/languages/types";
-import type { ValueOf } from "type-fest";
-import decodeMultifactorAuthenticationExpoMessage from "@libs/MultifactorAuthentication/decodeMultifactorAuthenticationExpoMessage";
-import { MultifactorAuthenticationPartialStatus } from "@hooks/useMultiAuthentication/types";
+import decodeMultifactorAuthenticationExpoMessage from "./decodeMultifactorAuthenticationExpoMessage";
+import MultifactorAuthenticationStore from "./MultifactorAuthenticationStore";
+import {
+  MultifactorAuthenticationKeyType,
+  MultifactorAuthenticationPartialStatus,
+} from "./types";
 
 /**
  * Provides secure storage for multifactorial authentication keys with authentication controls.
@@ -15,40 +17,36 @@ import { MultifactorAuthenticationPartialStatus } from "@hooks/useMultiAuthentic
  * - MultifactorAuthenticationPublicKeyStore: Allows access without authentication
  */
 class MultifactorAuthenticationKeyStore {
-  constructor(
-    private readonly key: ValueOf<
-      typeof CONST.MULTI_FACTOR_AUTHENTICATION.KEY_ALIASES
-    >,
-  ) {}
+  constructor(private readonly key: MultifactorAuthenticationKeyType) {}
 
   /**
    * SecureStore options that control authentication requirements.
    * Private keys require multifactorial authentication/credential auth, while public keys don't.
    * Also configures keychain access and credential alternatives.
    */
-  private get options(): SecureStore.SecureStoreOptions {
-    const isPrivateKey =
-      this.key === CONST.MULTI_FACTOR_AUTHENTICATION.KEY_ALIASES.PRIVATE_KEY;
-    return {
-      failOnDuplicate: isPrivateKey,
-      requireAuthentication: isPrivateKey,
-      askForAuthOnSave: isPrivateKey,
-      keychainService: CONST.MULTI_FACTOR_AUTHENTICATION.KEYCHAIN_SERVICE,
-      keychainAccessible: SecureStore.WHEN_PASSCODE_SET_THIS_DEVICE_ONLY,
-      enableCredentialsAlternative: true,
-    };
-  }
+  // private get options(): SecureStore.SecureStoreOptions {
+  //   const isPrivateKey =
+  //     this.key === CONST.MULTI_FACTOR_AUTHENTICATION.KEY_ALIASES.PRIVATE_KEY;
+  //   return {
+  //     failOnDuplicate: isPrivateKey,
+  //     requireAuthentication: isPrivateKey,
+  //     askForAuthOnSave: isPrivateKey,
+  //     keychainService: CONST.MULTI_FACTOR_AUTHENTICATION.KEYCHAIN_SERVICE,
+  //     keychainAccessible: SecureStore.WHEN_PASSCODE_SET_THIS_DEVICE_ONLY,
+  //     enableCredentialsAlternative: true,
+  //   };
+  // }
 
   /**
    * Checks device support for different authentication methods.
    * Returns whether biometrics authentication and device credentials can be used.
    */
-  public get supportedAuthentication() {
-    return {
-      biometrics: SecureStore.canUseBiometricAuthentication(),
-      credentials: SecureStore.canUseDeviceCredentialsAuthentication(),
-    };
-  }
+  // public get supportedAuthentication() {
+  //   return {
+  //     biometrics: SecureStore.canUseBiometricAuthentication(),
+  //     credentials: SecureStore.canUseDeviceCredentialsAuthentication(),
+  //   };
+  // }
 
   /**
    * Stores a value in SecureStore. For private keys, this will trigger an auth prompt.
@@ -58,11 +56,7 @@ class MultifactorAuthenticationKeyStore {
     value: string,
   ): Promise<MultifactorAuthenticationPartialStatus<boolean, true>> {
     try {
-      const type = await SecureStore.setItemAsync(
-        this.key,
-        value,
-        this.options,
-      );
+      const type = await MultifactorAuthenticationStore.set(this.key, value);
       return {
         value: true,
         reason:
@@ -88,9 +82,7 @@ class MultifactorAuthenticationKeyStore {
     MultifactorAuthenticationPartialStatus<boolean, true>
   > {
     try {
-      await SecureStore.deleteItemAsync(this.key, {
-        keychainService: CONST.MULTI_FACTOR_AUTHENTICATION.KEYCHAIN_SERVICE,
-      });
+      await MultifactorAuthenticationStore.delete(this.key);
       return {
         value: true,
         reason:
@@ -115,10 +107,7 @@ class MultifactorAuthenticationKeyStore {
     MultifactorAuthenticationPartialStatus<string | null, true>
   > {
     try {
-      const [key, type] = await SecureStore.getItemAsync(
-        this.key,
-        this.options,
-      );
+      const [key, type] = await MultifactorAuthenticationStore.get(this.key);
       return {
         value: key,
         reason:
@@ -143,7 +132,7 @@ class MultifactorAuthenticationKeyStore {
  */
 const MultifactorAuthenticationPrivateKeyStore =
   new MultifactorAuthenticationKeyStore(
-    CONST.MULTI_FACTOR_AUTHENTICATION.KEY_ALIASES.PRIVATE_KEY,
+    MultifactorAuthenticationValues.KEY_ALIASES.PRIVATE_KEY,
   );
 
 /**
@@ -152,7 +141,7 @@ const MultifactorAuthenticationPrivateKeyStore =
  */
 const MultifactorAuthenticationPublicKeyStore =
   new MultifactorAuthenticationKeyStore(
-    CONST.MULTI_FACTOR_AUTHENTICATION.KEY_ALIASES.PUBLIC_KEY,
+    MultifactorAuthenticationValues.KEY_ALIASES.PUBLIC_KEY,
   );
 
 export {

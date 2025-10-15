@@ -3,8 +3,8 @@
  * It maps each scenario type to its corresponding implementation method and any post-processing logic.
  * The scenarios include setting up multifactorial authentication and authorizing transactions with different authentication flows.
  */
-import { MultifactorAuthenticationScenarioMap } from "@libs/MultifactorAuthentication/scenarios/types";
-import CONST from "@src/CONST";
+import { MultifactorAuthenticationScenarioMap } from "./types";
+import MultifactorAuthenticationValues from "./MultifactorAuthenticationValues";
 import {
   authorizeTransaction,
   registerBiometrics,
@@ -19,10 +19,10 @@ import {
  * - Multi-factor authentication setup needs a public key
  */
 type MultifactorAuthenticationScenarioParameters = {
-  [CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION]: {
+  [MultifactorAuthenticationValues.SCENARIO.AUTHORIZE_TRANSACTION]: {
     transactionID: string;
   };
-  [CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS]: {
+  [MultifactorAuthenticationValues.SCENARIO.SETUP_BIOMETRICS]: {
     publicKey: string;
   };
 };
@@ -33,12 +33,12 @@ type MultifactorAuthenticationScenarioParameters = {
  * The fallback scenario includes additional post-processing and validation code storage.
  */
 const MULTI_FACTOR_AUTHENTICATION_SCENARIOS = {
-  [CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION]: {
+  [MultifactorAuthenticationValues.SCENARIO.AUTHORIZE_TRANSACTION]: {
     allowBiometrics: true,
     allow2FA: true,
     action: authorizeTransaction,
   },
-  [CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS]: {
+  [MultifactorAuthenticationValues.SCENARIO.SETUP_BIOMETRICS]: {
     allowBiometrics: false,
     allow2FA: true,
     action: registerBiometrics,

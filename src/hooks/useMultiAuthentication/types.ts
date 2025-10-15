@@ -1,12 +1,12 @@
 import type { ValueOf } from "type-fest";
-import { TranslationPaths } from "@src/languages/types";
-import { AUTH_TYPE } from "expo-secure-store";
 import CONST from "@src/CONST";
-import {
+import type {
   MultifactorAuthorizationFallbackScenario,
   MultifactorAuthorizationFallbackScenarioParams,
-  MultifactorAuthenticationFactor,
-} from "@libs/MultifactorAuthentication/scenarios/types";
+  MultifactorAuthenticationStatus,
+  MultifactorAuthenticationPartialStatus,
+  MultifactorAuthenticationStep,
+} from "@libs/MultifactorAuthentication";
 
 /**
  * Represents the most recent multifactorial authentication status and method to cancel it
@@ -170,81 +170,6 @@ type UseBiometricsSetup = MultifactorAuthenticationStep &
     cancel: () => MultifactorAuthenticationStatus<boolean>;
   };
 
-/**
- * Represents the step of the multifactorial authentication operation.
- */
-type MultifactorAuthenticationStep = {
-  /** Whether the recent step was successful */
-  wasRecentStepSuccessful: boolean | undefined;
-
-  /** The required factor for the next step */
-  requiredFactorForNextStep: MultifactorAuthenticationFactor | undefined;
-
-  /** Whether the request has been fulfilled */
-  isRequestFulfilled: boolean;
-};
-
-type MultifactorAuthenticationPartialStatusConditional<omitStep> =
-  omitStep extends false
-    ? {
-        /** The status of the multifactorial authentication operation */
-        step: MultifactorAuthenticationStep;
-      }
-    : object;
-
-/**
- * Represents the core status information for multifactorial authentication operations.
- * @template T - The type of the value of the multifactorial authentication operation.
- * @template omitStep - Whether to omit the step from the partial status.
- */
-type MultifactorAuthenticationPartialStatus<
-  T,
-  omitStep = false,
-> = MultifactorAuthenticationPartialStatusConditional<omitStep> & {
-  /**
-   * The result value of the multifactorial authentication operation.
-   * Can be of various types depending on the operation, commonly boolean or string.
-   */
-  value: T;
-
-  /**
-   * Translation key explaining the current status or error condition.
-   * Used to provide user feedback about what happened.
-   */
-  reason: TranslationPaths;
-
-  /**
-   * The numeric authentication type identifier from SecureStore.
-   * Indicates which authentication method was used (e.g. multifactorial authentication, passcode).
-   */
-  type?: ValueOf<typeof AUTH_TYPE>;
-};
-
-/**
- * Complete status object for multifactorial authentication operations, extending the partial status.
- * Used to track and communicate the full state of multifactorial authentication/authorization,
- * including user-facing messages and authentication details.
- */
-type MultifactorAuthenticationStatus<
-  T,
-  omitStatus = false,
-> = MultifactorAuthenticationPartialStatus<T, omitStatus> & {
-  /** Human-readable name of the authentication method used */
-  typeName?: string;
-
-  /**
-   * Formatted message combining status, reason, and authentication type
-   * for displaying detailed feedback to users
-   */
-  message: string;
-
-  /**
-   * Concise status message suitable for headers or brief notifications
-   * Examples: "Authorization Successful", "Authentication Failed"
-   */
-  title: string;
-};
-
 /** Valid multifactorial authentication scenario types as defined in constants */
 type MultifactorAuthenticationStatusKeyType = ValueOf<
   typeof CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE
@@ -275,12 +200,10 @@ type UseMultifactorAuthenticationStatus<T> = [
 ];
 
 export type {
-  MultifactorAuthenticationStatus,
   MultifactorAuthenticationStep,
   SetMultifactorAuthenticationStatus,
   MultifactorAuthenticationStatusKeyType,
   AuthTypeName,
-  MultifactorAuthenticationPartialStatus,
   UseMultifactorAuthenticationStatus,
   UseBiometricsSetup,
   Register,

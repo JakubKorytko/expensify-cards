@@ -1,10 +1,10 @@
 import type { TranslationPaths } from "@src/languages/types";
-import { MultifactorAuthenticationPrivateKeyStore } from "@libs/MultifactorAuthentication/MultifactorAuthenticationKeyStore";
-import { signToken as signTokenED25519 } from "@libs/ED25519";
+import { MultifactorAuthenticationPrivateKeyStore } from "./MultifactorAuthenticationKeyStore";
+import { signToken as signTokenED25519 } from "./ED25519";
 import { requestMultifactorAuthenticationChallenge } from "@libs/actions/MultifactorAuthentication";
-import processMultifactorAuthenticationScenario from "@libs/MultifactorAuthentication/scenarios/processMultifactorAuthenticationScenario";
-import CONST from "@src/CONST";
-import { MultifactorAuthenticationPartialStatus } from "@hooks/useMultiAuthentication/types";
+import processMultifactorAuthenticationScenario from "./processMultifactorAuthenticationScenario";
+import MultifactorAuthenticationValues from "./MultifactorAuthenticationValues";
+import type { MultifactorAuthenticationPartialStatus } from "./types";
 
 /**
  * Handles the multifactorial authentication challenge flow for a specific transaction.
@@ -122,7 +122,7 @@ class MultifactorAuthenticationChallenge {
     }
 
     const authorizationResult = processMultifactorAuthenticationScenario(
-      CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.AUTHORIZE_TRANSACTION,
+      MultifactorAuthenticationValues.SCENARIO.AUTHORIZE_TRANSACTION,
       {
         signedChallenge: this.auth.value,
 
