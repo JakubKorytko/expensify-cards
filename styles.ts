@@ -56,7 +56,7 @@ const styles = {
   },
   inputContainer: {
     ...bottomSheetBase,
-    height: 250,
+    height: 220,
   },
   gap15: {
     gap: 15,
@@ -67,6 +67,7 @@ const styles = {
     borderColor: "#E6E1DA",
     width: 250,
     borderRadius: 10,
+    height: 60,
     textAlign: "center",
     letterSpacing: 5,
     alignSelf: "center",
