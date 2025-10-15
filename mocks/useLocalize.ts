@@ -1,9 +1,9 @@
 import { useCallback } from "react";
-import { ElementType, NestedRecord } from "type-fest";
+import type { ElementType, NestedRecord } from "type-fest";
 import translations from "@src/languages/en";
 
 export default function useLocalize() {
-  const translate = useCallback((path: string, ...args: any[]): string => {
+  const translate = useCallback((path: string, args: Record<string, unknown>): string => {
     const keys = path.split(".");
     const value = keys.reduce(
       (acc, key) => {
@@ -16,7 +16,7 @@ export default function useLocalize() {
     );
 
     if (typeof value === "function") {
-      return value(...args);
+      return value(args);
     }
 
     if (typeof value === "string") {
