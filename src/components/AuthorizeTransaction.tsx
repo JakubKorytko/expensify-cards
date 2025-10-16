@@ -1,12 +1,9 @@
-import {
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from "react-native";
-import styles from "@/styles";
+import {View} from "react-native";
 import CONST from "@src/CONST";
 import useLocalize from "@hooks/useLocalize";
+import styles from "@src/styles";
+import Text from "./Text"
+import {Pressable, PressableWithoutFeedback} from "./Pressable";
 import MultifactorAuthentication from "./MultifactorAuthentication";
 
 type MultifactorAuthorizationFallbackUsingWrapperProps = {
@@ -26,8 +23,7 @@ function MultifactorAuthorizationFallbackUsingWrapper({
       params={{ transactionID }}
     >
       {(shouldShowSecret, authorize, status) => (
-        <>
-          <TouchableWithoutFeedback onPress={status.cancel}>
+        <PressableWithoutFeedback accessibilityRole="button" onPress={status.cancel}>
             <View
               style={[
                 styles.layoutContainer,
@@ -42,16 +38,17 @@ function MultifactorAuthorizationFallbackUsingWrapper({
                   <Text style={styles.title}>
                     {translate(
                       "multifactorAuthentication.title",
-                      false /* isBiometryConfigured always false in fallback */,
+                      {registered: false} /* isBiometryConfigured always false in fallback */,
                     )}
                   </Text>
                   <View style={styles.buttonContainer}>
-                    <TouchableOpacity
+                    <Pressable accessibilityRole="button"
                       style={styles.button}
-                      onPress={() => authorize()}
-                    >
+                      onPress={() => {
+                        authorize()}}
+                      >
                       <Text style={styles.buttonText}>Test</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                   </View>
                 </View>
               </View>
@@ -61,8 +58,7 @@ function MultifactorAuthorizationFallbackUsingWrapper({
                 <Text style={styles.hugeText}>Secret is hidden!</Text>
               )}
             </View>
-          </TouchableWithoutFeedback>
-        </>
+          </PressableWithoutFeedback>
       )}
     </MultifactorAuthentication>
   );

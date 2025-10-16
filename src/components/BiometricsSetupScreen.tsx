@@ -1,18 +1,18 @@
 import { useState } from "react";
 import {
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
-import styles from "@/styles";
-import InfoModal from "@src/components/Modals/InfoModal";
 import CONST from "@src/CONST";
-import InputModal from "@src/components/Modals/InputModal";
 import useLocalize from "@hooks/useLocalize";
-import useBiometricsSetup from "@hooks/useMultiAuthentication/useBiometricsSetup";
+import useBiometricsSetup from "@hooks/useMultifactorAuthentication/useBiometricsSetup";
+import styles from "@src/styles";
+import {Pressable, PressableWithoutFeedback} from "./Pressable"
+import Text from "./Text";
+import InfoModal from "./Modals/InfoModal";
+import InputModal from "./Modals/InputModal";
 
-function BiometricsSetup() {
+
+function BiometricsSetupScreen() {
   const { translate } = useLocalize();
   const BiometricsSetup = useBiometricsSetup();
   const [showModal, setShowModal] = useState<boolean>(false);
@@ -29,7 +29,7 @@ function BiometricsSetup() {
 
   return (
     <>
-      <TouchableWithoutFeedback onPress={BiometricsSetup.cancel}>
+      <PressableWithoutFeedback accessibilityRole="button" onPress={BiometricsSetup.cancel}>
         <View
           style={[
             styles.layoutContainer,
@@ -44,30 +44,30 @@ function BiometricsSetup() {
               <Text style={styles.title}>
                 {translate(
                   "multifactorAuthentication.title",
-                  BiometricsSetup.isBiometryConfigured,
+                  {registered: BiometricsSetup.isBiometryConfigured},
                 )}
               </Text>
               <View style={styles.buttonContainer}>
-                <TouchableOpacity
+                <Pressable accessibilityRole="button"
                   style={styles.button}
-                  onPress={() => authorizeWithModal()}
+                  onPress={() => {authorizeWithModal()}}
                 >
                   <Text style={styles.buttonText}>Test</Text>
-                </TouchableOpacity>
+                </Pressable>
 
                 {BiometricsSetup.isBiometryConfigured && (
-                  <TouchableOpacity
+                  <Pressable accessibilityRole="button"
                     style={styles.buttonNegativeSmall}
-                    onPress={() => BiometricsSetup.revoke()}
+                    onPress={() => {BiometricsSetup.revoke()}}
                   >
                     <Text style={styles.buttonTextNegative}>Remove</Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 )}
               </View>
             </View>
           </View>
         </View>
-      </TouchableWithoutFeedback>
+      </PressableWithoutFeedback>
       {showModal && BiometricsSetup.isRequestFulfilled && (
         <InfoModal
           message={BiometricsSetup.message}
@@ -79,7 +79,7 @@ function BiometricsSetup() {
       {BiometricsSetup.requiredFactorForNextStep ===
         CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE && (
         <InputModal
-          onSubmit={(validateCode) => authorizeWithModal(validateCode)}
+          onSubmit={(validateCode) => {authorizeWithModal(validateCode)}}
           title={translate("multifactorAuthentication.provideValidateCode")}
         />
       )}
@@ -87,6 +87,6 @@ function BiometricsSetup() {
   );
 }
 
-BiometricsSetup.displayName = "BiometricsSetup";
+BiometricsSetupScreen.displayName = "BiometricsSetupScreen";
 
-export default BiometricsSetup;
+export default BiometricsSetupScreen;

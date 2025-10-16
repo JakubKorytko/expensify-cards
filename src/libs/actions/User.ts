@@ -1,5 +1,7 @@
 import * as API from "@libs/API";
+// eslint-disable-next-line import/extensions
 import { WRITE_COMMANDS } from "@/mocks/api";
+// eslint-disable-next-line import/extensions
 import { USER_EMAIL } from "@/mocks/api/utils";
 
 /**
@@ -11,4 +13,5 @@ function requestValidateCodeAction() {
   });
 }
 
+// eslint-disable-next-line import/prefer-default-export
 export { requestValidateCodeAction };

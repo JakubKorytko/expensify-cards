@@ -1,15 +1,15 @@
 import React, { useState } from "react";
-import type { MultifactorAuthorizationFallbackScenario } from "@libs/MultifactorAuthentication";
-import useMultifactorAuthorizationFallback from "@hooks/useMultiAuthentication/useMultifactorAuthorizationFallback";
+import type { MultifactorAuthorizationFallbackScenario } from "@libs/MultifactorAuthentication/types";
+import useMultifactorAuthorizationFallback from "@hooks/useMultifactorAuthentication/useMultifactorAuthorizationFallback";
 import CONST from "@src/CONST";
 import InputModal from "@src/components/Modals/InputModal";
 import useLocalize from "@hooks/useLocalize";
-import { areMultifactorAuthorizationFallbackParamsValid } from "@hooks/useMultiAuthentication/helpers";
+import { areMultifactorAuthorizationFallbackParamsValid } from "@hooks/useMultifactorAuthentication/helpers";
 import InfoModal from "@src/components/Modals/InfoModal";
-import {
+import type {
   MultifactorAuthorizationFallbackProps,
   ExtendedMultifactorAuthenticationStatus,
-} from "@src/components/MultifactorAuthentication/types";
+} from "./types";
 
 function MultifactorAuthentication<
   T extends MultifactorAuthorizationFallbackScenario,
@@ -51,7 +51,7 @@ function MultifactorAuthentication<
     paramName: string,
   ) => (
     <InputModal
-      onSubmit={(value) => handleAuthorize({ [paramName]: value })}
+      onSubmit={(value) => {handleAuthorize({ [paramName]: value })}}
       title={translate(`multifactorAuthentication.provide${factor}`)}
     />
   );

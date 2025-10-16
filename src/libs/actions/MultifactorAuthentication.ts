@@ -1,36 +1,15 @@
-import * as API from "@libs/API";
-import { SIDE_EFFECT_REQUEST_COMMANDS } from "@libs/API/types";
-import type { TranslationPaths } from "@src/languages/types";
-import type { ValueOf } from "type-fest";
-
-/** HTTP codes returned by the API, mapped to the multifactorial authentication translation paths */
-const RESPONSE_TRANSLATION_PATH = {
-  UNKNOWN: "unknownResponse",
-  REQUEST_MULTI_FACTOR_AUTHENTICATION_CHALLENGE: {
-    401: "registrationRequired",
-    200: "challengeGenerated",
-  },
-  REGISTER_BIOMETRICS: {
-    422: "noPublicKey",
-    409: "keyAlreadyRegistered",
-    401: "validationCodeRequired",
-    400: "validationCodeInvalid",
-    200: "multifactorAuthenticationSuccess",
-  },
-  AUTHORIZE_TRANSACTION: {
-    422: "noTransactionID",
-    401: "userNotRegistered",
-    409: "unableToAuthorize",
-    200: "userAuthorized",
-    400: "badRequest",
-    202: "otpCodeRequired",
-  },
-} as const;
+/* eslint-disable rulesdir/no-api-side-effects-method */
+import type {ValueOf} from 'type-fest';
+import * as API from '@libs/API';
+import {SIDE_EFFECT_REQUEST_COMMANDS} from '@libs/API/types';
+import type {MultifactorAuthenticationResponseTranslationPath} from '@libs/MultifactorAuthentication/types';
+import CONST from '@src/CONST';
+import type {TranslationPaths} from '@src/languages/types';
 
 /** Helper method to create an object with an HTTP code and the reason translation path */
 function parseHttpCode(
   jsonCode: string | number | undefined,
-  source: Omit<ValueOf<typeof RESPONSE_TRANSLATION_PATH>, "UNKNOWN">,
+  source: ValueOf<Omit<MultifactorAuthenticationResponseTranslationPath, 'UNKNOWN'>>,
 ): {
   httpCode: number;
   reason: TranslationPaths;
@@ -38,9 +17,11 @@ function parseHttpCode(
   const httpCode = Number(jsonCode) || 0;
   const translation = source[httpCode as keyof typeof source];
 
+  const reason = `multifactorAuthentication.apiResponse.${translation || CONST.MULTI_FACTOR_AUTHENTICATION.RESPONSE_TRANSLATION_PATH.UNKNOWN}` as TranslationPaths;
+
   return {
     httpCode,
-    reason: `multifactorAuthentication.apiResponse.${translation || RESPONSE_TRANSLATION_PATH.UNKNOWN}`,
+    reason,
   };
 }
 
@@ -61,33 +42,20 @@ function parseHttpCode(
  */
 
 /** Send multifactorial authentication public key to the API along with the validation code if required. */
-async function registerBiometrics({
-  publicKey,
-  validateCode,
-}: {
-  publicKey: string;
-  validateCode?: number;
-}) {
-  const { jsonCode } = await API.makeRequestWithSideEffects(
-    SIDE_EFFECT_REQUEST_COMMANDS.REGISTER_BIOMETRICS,
-    { publicKey, validateCode },
-    {},
-  );
-  return parseHttpCode(jsonCode, RESPONSE_TRANSLATION_PATH.REGISTER_BIOMETRICS);
+async function registerBiometrics({publicKey, validateCode}: {publicKey: string; validateCode?: number}) {
+  const response = await API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.REGISTER_BIOMETRICS, {publicKey, validateCode}, {});
+
+  const {jsonCode} = response ?? {};
+  return parseHttpCode(jsonCode, CONST.MULTI_FACTOR_AUTHENTICATION.RESPONSE_TRANSLATION_PATH.REGISTER_BIOMETRICS);
 }
 
 /** Ask API for the multifactorial authentication challenge. */
-async function requestMultifactorAuthenticationChallenge() {
-  const { jsonCode, challenge } = await API.makeRequestWithSideEffects(
-    SIDE_EFFECT_REQUEST_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE,
-    {},
-    {},
-  );
+async function requestBiometricChallenge() {
+  const response = await API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE, {}, {});
+  const {jsonCode, challenge} = response ?? {};
+
   return {
-    ...parseHttpCode(
-      jsonCode,
-      RESPONSE_TRANSLATION_PATH.REQUEST_MULTI_FACTOR_AUTHENTICATION_CHALLENGE,
-    ),
+    ...parseHttpCode(jsonCode, CONST.MULTI_FACTOR_AUTHENTICATION.RESPONSE_TRANSLATION_PATH.REQUEST_BIOMETRIC_CHALLENGE),
     challenge,
   };
 }
@@ -104,30 +72,12 @@ async function requestMultifactorAuthenticationChallenge() {
  * we actually need to make one call with validateCode only,
  * and then another one with otp + validateCode.
  */
-async function authorizeTransaction({
-  transactionID,
-  signedChallenge,
-  validateCode,
-  otp,
-}: {
-  transactionID: string;
-  signedChallenge?: string;
-  validateCode?: number;
-  otp?: number;
-}) {
-  const { jsonCode } = await API.makeRequestWithSideEffects(
-    SIDE_EFFECT_REQUEST_COMMANDS.AUTHORIZE_TRANSACTION,
-    { transactionID, signedChallenge, validateCode, otp },
-    {},
-  );
-  return parseHttpCode(
-    jsonCode,
-    RESPONSE_TRANSLATION_PATH.AUTHORIZE_TRANSACTION,
-  );
+async function authorizeTransaction({transactionID, signedChallenge, validateCode, otp}: {transactionID: string; signedChallenge?: string; validateCode?: number; otp?: number}) {
+  const response = await API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.AUTHORIZE_TRANSACTION, {transactionID, signedChallenge, validateCode, otp}, {});
+
+  const {jsonCode} = response ?? {};
+
+  return parseHttpCode(jsonCode, CONST.MULTI_FACTOR_AUTHENTICATION.RESPONSE_TRANSLATION_PATH.AUTHORIZE_TRANSACTION);
 }
 
-export {
-  registerBiometrics,
-  requestMultifactorAuthenticationChallenge,
-  authorizeTransaction,
-};
+export {registerBiometrics, requestBiometricChallenge, authorizeTransaction};

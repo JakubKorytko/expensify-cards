@@ -1,5 +1,7 @@
-import { Text, TouchableOpacity, View } from "react-native";
-import styles from "@/styles";
+import { View } from "react-native";
+import {Pressable} from "@src/components/Pressable"
+import Text from "@src/components/Text"
+import styles from "@src/styles";
 
 type InfoModalProps = {
   onClose?: () => void;
@@ -20,7 +22,7 @@ function InfoModal({
         <Text style={styles.hugeText}>{title}</Text>
         <Text>{message}</Text>
       </View>
-      <TouchableOpacity
+      <Pressable accessibilityRole="button"
         style={success ? styles.greenButton : styles.buttonNegative}
         onPress={onClose}
       >
@@ -29,7 +31,7 @@ function InfoModal({
         >
           Got it
         </Text>
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 }

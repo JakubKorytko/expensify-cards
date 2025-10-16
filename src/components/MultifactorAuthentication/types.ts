@@ -1,9 +1,9 @@
-import React from "react";
+import type React from "react";
 import type {
   MultifactorAuthenticationScenarioParameters,
   MultifactorAuthorizationFallbackScenario,
-} from "@libs/MultifactorAuthentication";
-import { UseMultifactorAuthorizationFallback } from "@hooks/useMultiAuthentication/types";
+} from "@libs/MultifactorAuthentication/types";
+import type { UseMultifactorAuthorizationFallback } from "@hooks/useMultifactorAuthentication/types";
 
 // Base type for multifactorial authentication status including modal state
 type ExtendedMultifactorAuthenticationStatus<

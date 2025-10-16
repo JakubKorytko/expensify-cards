@@ -3,12 +3,9 @@
  * It maps each scenario type to its corresponding implementation method and any post-processing logic.
  * The scenarios include setting up multifactorial authentication and authorizing transactions with different authentication flows.
  */
-import { MultifactorAuthenticationScenarioMap } from "./types";
-import MultifactorAuthenticationValues from "./MultifactorAuthenticationValues";
-import {
-  authorizeTransaction,
-  registerBiometrics,
-} from "@libs/actions/MultifactorAuthentication";
+import {authorizeTransaction, registerBiometrics} from '@libs/actions/MultifactorAuthentication';
+import type {MultifactorAuthenticationScenarioMap} from './types';
+import VALUES from './VALUES';
 
 /**
  * Defines the required parameters for each multifactorial authentication scenario type.
@@ -19,12 +16,12 @@ import {
  * - Multi-factor authentication setup needs a public key
  */
 type MultifactorAuthenticationScenarioParameters = {
-  [MultifactorAuthenticationValues.SCENARIO.AUTHORIZE_TRANSACTION]: {
-    transactionID: string;
-  };
-  [MultifactorAuthenticationValues.SCENARIO.SETUP_BIOMETRICS]: {
-    publicKey: string;
-  };
+    [VALUES.SCENARIO.AUTHORIZE_TRANSACTION]: {
+        transactionID: string;
+    };
+    [VALUES.SCENARIO.SETUP_BIOMETRICS]: {
+        publicKey: string;
+    };
 };
 
 /**
@@ -33,17 +30,17 @@ type MultifactorAuthenticationScenarioParameters = {
  * The fallback scenario includes additional post-processing and validation code storage.
  */
 const MULTI_FACTOR_AUTHENTICATION_SCENARIOS = {
-  [MultifactorAuthenticationValues.SCENARIO.AUTHORIZE_TRANSACTION]: {
-    allowBiometrics: true,
-    allow2FA: true,
-    action: authorizeTransaction,
-  },
-  [MultifactorAuthenticationValues.SCENARIO.SETUP_BIOMETRICS]: {
-    allowBiometrics: false,
-    allow2FA: true,
-    action: registerBiometrics,
-  },
+    [VALUES.SCENARIO.AUTHORIZE_TRANSACTION]: {
+        allowBiometrics: true,
+        allow2FA: true,
+        action: authorizeTransaction,
+    },
+    [VALUES.SCENARIO.SETUP_BIOMETRICS]: {
+        allowBiometrics: false,
+        allow2FA: true,
+        action: registerBiometrics,
+    },
 } as const satisfies MultifactorAuthenticationScenarioMap;
 
-export { MULTI_FACTOR_AUTHENTICATION_SCENARIOS };
-export type { MultifactorAuthenticationScenarioParameters };
+export default MULTI_FACTOR_AUTHENTICATION_SCENARIOS;
+export type {MultifactorAuthenticationScenarioParameters};

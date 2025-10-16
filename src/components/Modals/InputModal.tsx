@@ -1,6 +1,8 @@
-import { View, Text, TouchableOpacity, TextInput } from "react-native";
-import styles from "@/styles";
+import { View, TextInput } from "react-native";
 import { useState } from "react";
+import {Pressable} from "@src/components/Pressable"
+import Text from "@src/components/Text"
+import styles from "@src/styles";
 
 type InputModalProps = {
   onSubmit: (validateCode: number) => void;
@@ -14,7 +16,7 @@ function InputModal({ onSubmit, title }: InputModalProps) {
     <View style={styles.inputContainer}>
       <Text style={styles.hugeText}>{title}</Text>
       <View style={styles.innerInputContainer}>
-        <TextInput
+        <TextInput accessibilityLabel="Text input field"
           onChangeText={(text) => setInputValue(text)}
           value={inputValue}
           keyboardType="numeric"
@@ -22,12 +24,12 @@ function InputModal({ onSubmit, title }: InputModalProps) {
           maxLength={6}
           style={styles.textInput}
         />
-        <TouchableOpacity
+        <Pressable accessibilityRole="button"
           style={styles.greenButton}
           onPress={() => onSubmit(Number(inputValue))}
         >
           <Text style={styles.greenButtonText}>Authorize</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );
