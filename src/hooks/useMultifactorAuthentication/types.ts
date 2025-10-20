@@ -1,6 +1,8 @@
 import type {ValueOf} from 'type-fest';
 import type {
     MultifactorAuthenticationPartialStatus,
+    MultifactorAuthenticationScenario,
+    MultifactorAuthenticationScenarioParams,
     MultifactorAuthenticationStatus,
     MultifactorAuthenticationStep,
     MultifactorAuthorizationFallbackScenario,
@@ -17,25 +19,16 @@ type MultifactorAuthenticationRecentStatus = {
 };
 
 /**
- * Parameters required for multifactorial authentication authorization
- */
-type AuthorizationParams = {
-    otp?: number;
-    validateCode?: number;
-    transactionID: string;
-};
-
-/**
  * Function type for performing multifactorial authentication authorization
  */
-type MultifactorAuthorizationMethod = (params: AuthorizationParams) => Promise<MultifactorAuthenticationStatus<boolean>>;
+type MultifactorAuthorizationMethod<T extends MultifactorAuthenticationScenario> = (params: MultifactorAuthenticationScenarioParams<T>) => Promise<MultifactorAuthenticationStatus<boolean>>;
 
 /**
  * Available multifactorial authentication scenarios including registration, authorization, reset and cancel
  */
-type MultifactorAuthenticationMethods = {
+type MultifactorAuthenticationMethods<T extends MultifactorAuthenticationScenario> = {
     register: Register;
-    authorize: MultifactorAuthorization;
+    authorize: MultifactorAuthorization<T>;
     resetSetup: () => Promise<MultifactorAuthenticationStatus<boolean>>;
     cancel: () => MultifactorAuthenticationStatus<boolean>;
 };
@@ -50,7 +43,7 @@ type MultifactorAuthenticationState = MultifactorAuthenticationStatus<boolean> &
 /**
  * Hook return type containing multifactorial authentication state and available scenarios
  */
-type UseMultifactorAuthentication = [MultifactorAuthenticationState, MultifactorAuthenticationMethods];
+type UseMultifactorAuthentication<T extends MultifactorAuthenticationScenario> = [MultifactorAuthenticationState, MultifactorAuthenticationMethods<T>];
 
 /**
  * Factory function type for creating a MultifactorAuthenticationRecentStatus object
@@ -65,20 +58,20 @@ type CreateMultifactorAuthenticationRecentStatus = (
  * Takes a transaction ID, optional validate code, and optional chained private key status.
  * Returns a promise resolving to the authorization status.
  */
-type MultifactorAuthorization = (params: {
-    transactionID: string;
-    validateCode?: number;
-    chainedPrivateKeyStatus?: MultifactorAuthenticationStatus<string | null>;
-}) => Promise<MultifactorAuthenticationStatus<boolean>>;
+type MultifactorAuthorization<T extends MultifactorAuthenticationScenario> = (
+    params: MultifactorAuthenticationScenarioParams<T> & {
+        chainedPrivateKeyStatus?: MultifactorAuthenticationStatus<string | null>;
+    },
+) => Promise<MultifactorAuthenticationStatus<boolean>>;
 
 /**
  * Hook return type for multifactorial authentication transaction authorization.
  * Provides current authorization status, authorize function to initiate authorization,
  * and cancel function to cancel the current authorization flow.
  */
-type UseMultifactorAuthorization = {
+type UseMultifactorAuthorization<T extends MultifactorAuthenticationScenario> = {
     status: MultifactorAuthenticationStatus<boolean>;
-    authorize: MultifactorAuthorization;
+    authorize: MultifactorAuthorization<T>;
     cancel: () => MultifactorAuthenticationStatus<boolean>;
 };
 
@@ -171,6 +164,7 @@ type AuthTypeName = ValueOf<typeof CONST.MULTI_FACTOR_AUTHENTICATION.AUTH_TYPE>[
  */
 type SetMultifactorAuthenticationStatus<T> = (
     partialStatus: MultifactorAuthenticationPartialStatus<T> | ((prevStatus: MultifactorAuthenticationStatus<T>) => MultifactorAuthenticationStatus<T>),
+    overwriteType?: MultifactorAuthenticationStatusKeyType,
 ) => MultifactorAuthenticationStatus<T>;
 
 /** Valid type for the useMultifactorAuthenticationStatus hook */

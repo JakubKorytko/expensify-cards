@@ -3,9 +3,8 @@ import type {TranslationPaths} from '@src/languages/types';
 import {signToken as signTokenED25519} from './ED25519';
 import {processScenario} from './helpers';
 import {PrivateKeyStore} from './KeyStore';
-import type {MultifactorAuthenticationPartialStatus} from './types';
+import type {MultifactorAuthenticationPartialStatus, MultifactorAuthenticationScenario, MultifactorAuthenticationScenarioAdditionalParams} from './types';
 import VALUES from './VALUES';
-import CONST from "@src/CONST";
 
 /**
  * Handles the multifactorial authentication challenge flow for a specific transaction.
@@ -18,14 +17,17 @@ import CONST from "@src/CONST";
  *
  * Each step provides detailed status feedback through MultifactorAuthenticationPartialStatus objects.
  */
-class MultifactorAuthenticationChallenge {
+class MultifactorAuthenticationChallenge<T extends MultifactorAuthenticationScenario> {
     /** Tracks the current state and status of the authentication process */
     private auth: MultifactorAuthenticationPartialStatus<string | undefined, true> = {
         value: undefined,
         reason: 'multifactorAuthentication.reason.generic.notRequested',
     };
 
-    constructor(private readonly transactionID: string) {}
+    constructor(
+        private readonly scenario: T,
+        private readonly params: MultifactorAuthenticationScenarioAdditionalParams<T>,
+    ) {}
 
     /** Creates a standardized error response with the given reason key */
     private createErrorReturnValue(reasonKey: TranslationPaths): MultifactorAuthenticationPartialStatus<boolean, true> {
@@ -90,12 +92,14 @@ class MultifactorAuthenticationChallenge {
             return this.createErrorReturnValue('multifactorAuthentication.reason.error.signatureMissing');
         }
 
-        const authorizationResult = processScenario(VALUES.SCENARIO.AUTHORIZE_TRANSACTION, {
-            signedChallenge: this.auth.value,
-            transactionID: this.transactionID,
-        },
-          CONST.MULTI_FACTOR_AUTHENTICATION.FACTOR_COMBINATIONS.BIOMETRICS_AUTHENTICATION,
-          );
+        const authorizationResult = processScenario(
+            this.scenario,
+            {
+                ...this.params,
+                signedChallenge: this.auth.value,
+            },
+            VALUES.FACTOR_COMBINATIONS.BIOMETRICS_AUTHENTICATION,
+        );
 
         const {
             reason,

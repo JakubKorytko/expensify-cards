@@ -31,13 +31,11 @@ type MultifactorAuthenticationScenarioParameters = {
  */
 const MULTI_FACTOR_AUTHENTICATION_SCENARIOS = {
     [VALUES.SCENARIO.AUTHORIZE_TRANSACTION]: {
-        allowBiometrics: true,
-        allow2FA: true,
+        securityLevel: VALUES.SECURITY_LEVEL.BIOMETRICS_WITH_FALLBACK,
         action: authorizeTransaction,
     },
     [VALUES.SCENARIO.SETUP_BIOMETRICS]: {
-        allowBiometrics: false,
-        allow2FA: true,
+        securityLevel: VALUES.SECURITY_LEVEL.FALLBACK_ONLY,
         action: registerBiometrics,
     },
 } as const satisfies MultifactorAuthenticationScenarioMap;

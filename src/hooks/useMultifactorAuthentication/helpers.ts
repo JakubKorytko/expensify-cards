@@ -1,3 +1,4 @@
+import type {ValueOf} from 'type-fest';
 import {PrivateKeyStore, PublicKeyStore} from '@libs/MultifactorAuthentication/KeyStore';
 import type {
     MultifactorAuthenticationFactor,
@@ -7,7 +8,23 @@ import type {
     MultifactorAuthorizationFallbackScenarioParams,
 } from '@libs/MultifactorAuthentication/types';
 import CONST from '@src/CONST';
-import type {AuthTypeName, CreateMultifactorAuthenticationRecentStatus} from './types';
+import type {AuthTypeName, CreateMultifactorAuthenticationRecentStatus, MultifactorAuthenticationStatusKeyType} from './types';
+
+const failedStep = {
+    wasRecentStepSuccessful: false,
+    isRequestFulfilled: true,
+    requiredFactorForNextStep: undefined,
+};
+
+const EMPTY_MULTIFACTOR_AUTHENTICATION_STATUS: MultifactorAuthenticationStatus<boolean> = {
+    value: false,
+    reason: 'multifactorAuthentication.reason.generic.notRequested',
+    message: 'No request made yet',
+    title: 'No request made yet',
+    step: {
+        ...failedStep,
+    },
+};
 
 /**
  * Creates a MultifactorAuthenticationRecentStatus object that contains both the status and cancel method.
@@ -28,9 +45,7 @@ const createAuthorizeErrorStatus = (errorStatus: MultifactorAuthenticationPartia
     ...prevStatus,
     ...errorStatus,
     step: {
-        wasRecentStepSuccessful: false,
-        isRequestFulfilled: true,
-        requiredFactorForNextStep: undefined,
+        ...failedStep,
     },
 });
 
@@ -39,7 +54,7 @@ function areMultifactorAuthorizationFallbackParamsValid<T extends MultifactorAut
     params: Record<string, unknown>,
 ): params is MultifactorAuthorizationFallbackScenarioParams<T> {
     return Object.keys(params).every((key) => {
-        return CONST.MULTI_FACTOR_AUTHENTICATION.FACTOR_COMBINATIONS.TWO_FACTOR.find((factor) => CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS_REQUIREMENTS[factor].parameter === key);
+        return CONST.MULTI_FACTOR_AUTHENTICATION.FACTOR_COMBINATIONS.FALLBACK.find((factor) => CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS_REQUIREMENTS[factor].parameter === key);
     });
 }
 
@@ -156,6 +171,45 @@ function createRefreshStatusStatus(isMultifactorAuthenticationConfiguredValue: b
     });
 }
 
+const shouldAllowFallback = (securityLevel: ValueOf<typeof CONST.MULTI_FACTOR_AUTHENTICATION.SECURITY_LEVEL>) =>
+    securityLevel === CONST.MULTI_FACTOR_AUTHENTICATION.SECURITY_LEVEL.FALLBACK_ONLY || securityLevel === CONST.MULTI_FACTOR_AUTHENTICATION.SECURITY_LEVEL.BIOMETRICS_WITH_FALLBACK;
+
+const shouldAllowBiometrics = (securityLevel: ValueOf<typeof CONST.MULTI_FACTOR_AUTHENTICATION.SECURITY_LEVEL>) =>
+    securityLevel === CONST.MULTI_FACTOR_AUTHENTICATION.SECURITY_LEVEL.BIOMETRICS_ONLY || securityLevel === CONST.MULTI_FACTOR_AUTHENTICATION.SECURITY_LEVEL.BIOMETRICS_WITH_FALLBACK;
+
+// eslint-disable-next-line rulesdir/no-negated-variables
+const createBiometricsNotAllowedStatus = (authorization?: boolean): [MultifactorAuthenticationPartialStatus<boolean>, MultifactorAuthenticationStatusKeyType] => {
+    return [
+        {
+            step: {
+                ...failedStep,
+            },
+            value: false,
+            reason: 'multifactorAuthentication.reason.error.biometricsNotAllowed',
+        },
+        authorization ? CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION : CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION,
+    ];
+};
+
+// eslint-disable-next-line rulesdir/no-negated-variables
+const createFallbackNotAllowedStatus = (): [MultifactorAuthenticationPartialStatus<boolean>, MultifactorAuthenticationStatusKeyType] => {
+    return [
+        {
+            step: {
+                ...failedStep,
+            },
+            value: false,
+            reason: 'multifactorAuthentication.reason.error.fallbackNotAllowed',
+        },
+        CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION_FALLBACK,
+    ];
+};
+
+const convertResultIntoBoolean = (status: MultifactorAuthenticationStatus<unknown>): MultifactorAuthenticationStatus<boolean> => ({
+    ...status,
+    value: !!status.value,
+});
+
 /**
  * Collection of status creator functions for handling different multifactorial authentication states.
  * Each function builds a properly formatted status object for its specific case.
@@ -167,6 +221,11 @@ const Status = {
     createRegistrationResultStatus,
     createFulfillStatus,
     createRefreshStatusStatus,
+} as const;
+
+const MergedHooksStatus = {
+    createBiometricsNotAllowedStatus,
+    createFallbackNotAllowedStatus,
 } as const;
 
 /**
@@ -184,5 +243,10 @@ export {
     isBiometryConfigured,
     resetKeys,
     createAuthorizeErrorStatus,
+    shouldAllowFallback,
+    shouldAllowBiometrics,
+    convertResultIntoBoolean,
+    EMPTY_MULTIFACTOR_AUTHENTICATION_STATUS,
+    MergedHooksStatus,
     Status,
 };

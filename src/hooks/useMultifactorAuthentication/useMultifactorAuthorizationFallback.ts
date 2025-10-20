@@ -11,7 +11,7 @@ import useMultifactorAuthenticationStatus from './useMultifactorAuthenticationSt
  * Uses validate code and OTP for transaction authorization instead.
  */
 function useMultifactorAuthorizationFallback<T extends MultifactorAuthorizationFallbackScenario>(scenario: T): UseMultifactorAuthorizationFallback<T> {
-    const [status, setStatus] = useMultifactorAuthenticationStatus<number | undefined>(undefined, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION);
+    const [status, setStatus] = useMultifactorAuthenticationStatus<number | undefined>(undefined, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION_FALLBACK);
 
     /**
      * Verifies that all required authentication factors are provided.
@@ -23,9 +23,8 @@ function useMultifactorAuthorizationFallback<T extends MultifactorAuthorizationF
                 {
                     ...params,
                 },
-              CONST.MULTI_FACTOR_AUTHENTICATION.FACTOR_COMBINATIONS.TWO_FACTOR,
+                CONST.MULTI_FACTOR_AUTHENTICATION.FACTOR_COMBINATIONS.FALLBACK,
                 !!status.value,
-
             ),
         [status.value],
     );
@@ -65,7 +64,7 @@ function useMultifactorAuthorizationFallback<T extends MultifactorAuthorizationF
                     ...params,
                     ...(parameterName ? {[parameterName]: providedOrStoredFactor} : {}),
                 },
-              CONST.MULTI_FACTOR_AUTHENTICATION.FACTOR_COMBINATIONS.TWO_FACTOR,
+                CONST.MULTI_FACTOR_AUTHENTICATION.FACTOR_COMBINATIONS.FALLBACK,
                 !!status.value,
             );
 

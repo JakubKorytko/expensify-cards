@@ -112,11 +112,14 @@ function useBiometricsSetup(): UseBiometricsSetup {
             const {
                 step: {wasRecentStepSuccessful, isRequestFulfilled},
                 reason,
-            } = await processScenario(CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS, {
-                publicKey,
-                validateCode,
-            },
-              CONST.MULTI_FACTOR_AUTHENTICATION.FACTOR_COMBINATIONS.REGISTRATION);
+            } = await processScenario(
+                CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS,
+                {
+                    publicKey,
+                    validateCode,
+                },
+                CONST.MULTI_FACTOR_AUTHENTICATION.FACTOR_COMBINATIONS.REGISTRATION,
+            );
 
             const successMessage = 'multifactorAuthentication.reason.success.keyPairGenerated';
             const isCallSuccessful = wasRecentStepSuccessful && isRequestFulfilled;

@@ -1,5 +1,6 @@
 import {useCallback} from 'react';
 import Challenge from '@libs/MultifactorAuthentication/Challenge';
+import type {MultifactorAuthenticationScenario, MultifactorAuthorizationFallbackScenario} from '@libs/MultifactorAuthentication/types';
 import CONST from '@src/CONST';
 import {createAuthorizeErrorStatus} from './helpers';
 import type {MultifactorAuthorization, UseMultifactorAuthorization} from './types';
@@ -15,7 +16,7 @@ import useMultifactorAuthenticationStatus from './useMultifactorAuthenticationSt
  *
  * Returns current authorization status and methods to control the flow.
  */
-function useMultifactorAuthorization(): UseMultifactorAuthorization {
+function useMultifactorAuthorization<T extends MultifactorAuthenticationScenario>(scenario: T): UseMultifactorAuthorization<T> {
     const [status, setStatus] = useMultifactorAuthenticationStatus(false, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION);
 
     /**
@@ -26,9 +27,10 @@ function useMultifactorAuthorization(): UseMultifactorAuthorization {
      *
      * Will trigger a multifactorial authentication prompt if no private key status is provided.
      */
-    const authorize: MultifactorAuthorization = useCallback(
-        async ({transactionID, chainedPrivateKeyStatus}) => {
-            const challenge = new Challenge(transactionID);
+    const authorize: MultifactorAuthorization<T> = useCallback(
+        async (params) => {
+            const {chainedPrivateKeyStatus} = params;
+            const challenge = new Challenge(scenario, params);
 
             const requestStatus = await challenge.request();
             if (!requestStatus.value) {
@@ -51,7 +53,7 @@ function useMultifactorAuthorization(): UseMultifactorAuthorization {
                 },
             });
         },
-        [setStatus],
+        [scenario, setStatus],
     );
 
     /**

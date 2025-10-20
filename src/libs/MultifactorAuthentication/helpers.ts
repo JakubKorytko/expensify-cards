@@ -1,5 +1,5 @@
+import type {ValueOf} from 'type-fest';
 import type {TranslationPaths} from '@src/languages/types';
-import type {ValueOf} from "type-fest";
 import MULTI_FACTOR_AUTHENTICATION_SCENARIOS from './scenarios';
 import type {
     AllMultifactorAuthenticationFactors,
@@ -125,12 +125,9 @@ async function processMultifactorAuthenticationScenario<T extends MultifactorAut
     scenario: T,
     params: MultifactorAuthenticationScenarioParams<T>,
     factorsCombination: ValueOf<typeof VALUES.FACTOR_COMBINATIONS>,
-isStoredFactorVerified?: boolean,
-    // multifactorAuthentication = false,
+    isStoredFactorVerified?: boolean,
 ): Promise<MultifactorAuthenticationPartialStatus<number | undefined>> {
     const factorsCheckResult = areMultifactorAuthenticationFactorsSufficient(params, factorsCombination, isStoredFactorVerified);
-
-    console.log('xDDDDDDD?', factorsCheckResult);
 
     const currentScenario = MULTI_FACTOR_AUTHENTICATION_SCENARIOS[scenario] as MultifactorAuthenticationScenarioMap[T];
 

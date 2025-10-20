@@ -92,8 +92,11 @@ export default function useMultifactorAuthenticationStatus<T>(
      * for immediate use, though the status value from the hook can be used for reactive updates.
      */
     const setStatus: SetMultifactorAuthenticationStatus<T> = useCallback(
-        (partialStatus) => {
-            const isChallengeType = type === CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION;
+        (partialStatus, overwriteType) => {
+            const isChallengeType = !![CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION_FALLBACK].find(
+                (scenarioType) => scenarioType === (overwriteType ?? type),
+            );
+
             const state = typeof partialStatus === 'function' ? partialStatus(previousStatus.current) : partialStatus;
 
             const success = successSource.current ? successSource.current(state) : !!state.step.wasRecentStepSuccessful;

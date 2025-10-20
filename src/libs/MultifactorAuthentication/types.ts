@@ -92,7 +92,7 @@ type MultifactorAuthenticationScenario = ValueOf<typeof VALUES.SCENARIO>;
  */
 type MultifactorAuthorizationFallbackScenario = ValueOf<{
     [K in keyof MultifactorAuthenticationScenarioConfig as MultifactorAuthenticationScenarioConfig[K] extends {
-        allow2FA: true;
+        securityLevel: typeof VALUES.SECURITY_LEVEL.FALLBACK_ONLY | typeof VALUES.SECURITY_LEVEL.BIOMETRICS_WITH_FALLBACK;
     }
         ? K
         : never]: K;
@@ -167,8 +167,7 @@ type MultifactorAuthenticationScenarioMethod<T extends MultifactorAuthentication
 
 type MultifactorAuthenticationScenarioData<T extends MultifactorAuthenticationScenario> = {
     action: MultifactorAuthenticationScenarioMethod<T>;
-    allow2FA: boolean;
-    allowBiometrics: boolean;
+    securityLevel: ValueOf<typeof VALUES.SECURITY_LEVEL>;
 };
 
 /**
@@ -187,9 +186,7 @@ type MultifactorAuthenticationResponseTranslationPath = typeof VALUES.RESPONSE_T
 
 type MultifactorAuthenticationKeyType = ValueOf<typeof VALUES.KEY_ALIASES>;
 
-export type {
-    MultifactorAuthenticationScenarioParameters
-} from "./scenarios"
+export type {MultifactorAuthenticationScenarioParameters} from './scenarios';
 
 export type {
     MultifactorAuthenticationFactor,
@@ -208,4 +205,5 @@ export type {
     MultifactorAuthenticationScenarioResponseWithSuccess,
     MultifactorAuthenticationStatus,
     MultifactorAuthenticationPartialStatus,
+    MultifactorAuthenticationScenarioAdditionalParams,
 };

@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {View} from 'react-native';
 import useLocalize from '@hooks/useLocalize';
-import useBiometricsSetup from '@hooks/useMultifactorAuthentication/useBiometricsSetup';
+import useMultifactorAuthentication from '@hooks/useMultifactorAuthentication';
 import CONST from '@src/CONST';
 import styles from '@src/styles';
 import InfoModal from './Modals/InfoModal';
@@ -11,7 +11,7 @@ import Text from './Text';
 
 function BiometricsSetupScreen() {
     const {translate} = useLocalize();
-    const BiometricsSetup = useBiometricsSetup();
+    const BiometricsSetup = useMultifactorAuthentication(CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS);
     const [showModal, setShowModal] = useState<boolean>(false);
 
     const authorizeWithModal = async (validateCode?: number) => {
