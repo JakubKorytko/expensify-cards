@@ -89,6 +89,8 @@ const translations = {
         /** User input prompts during multifactorial authentication flows */
         provideValidateCode: 'Enter your verification code to continue',
         provideOTPCode: 'Enter your one-time password to continue',
+        softPromptTitle: 'Verify yourself with your face or fingerprint',
+        softPromptDescription: 'Enable quick, secure verification using your face or fingerprint - no passwords or codes required.',
     },
     // ...
 };

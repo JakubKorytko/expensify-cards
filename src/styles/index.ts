@@ -53,6 +53,9 @@ const styles = {
     inputContainer: {
         ...bottomSheetBase,
     },
+    softPromptContainer: {
+        ...bottomSheetBase,
+    },
     gap15: {
         gap: 15,
     },
@@ -99,6 +102,16 @@ const styles = {
         backgroundColor: '#E6E1DA',
         paddingVertical: 9,
     },
+    grayButton: {
+        ...buttonContainerBase,
+        paddingVertical: 10,
+        backgroundColor: '#E6E1DA',
+        width: '100%',
+    },
+    grayButtonText: {
+        ...boldTextBase,
+        fontSize: 15,
+    },
     buttonText: {
         ...boldText11,
     },
@@ -133,6 +146,11 @@ const styles = {
     },
     hugeText: {
         fontSize: 17,
+        fontWeight: 'bold',
+    },
+    text: {
+        fontSize: 14,
+        color: '#424242',
         fontWeight: 'bold',
     },
     buttonContainer: {

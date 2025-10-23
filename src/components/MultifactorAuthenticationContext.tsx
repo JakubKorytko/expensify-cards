@@ -15,6 +15,7 @@ const MultifactorAuthenticationContext = createContext<UseMultifactorAuthenticat
     revoke: () => Promise.resolve(EMPTY_MULTIFACTOR_AUTHENTICATION_STATUS),
     cancel: () => EMPTY_MULTIFACTOR_AUTHENTICATION_STATUS,
     done: () => EMPTY_MULTIFACTOR_AUTHENTICATION_STATUS,
+    softPromptDecision: () => Promise.resolve(EMPTY_MULTIFACTOR_AUTHENTICATION_STATUS),
     success: undefined,
 });
 

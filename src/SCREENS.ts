@@ -8,6 +8,7 @@ const SCREENS = {
     AuthorizeTransactionPage: React.lazy(() => import('./pages/AuthorizeTransactionPage')),
     SetupBiometricsPage: React.lazy(() => import('./pages/SetupBiometricsPage')),
     NotFoundPage: React.lazy(() => import('./pages/NotFoundPage')),
+    SoftPromptPage: React.lazy(() => import('./pages/SoftPromptPage')),
 } as const;
 
 export default SCREENS;

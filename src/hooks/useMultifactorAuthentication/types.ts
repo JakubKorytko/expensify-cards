@@ -118,6 +118,7 @@ type UseMultifactorAuthentication = MultifactorAuthenticationInfo &
         cancel: () => MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>;
         done: () => MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>;
         success: undefined | boolean;
+        softPromptDecision: (accepted: boolean) => Promise<MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>>;
     };
 
 type MultifactorAuthenticationScenarioStatus = {
