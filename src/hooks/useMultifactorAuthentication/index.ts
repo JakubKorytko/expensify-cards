@@ -1,117 +1,211 @@
 import {useCallback, useMemo, useRef} from 'react';
 import MULTI_FACTOR_AUTHENTICATION_SCENARIOS from '@libs/MultifactorAuthentication/scenarios';
-import type {MultifactorAuthenticationScenario, MultifactorAuthenticationScenarioParams, MultifactorAuthenticationStatus} from '@libs/MultifactorAuthentication/types';
+import type {
+    AllMultifactorAuthenticationFactors,
+    MultifactorAuthenticationPartialStatus,
+    MultifactorAuthenticationScenario,
+    MultifactorAuthenticationScenarioAdditionalParams,
+    MultifactorAuthenticationScenarioParams,
+    MultifactorAuthenticationStatus,
+    MultifactorAuthorizationFallbackScenario,
+    MultifactorAuthorizationFallbackScenarioParams,
+} from '@libs/MultifactorAuthentication/types';
+import {useNavigation} from '@src/components/NavigationMock';
 import CONST from '@src/CONST';
-import {convertResultIntoBoolean, MergedHooksStatus, shouldAllowBiometrics, shouldAllowFallback} from './helpers';
-import type {MultifactorAuthenticationStatusKeyType, Register} from './types';
+import type ROUTES from '@src/ROUTES';
+import {areMultifactorAuthorizationFallbackParamsValid, convertResultIntoMFAStatus, MergedHooksStatus, shouldAllowBiometrics, shouldAllowFallback} from './helpers';
+import type {MultifactorAuthenticationScenarioStatus, Register, UseMultifactorAuthentication} from './types';
 import useBiometricsSetup from './useBiometricsSetup';
 import useMultifactorAuthenticationStatus from './useMultifactorAuthenticationStatus';
 import useMultifactorAuthorization from './useMultifactorAuthorization';
 import useMultifactorAuthorizationFallback from './useMultifactorAuthorizationFallback';
 
-function useMultifactorAuthentication<T extends MultifactorAuthenticationScenario>(scenario: T) {
+function useMultifactorAuthentication(): UseMultifactorAuthentication {
     const BiometricsSetup = useBiometricsSetup();
-    const MultifactorAuthorizationFallback = useMultifactorAuthorizationFallback(scenario);
-    const MultifactorAuthorization = useMultifactorAuthorization(scenario);
-    const [mergedStatus, setMergedStatus] = useMultifactorAuthenticationStatus<boolean>(false, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.NONE);
-    const lastScenarioType = useRef<MultifactorAuthenticationStatusKeyType>(CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.NONE);
+    const MultifactorAuthorizationFallback = useMultifactorAuthorizationFallback();
+    const MultifactorAuthorization = useMultifactorAuthorization();
+    const [mergedStatus, setMergedStatus] = useMultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>(
+        {
+            scenario: undefined,
+            type: CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.NONE,
+        },
+        CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.NONE,
+    );
+    const {navigate, route} = useNavigation();
+    const success = useRef<boolean | undefined>(undefined);
 
-    const allowedMethods = useMemo(() => {
+    const navigateWithClear = useCallback(
+        (status: MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>) => {
+            const {
+                step,
+                value: {scenario},
+            } = status;
+
+            const scenarioRoute: keyof typeof ROUTES = scenario ? MULTI_FACTOR_AUTHENTICATION_SCENARIOS[scenario].route : 'notFound';
+
+            let shouldClear = false;
+
+            if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE && route !== 'magicCode') {
+                navigate('magicCode');
+                shouldClear = true;
+            } else if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.OTP && route !== 'otp') {
+                navigate('otp');
+                shouldClear = true;
+            } else if (step.isRequestFulfilled) {
+                if (step.wasRecentStepSuccessful && route !== 'success') {
+                    navigate('success');
+                    success.current = true;
+                } else if (step.wasRecentStepSuccessful === false && route !== 'failure') {
+                    navigate('failure');
+                    success.current = false;
+                } else if (step.wasRecentStepSuccessful === undefined && route !== scenarioRoute) {
+                    navigate(scenarioRoute);
+                    shouldClear = true;
+                }
+            }
+
+            if (shouldClear) {
+                success.current = undefined;
+            }
+        },
+        [navigate, route],
+    );
+
+    const setStatus = useCallback(
+        (...args: Parameters<typeof setMergedStatus>) => {
+            const [status, typeOverride] = args;
+
+            const merged = setMergedStatus(status, typeOverride ?? (typeof status === 'function' ? undefined : status?.value.type));
+
+            navigateWithClear(merged);
+
+            return merged;
+        },
+        [navigateWithClear, setMergedStatus],
+    );
+
+    const allowedMethods = useCallback(<T extends MultifactorAuthenticationScenario>(scenario: T) => {
         const {securityLevel} = MULTI_FACTOR_AUTHENTICATION_SCENARIOS[scenario];
 
         return {
             fallback: shouldAllowFallback(securityLevel),
             biometrics: shouldAllowBiometrics(securityLevel),
         };
-    }, [scenario]);
+    }, []);
 
     const register = useCallback(
-        async (params) => {
+        async <T extends MultifactorAuthorizationFallbackScenario>(
+            params: MultifactorAuthenticationScenarioParams<T> & {
+                chainedWithAuthorization?: boolean;
+            },
+            potentialScenario?: T,
+        ) => {
             const {chainedWithAuthorization} = params;
+            const scenario = potentialScenario ?? CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS;
 
-            if (!allowedMethods.biometrics) {
-                return setMergedStatus(...MergedHooksStatus.createBiometricsNotAllowedStatus());
+            if (!allowedMethods(scenario).biometrics) {
+                return setStatus(...MergedHooksStatus.createBiometricsNotAllowedStatus(scenario, params));
             }
-
-            lastScenarioType.current = CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION;
             const result = await BiometricsSetup.register(params);
-            const mergedResult = setMergedStatus(convertResultIntoBoolean(result), CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION);
+            const status = convertResultIntoMFAStatus(result, scenario, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION, params);
+            const mergedResult = setStatus(status);
             if (chainedWithAuthorization) {
                 return {
                     ...mergedResult,
                     value: result.value,
-                };
+                } as MultifactorAuthenticationStatus<string>;
             }
             return mergedResult;
         },
-        [BiometricsSetup, allowedMethods.biometrics, setMergedStatus],
-    ) as Register;
+        [BiometricsSetup, allowedMethods, setStatus],
+    ) as Register<MultifactorAuthenticationScenarioStatus>;
 
     const authorizeFallback = useCallback(
-        async (params: MultifactorAuthenticationScenarioParams<T>) => {
-            if (!allowedMethods.fallback) {
-                return setMergedStatus(...MergedHooksStatus.createFallbackNotAllowedStatus());
+        async <T extends MultifactorAuthorizationFallbackScenario>(scenario: T, params: MultifactorAuthorizationFallbackScenarioParams<T>) => {
+            if (!allowedMethods(scenario).fallback) {
+                return setStatus(...MergedHooksStatus.createFallbackNotAllowedStatus(scenario, params));
             }
-
-            lastScenarioType.current = CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION_FALLBACK;
-            const result = await MultifactorAuthorizationFallback.authorize(params);
-            return setMergedStatus(convertResultIntoBoolean(result), CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION_FALLBACK);
+            const result = await MultifactorAuthorizationFallback.authorize(scenario, params);
+            return setStatus(convertResultIntoMFAStatus(result, scenario, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION_FALLBACK, params));
         },
-        [MultifactorAuthorizationFallback, allowedMethods.fallback, setMergedStatus],
+        [MultifactorAuthorizationFallback, allowedMethods, setStatus],
     );
 
     const authorize = useCallback(
-        async (
+        async <T extends MultifactorAuthenticationScenario>(
+            scenario: T,
             params: MultifactorAuthenticationScenarioParams<T> & {
-                chainedPrivateKeyStatus?: MultifactorAuthenticationStatus<string | null> | undefined;
+                chainedPrivateKeyStatus?: MultifactorAuthenticationPartialStatus<string | null> | undefined;
             },
         ) => {
-            if (!allowedMethods.biometrics) {
-                return setMergedStatus(...MergedHooksStatus.createBiometricsNotAllowedStatus(true));
+            if (!allowedMethods(scenario).biometrics) {
+                return setStatus(...MergedHooksStatus.createBiometricsNotAllowedStatus(scenario, params, true));
             }
-            lastScenarioType.current = CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION;
-            return setMergedStatus(await MultifactorAuthorization.authorize(params), CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION);
+            return setStatus(
+                convertResultIntoMFAStatus(await MultifactorAuthorization.authorize(scenario, params), scenario, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION, params),
+            );
         },
-        [MultifactorAuthorization, allowedMethods.biometrics, setMergedStatus],
+        [MultifactorAuthorization, allowedMethods, setStatus],
     );
 
     const cancel = useCallback(() => {
-        const lastScenario = lastScenarioType.current;
-        lastScenarioType.current = CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.NONE;
-        if (lastScenario === CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION) {
-            return setMergedStatus(MultifactorAuthorization.cancel());
+        const {scenario, type} = mergedStatus.value;
+
+        if (type === CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION) {
+            return setStatus(convertResultIntoMFAStatus(MultifactorAuthorization.cancel(), scenario, type, false));
         }
-        if (lastScenario === CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION_FALLBACK) {
-            return setMergedStatus(convertResultIntoBoolean(MultifactorAuthorizationFallback.cancel()));
+        if (type === CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION_FALLBACK) {
+            return setStatus(convertResultIntoMFAStatus(MultifactorAuthorizationFallback.cancel(), scenario, type, false));
         }
 
-        return setMergedStatus(BiometricsSetup.cancel());
-    }, [BiometricsSetup, MultifactorAuthorization, MultifactorAuthorizationFallback, setMergedStatus]);
+        return setStatus(convertResultIntoMFAStatus(BiometricsSetup.cancel(), scenario, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION, false));
+    }, [BiometricsSetup, MultifactorAuthorization, MultifactorAuthorizationFallback, mergedStatus.value, setStatus]);
 
     const process = useCallback(
-        async (params: MultifactorAuthenticationScenarioParams<T>): Promise<MultifactorAuthenticationStatus<boolean | undefined>> => {
-            if (!BiometricsSetup.deviceSupportBiometrics) {
-                return authorizeFallback(params);
+        async <T extends MultifactorAuthenticationScenario>(
+            scenario: T,
+            params?: MultifactorAuthenticationScenarioParams<T>,
+        ): Promise<MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>> => {
+            if (scenario === CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS) {
+                return setStatus(convertResultIntoMFAStatus(await register(params ?? {}, scenario), scenario, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION, false));
             }
 
-            const {validateCode} = params;
+            if (!params) {
+                return setStatus((prevStatus) => MergedHooksStatus.badRequestStatus(prevStatus));
+            }
+
+            if (!BiometricsSetup.deviceSupportBiometrics || !allowedMethods(scenario).biometrics) {
+                if (!areMultifactorAuthorizationFallbackParamsValid(scenario, params)) {
+                    return setStatus((prevStatus) => MergedHooksStatus.badRequestStatus(prevStatus));
+                }
+
+                return authorizeFallback(scenario, params);
+            }
 
             if (!BiometricsSetup.isBiometryConfigured) {
                 /** Multi-factor authentication is not configured, let's do that first */
                 /** Run the setup method */
-                const requestStatus = await register({
-                    validateCode,
-                    chainedWithAuthorization: true,
-                });
 
-                return authorize({
+                const requestStatus = await register(
+                    {
+                        ...params,
+                        chainedWithAuthorization: true,
+                    },
+                    scenario,
+                );
+
+                if (!requestStatus.step.wasRecentStepSuccessful) {
+                    return setStatus(convertResultIntoMFAStatus(requestStatus, scenario, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION, params));
+                }
+
+                return authorize(scenario, {
                     ...params,
                     chainedPrivateKeyStatus: requestStatus,
                 });
             }
 
             /** Multi-factor authentication is configured already, let's do the challenge logic */
-            const result = await authorize({
+            const result = await authorize(scenario, {
                 ...params,
                 chainedPrivateKeyStatus: undefined,
             });
@@ -122,22 +216,67 @@ function useMultifactorAuthentication<T extends MultifactorAuthenticationScenari
 
             return result;
         },
-        [BiometricsSetup, authorize, authorizeFallback, register],
+        [BiometricsSetup, allowedMethods, authorize, authorizeFallback, register, setStatus],
     );
+
+    const provideFactor = useCallback(
+        async (params: Partial<AllMultifactorAuthenticationFactors>) => {
+            const {scenario, payload} = mergedStatus.value;
+            const {isRequestFulfilled} = mergedStatus.step;
+
+            if (!scenario || isRequestFulfilled || !isPayloadSufficient(scenario, payload)) {
+                return setStatus(MergedHooksStatus.badRequestStatus(mergedStatus));
+            }
+
+            return process(scenario, {
+                ...payload,
+                ...params,
+            });
+        },
+        [mergedStatus, process, setStatus],
+    );
+
+    const done = useCallback(() => {
+        const {step} = mergedStatus;
+
+        const result = cancel();
+        success.current = !!step.wasRecentStepSuccessful && step.isRequestFulfilled;
+        return result;
+    }, [cancel, mergedStatus]);
 
     return useMemo(
         () => ({
-            ...mergedStatus,
             ...mergedStatus.step,
+            title: mergedStatus.title,
+            message: mergedStatus.message,
             isBiometryConfigured: BiometricsSetup.isBiometryConfigured,
             deviceSupportBiometrics: BiometricsSetup.deviceSupportBiometrics,
             process,
-            revoke: BiometricsSetup.revoke,
-            register: BiometricsSetup.register,
+            revoke: async () =>
+                setStatus(
+                    convertResultIntoMFAStatus(
+                        await BiometricsSetup.revoke(),
+                        CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS,
+                        CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION,
+                        false,
+                    ),
+                    CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.NONE,
+                ),
+            register: (params: Parameters<Register>[0]) => register({...params, chainedWithAuthorization: false}, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS),
+            provideFactor,
             cancel,
+            done,
+            success: success.current,
         }),
-        [BiometricsSetup.deviceSupportBiometrics, BiometricsSetup.isBiometryConfigured, BiometricsSetup.register, BiometricsSetup.revoke, cancel, mergedStatus, process],
+        [BiometricsSetup, cancel, done, mergedStatus.message, mergedStatus.step, mergedStatus.title, process, provideFactor, register, setStatus],
     );
+}
+
+function isPayloadSufficient(
+    scenario: MultifactorAuthenticationScenario,
+    payload: MultifactorAuthenticationScenarioAdditionalParams<MultifactorAuthenticationScenario> | undefined,
+): payload is MultifactorAuthenticationScenarioAdditionalParams<MultifactorAuthenticationScenario> {
+    return !!payload || scenario === CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS;
 }
 
 export default useMultifactorAuthentication;

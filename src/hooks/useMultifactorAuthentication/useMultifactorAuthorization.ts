@@ -1,9 +1,9 @@
 import {useCallback} from 'react';
 import Challenge from '@libs/MultifactorAuthentication/Challenge';
-import type {MultifactorAuthenticationScenario, MultifactorAuthorizationFallbackScenario} from '@libs/MultifactorAuthentication/types';
+import type {MultifactorAuthenticationScenario} from '@libs/MultifactorAuthentication/types';
 import CONST from '@src/CONST';
 import {createAuthorizeErrorStatus} from './helpers';
-import type {MultifactorAuthorization, UseMultifactorAuthorization} from './types';
+import type {MultifactorAuthorization} from './types';
 import useMultifactorAuthenticationStatus from './useMultifactorAuthenticationStatus';
 
 /**
@@ -16,7 +16,7 @@ import useMultifactorAuthenticationStatus from './useMultifactorAuthenticationSt
  *
  * Returns current authorization status and methods to control the flow.
  */
-function useMultifactorAuthorization<T extends MultifactorAuthenticationScenario>(scenario: T): UseMultifactorAuthorization<T> {
+function useMultifactorAuthorization() {
     const [status, setStatus] = useMultifactorAuthenticationStatus(false, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION);
 
     /**
@@ -27,19 +27,19 @@ function useMultifactorAuthorization<T extends MultifactorAuthenticationScenario
      *
      * Will trigger a multifactorial authentication prompt if no private key status is provided.
      */
-    const authorize: MultifactorAuthorization<T> = useCallback(
-        async (params) => {
+    const authorize = useCallback(
+        async <T extends MultifactorAuthenticationScenario>(scenario: T, params: Parameters<MultifactorAuthorization<T>>[1]): ReturnType<MultifactorAuthorization<T>> => {
             const {chainedPrivateKeyStatus} = params;
             const challenge = new Challenge(scenario, params);
 
             const requestStatus = await challenge.request();
             if (!requestStatus.value) {
-                setStatus(createAuthorizeErrorStatus(requestStatus));
+                return setStatus(createAuthorizeErrorStatus(requestStatus));
             }
 
             const signature = await challenge.sign(chainedPrivateKeyStatus);
             if (!signature.value) {
-                setStatus(createAuthorizeErrorStatus(signature));
+                return setStatus(createAuthorizeErrorStatus(signature));
             }
 
             const result = await challenge.send();
@@ -53,7 +53,7 @@ function useMultifactorAuthorization<T extends MultifactorAuthenticationScenario
                 },
             });
         },
-        [scenario, setStatus],
+        [setStatus],
     );
 
     /**
@@ -66,7 +66,7 @@ function useMultifactorAuthorization<T extends MultifactorAuthenticationScenario
             step: {
                 isRequestFulfilled: true,
                 requiredFactorForNextStep: undefined,
-                wasRecentStepSuccessful: !prevStatus.step.requiredFactorForNextStep && prevStatus.step.wasRecentStepSuccessful,
+                wasRecentStepSuccessful: undefined,
             },
         }));
     }, [setStatus]);

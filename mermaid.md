@@ -55,7 +55,7 @@ sequenceDiagram
     box rgba(99,66,33,0.5) App Component Stack
         participant MFACTX as MultifactorAuthenticationContext
         participant RHPRHP as RHP Navigator
-        participant Screen as Authorize Transaction Flow Screen
+        participant Screen as Authorize AuthorizeTransactionPage Flow Screen
         participant Final as Success/Failure Screen
     end
 
@@ -100,7 +100,7 @@ sequenceDiagram
     box rgba(99,66,33,0.5) App Component Stack
         participant MFACTX as MultifactorAuthenticationContext
         participant RHPRHP as RHP Navigator
-        participant Screen as Authorize Transaction Flow Screen
+        participant Screen as Authorize AuthorizeTransactionPage Flow Screen
         participant Final as Success/Failure Screen
     end
 
@@ -144,7 +144,7 @@ sequenceDiagram
     box rgba(99,66,33,0.5) App Component Stack
         participant MFACTX as MultifactorAuthenticationContext
         participant RHPRHP as RHP Navigator
-        participant Screen as Authorize Transaction Flow Screen
+        participant Screen as Authorize AuthorizeTransactionPage Flow Screen
         participant Final as Success/Failure Screen
     end
 
@@ -194,7 +194,7 @@ sequenceDiagram
     box rgba(99,66,33,0.5) App Component Stack
         participant MFACTX as MultifactorAuthenticationContext
         participant RHPRHP as RHP Navigator
-        participant Screen as Authorize Transaction Flow Screen
+        participant Screen as Authorize AuthorizeTransactionPage Flow Screen
         participant Final as Success/Failure Screen
     end
 

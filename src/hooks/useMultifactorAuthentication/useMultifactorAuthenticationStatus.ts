@@ -60,17 +60,33 @@ export default function useMultifactorAuthenticationStatus<T>(
 
     /** Creates a formatted status object based on authentication data and result */
     const createStatus = useCallback(
-        (partialStatus: MultifactorAuthenticationPartialStatus<T>, success: boolean, authorize?: boolean): MultifactorAuthenticationStatus<T> => {
+        (partialStatus: MultifactorAuthenticationPartialStatus<T>, success: boolean, scenarioType?: MultifactorAuthenticationStatusKeyType): MultifactorAuthenticationStatus<T> => {
+            const isAuthorization = !![CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION_FALLBACK].find(
+                (scType) => scenarioType === scType,
+            );
+            const isAuthentication = scenarioType === CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION;
+
             const {reason} = partialStatus;
             const typeName = getAuthTypeName(partialStatus);
-            const message = translate(reason);
+            const oriMessage = translate(reason);
             const statusType = success ? 'success' : 'failed';
+
+            let message;
+            let title;
+
+            if (!isAuthorization && !isAuthentication) {
+                message = translate(reason);
+                title = translate(`multifactorAuthentication.statusMessage.${success ? 'success' : 'failed'}TitleGeneral`);
+            } else {
+                message = translate(`multifactorAuthentication.statusMessage.${statusType}Message`, {authorization: isAuthorization, because: success ? typeName : oriMessage});
+                title = translate(`multifactorAuthentication.statusMessage.${statusType}Title`, {authorization: isAuthorization});
+            }
 
             return {
                 ...partialStatus,
                 typeName,
-                message: translate(`multifactorAuthentication.statusMessage.${statusType}Message`, {authorization: authorize, because: success ? typeName : message}),
-                title: translate(`multifactorAuthentication.statusMessage.${statusType}Title`, {authorization: authorize}),
+                message,
+                title,
             };
         },
         [translate],
@@ -93,15 +109,11 @@ export default function useMultifactorAuthenticationStatus<T>(
      */
     const setStatus: SetMultifactorAuthenticationStatus<T> = useCallback(
         (partialStatus, overwriteType) => {
-            const isChallengeType = !![CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION_FALLBACK].find(
-                (scenarioType) => scenarioType === (overwriteType ?? type),
-            );
-
             const state = typeof partialStatus === 'function' ? partialStatus(previousStatus.current) : partialStatus;
 
             const success = successSource.current ? successSource.current(state) : !!state.step.wasRecentStepSuccessful;
 
-            const createdStatus = createStatus(state, success, isChallengeType);
+            const createdStatus = createStatus(state, success, overwriteType ?? type);
 
             setStatusSource(createdStatus);
             previousStatus.current = createdStatus;

@@ -1,20 +1,24 @@
 import {useState} from 'react';
 import {TextInput, View} from 'react-native';
+import useLocalize from '@hooks/useLocalize';
+import HeaderWithBackButton from '@src/components/HeaderWithBackButton';
+import {useMultifactorAuthenticationContext} from '@src/components/MultifactorAuthenticationContext';
 import {Pressable} from '@src/components/Pressable';
 import Text from '@src/components/Text';
 import styles from '@src/styles';
 
-type InputModalProps = {
-    onSubmit: (validateCode: number) => void;
-    title: string;
-};
-
-function InputModal({onSubmit, title}: InputModalProps) {
+function MagicCodePage() {
     const [inputValue, setInputValue] = useState('');
+    const {translate} = useLocalize();
+    const {provideFactor} = useMultifactorAuthenticationContext();
+    const title = translate(`multifactorAuthentication.provideValidateCode`);
 
     return (
         <View style={styles.inputContainer}>
-            <Text style={styles.hugeText}>{title}</Text>
+            <View>
+                <HeaderWithBackButton />
+                <Text style={styles.hugeText}>{title}</Text>
+            </View>
             <View style={styles.innerInputContainer}>
                 <TextInput
                     accessibilityLabel="Text input field"
@@ -28,7 +32,11 @@ function InputModal({onSubmit, title}: InputModalProps) {
                 <Pressable
                     accessibilityRole="button"
                     style={styles.greenButton}
-                    onPress={() => onSubmit(Number(inputValue))}
+                    onPress={() => {
+                        provideFactor({
+                            validateCode: Number(inputValue),
+                        });
+                    }}
                 >
                     <Text style={styles.greenButtonText}>Authorize</Text>
                 </Pressable>
@@ -37,6 +45,6 @@ function InputModal({onSubmit, title}: InputModalProps) {
     );
 }
 
-InputModal.displayName = 'InputModal';
+MagicCodePage.displayName = 'MagicCodePage';
 
-export default InputModal;
+export default MagicCodePage;

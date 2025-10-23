@@ -4,11 +4,14 @@ import type {
     MultifactorAuthenticationFactor,
     MultifactorAuthenticationPartialStatus,
     MultifactorAuthenticationScenario,
+    MultifactorAuthenticationScenarioAdditionalParams,
+    MultifactorAuthenticationScenarioParams,
     MultifactorAuthenticationStatus,
+    MultifactorAuthorizationFallbackScenario,
     MultifactorAuthorizationFallbackScenarioParams,
 } from '@libs/MultifactorAuthentication/types';
 import CONST from '@src/CONST';
-import type {AuthTypeName, CreateMultifactorAuthenticationRecentStatus, MultifactorAuthenticationStatusKeyType} from './types';
+import type {AuthTypeName, MultifactorAuthenticationScenarioStatus, MultifactorAuthenticationStatusKeyType} from './types';
 
 const failedStep = {
     wasRecentStepSuccessful: false,
@@ -16,8 +19,10 @@ const failedStep = {
     requiredFactorForNextStep: undefined,
 };
 
-const EMPTY_MULTIFACTOR_AUTHENTICATION_STATUS: MultifactorAuthenticationStatus<boolean> = {
-    value: false,
+const EMPTY_MULTIFACTOR_AUTHENTICATION_STATUS: MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus> = {
+    value: {
+        scenario: undefined,
+    },
     reason: 'multifactorAuthentication.reason.generic.notRequested',
     message: 'No request made yet',
     title: 'No request made yet',
@@ -25,16 +30,6 @@ const EMPTY_MULTIFACTOR_AUTHENTICATION_STATUS: MultifactorAuthenticationStatus<b
         ...failedStep,
     },
 };
-
-/**
- * Creates a MultifactorAuthenticationRecentStatus object that contains both the status and cancel method.
- * The status includes whether the most recent multifactorial authentication step was successful.
- * The cancel method is used to cancel the multifactorial authentication operation.
- */
-const createRecentStatus: CreateMultifactorAuthenticationRecentStatus = (result, cancel) => ({
-    status: {...result, value: !!result.step.wasRecentStepSuccessful},
-    cancel,
-});
 
 /**
  * Creates a status object for failed multifactorial authentication authorization attempts.
@@ -49,12 +44,14 @@ const createAuthorizeErrorStatus = (errorStatus: MultifactorAuthenticationPartia
     },
 });
 
-function areMultifactorAuthorizationFallbackParamsValid<T extends MultifactorAuthenticationScenario>(
+function areMultifactorAuthorizationFallbackParamsValid<T extends MultifactorAuthorizationFallbackScenario>(
     scenario: T,
     params: Record<string, unknown>,
 ): params is MultifactorAuthorizationFallbackScenarioParams<T> {
     return Object.keys(params).every((key) => {
-        return CONST.MULTI_FACTOR_AUTHENTICATION.FACTOR_COMBINATIONS.FALLBACK.find((factor) => CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS_REQUIREMENTS[factor].parameter === key);
+        return CONST.MULTI_FACTOR_AUTHENTICATION.FACTOR_COMBINATIONS.BIOMETRICS_AUTHENTICATION.find(
+            (factor) => CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS_REQUIREMENTS[factor].parameter !== key,
+        );
     });
 }
 
@@ -147,16 +144,14 @@ function createRegistrationResultStatus(partialStatus: Partial<MultifactorAuthen
  * Success depends on having no pending requirements and previous success.
  * Returns unchanged status if already fulfilled.
  */
-function createFulfillStatus(prevStatus: MultifactorAuthenticationStatus<boolean>): MultifactorAuthenticationStatus<boolean> {
-    if (prevStatus.step.isRequestFulfilled) {
-        return prevStatus;
-    }
-
-    const wasSuccessful = !prevStatus.step.requiredFactorForNextStep && !!prevStatus.step.wasRecentStepSuccessful;
-
+function createCancelStatus(prevStatus: MultifactorAuthenticationStatus<boolean>): MultifactorAuthenticationStatus<boolean> {
     return {
         ...prevStatus,
-        step: createBaseStep(wasSuccessful, true),
+        step: {
+            isRequestFulfilled: true,
+            wasRecentStepSuccessful: undefined,
+            requiredFactorForNextStep: undefined,
+        },
     };
 }
 
@@ -164,12 +159,40 @@ function createFulfillStatus(prevStatus: MultifactorAuthenticationStatus<boolean
  * Creates a status reflecting whether multifactorial authentication is configured.
  * Only updates the configuration flag while preserving other status fields.
  */
-function createRefreshStatusStatus(isMultifactorAuthenticationConfiguredValue: boolean) {
+function createRefreshStatusStatus(isMultifactorAuthenticationConfiguredValue: boolean, overwriteStatus?: Partial<MultifactorAuthenticationStatus<boolean>>) {
     return (prevStatus: MultifactorAuthenticationStatus<boolean>): MultifactorAuthenticationStatus<boolean> => ({
         ...prevStatus,
+        ...overwriteStatus,
         value: isMultifactorAuthenticationConfiguredValue,
     });
 }
+
+/**
+ * Helper function that converts a numeric authentication type from SecureStore into
+ * a human-readable string name.
+ */
+const getAuthTypeName = <T>({type}: MultifactorAuthenticationPartialStatus<T>): AuthTypeName | undefined =>
+    Object.values(CONST.MULTI_FACTOR_AUTHENTICATION.AUTH_TYPE).find(({CODE}) => CODE === type)?.NAME;
+
+const additionalParametersToExclude = ['chainedWithAuthorization', 'chainedPrivateKeyStatus'] as const;
+
+const extractAdditionalParameters = <T extends MultifactorAuthenticationScenario>(
+    params: MultifactorAuthenticationScenarioParams<T> & Record<string, unknown>,
+): MultifactorAuthenticationScenarioAdditionalParams<T> => {
+    const factorParams = Object.values(CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS_REQUIREMENTS).map(({parameter}) => parameter);
+    const newParams = {...params};
+    for (const param of factorParams) {
+        if (param in newParams) {
+            delete newParams[param];
+        }
+    }
+    for (const additionalParameter of additionalParametersToExclude) {
+        if (additionalParameter in newParams) {
+            delete newParams[additionalParameter];
+        }
+    }
+    return newParams;
+};
 
 const shouldAllowFallback = (securityLevel: ValueOf<typeof CONST.MULTI_FACTOR_AUTHENTICATION.SECURITY_LEVEL>) =>
     securityLevel === CONST.MULTI_FACTOR_AUTHENTICATION.SECURITY_LEVEL.FALLBACK_ONLY || securityLevel === CONST.MULTI_FACTOR_AUTHENTICATION.SECURITY_LEVEL.BIOMETRICS_WITH_FALLBACK;
@@ -178,13 +201,20 @@ const shouldAllowBiometrics = (securityLevel: ValueOf<typeof CONST.MULTI_FACTOR_
     securityLevel === CONST.MULTI_FACTOR_AUTHENTICATION.SECURITY_LEVEL.BIOMETRICS_ONLY || securityLevel === CONST.MULTI_FACTOR_AUTHENTICATION.SECURITY_LEVEL.BIOMETRICS_WITH_FALLBACK;
 
 // eslint-disable-next-line rulesdir/no-negated-variables
-const createBiometricsNotAllowedStatus = (authorization?: boolean): [MultifactorAuthenticationPartialStatus<boolean>, MultifactorAuthenticationStatusKeyType] => {
+const createBiometricsNotAllowedStatus = <T extends MultifactorAuthenticationScenario>(
+    scenario: T,
+    params: MultifactorAuthenticationScenarioParams<T> & Record<string, unknown>,
+    authorization?: boolean,
+): [MultifactorAuthenticationPartialStatus<MultifactorAuthenticationScenarioStatus>, MultifactorAuthenticationStatusKeyType] => {
     return [
         {
             step: {
                 ...failedStep,
             },
-            value: false,
+            value: {
+                scenario,
+                payload: extractAdditionalParameters<T>(params),
+            },
             reason: 'multifactorAuthentication.reason.error.biometricsNotAllowed',
         },
         authorization ? CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION : CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION,
@@ -192,23 +222,77 @@ const createBiometricsNotAllowedStatus = (authorization?: boolean): [Multifactor
 };
 
 // eslint-disable-next-line rulesdir/no-negated-variables
-const createFallbackNotAllowedStatus = (): [MultifactorAuthenticationPartialStatus<boolean>, MultifactorAuthenticationStatusKeyType] => {
+const createFallbackNotAllowedStatus = <T extends MultifactorAuthenticationScenario>(
+    scenario: T,
+    params: MultifactorAuthenticationScenarioParams<T>,
+): [MultifactorAuthenticationPartialStatus<MultifactorAuthenticationScenarioStatus>, MultifactorAuthenticationStatusKeyType] => {
     return [
         {
             step: {
                 ...failedStep,
             },
-            value: false,
+            value: {
+                scenario,
+                payload: extractAdditionalParameters<T>(params),
+            },
             reason: 'multifactorAuthentication.reason.error.fallbackNotAllowed',
         },
         CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION_FALLBACK,
     ];
 };
 
-const convertResultIntoBoolean = (status: MultifactorAuthenticationStatus<unknown>): MultifactorAuthenticationStatus<boolean> => ({
-    ...status,
-    value: !!status.value,
-});
+function convertResultIntoMFAStatus<T extends MultifactorAuthenticationScenario>(
+    status: MultifactorAuthenticationStatus<unknown>,
+    scenario: T | undefined,
+    type: MultifactorAuthenticationStatusKeyType,
+    params: MultifactorAuthenticationScenarioParams<T> | false,
+): MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>;
+function convertResultIntoMFAStatus<T extends MultifactorAuthenticationScenario>(
+    status: MultifactorAuthenticationPartialStatus<unknown>,
+    scenario: T | undefined,
+    type: MultifactorAuthenticationStatusKeyType,
+    params: MultifactorAuthenticationScenarioParams<T> | false,
+): MultifactorAuthenticationPartialStatus<MultifactorAuthenticationScenarioStatus>;
+function convertResultIntoMFAStatus<T extends MultifactorAuthenticationScenario>(
+    status: MultifactorAuthenticationStatus<unknown> | MultifactorAuthenticationPartialStatus<unknown>,
+    scenario: T | undefined,
+    type: MultifactorAuthenticationStatusKeyType,
+    params: MultifactorAuthenticationScenarioParams<T> | false,
+): MultifactorAuthenticationPartialStatus<MultifactorAuthenticationScenarioStatus> | MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus> {
+    return {
+        ...status,
+        value: {
+            scenario,
+            payload: params ? extractAdditionalParameters<T>(params) : undefined,
+            type,
+        },
+    };
+}
+
+function convertScenarioToType<T extends MultifactorAuthenticationScenario>(scenario: T | undefined, fallback?: boolean): MultifactorAuthenticationStatusKeyType {
+    if (!scenario) {
+        return CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.NONE;
+    }
+    if (scenario === CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS) {
+        return CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION;
+    }
+    if (fallback) {
+        return CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION_FALLBACK;
+    }
+    return CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION;
+}
+
+const badRequestStatus = (
+    currentStatus: MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>,
+): MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus> => {
+    return {
+        ...currentStatus,
+        reason: 'multifactorAuthentication.reason.error.badRequest',
+        step: {
+            ...failedStep,
+        },
+    };
+};
 
 /**
  * Collection of status creator functions for handling different multifactorial authentication states.
@@ -219,33 +303,28 @@ const Status = {
     createValidateCodeMissingStatus,
     createKeyErrorStatus,
     createRegistrationResultStatus,
-    createFulfillStatus,
+    createCancelStatus,
+    createBaseStep,
     createRefreshStatusStatus,
 } as const;
 
 const MergedHooksStatus = {
     createBiometricsNotAllowedStatus,
     createFallbackNotAllowedStatus,
+    badRequestStatus,
 } as const;
-
-/**
- * Helper function that converts a numeric authentication type from SecureStore into
- * a human-readable string name.
- */
-const getAuthTypeName = <T>({type}: MultifactorAuthenticationPartialStatus<T>): AuthTypeName | undefined =>
-    Object.values(CONST.MULTI_FACTOR_AUTHENTICATION.AUTH_TYPE).find(({CODE}) => CODE === type)?.NAME;
 
 export {
     areMultifactorAuthorizationFallbackParamsValid,
-    createRecentStatus,
     getAuthTypeName,
     doesDeviceSupportBiometrics,
     isBiometryConfigured,
     resetKeys,
     createAuthorizeErrorStatus,
     shouldAllowFallback,
+    convertScenarioToType,
     shouldAllowBiometrics,
-    convertResultIntoBoolean,
+    convertResultIntoMFAStatus,
     EMPTY_MULTIFACTOR_AUTHENTICATION_STATUS,
     MergedHooksStatus,
     Status,

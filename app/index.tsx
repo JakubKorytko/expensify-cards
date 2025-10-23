@@ -1,8 +1,12 @@
-// import MultifactorAuthenticationFallbackUsingWrapper from "@src/components/AuthorizeTransaction";
-import BiometricsSetup from "@src/components/BiometricsSetupScreen";
+import MultifactorAuthenticationContextProvider from '@src/components/MultifactorAuthenticationContext';
+import NavigationMockContextProvider, {Navigator} from '@src/components/NavigationMock';
 
 export default function Index() {
-  return (
-    <BiometricsSetup  />
-  );
+    return (
+        <NavigationMockContextProvider initialRoute="authorizeTransaction">
+            <MultifactorAuthenticationContextProvider>
+                <Navigator />
+            </MultifactorAuthenticationContextProvider>
+        </NavigationMockContextProvider>
+    );
 }

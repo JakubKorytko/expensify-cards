@@ -14,6 +14,8 @@ const translations = {
                 `Your ${authorization ? 'authorization' : 'authentication'} ${because ? `failed: ${because}` : 'was unsuccessful'}`,
             successTitle: ({authorization}: {authorization?: boolean}) => `${authorization ? 'Authorization' : 'Authentication'} successful`,
             failedTitle: ({authorization}: {authorization?: boolean}) => `${authorization ? 'Authorization' : 'Authentication'} failed`,
+            successTitleGeneral: 'Operation successful',
+            failedTitleGeneral: 'Operation failed',
         },
         /** Title indicating multifactorial authentication registration status */
         title: ({registered = true}: {registered?: boolean}) => `Multifactor Authentication (${registered ? 'Registered' : 'Not registered'})`,
@@ -43,6 +45,7 @@ const translations = {
                 otpMissing: 'OTP code is missing',
                 keyMissingOnTheBE: 'Key is stored locally but not found on server',
                 multifactorAuthenticationNotSupported: 'This device does not support multifactorial authentication',
+                badRequest: 'Bad request',
                 fallbackNotAllowed: 'This device does not support biometrics and fallback is not allowed',
                 biometricsNotAllowed: 'The biometrics actions are not allowed for this scenario',
             },

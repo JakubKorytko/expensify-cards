@@ -8,8 +8,6 @@ import type {
     MultifactorAuthenticationScenarioMap,
     MultifactorAuthenticationScenarioParams,
     MultifactorAuthenticationScenarioResponseWithSuccess,
-    MultifactorAuthorizationFallbackScenario,
-    MultifactorAuthorizationFallbackScenarioParams,
 } from './types';
 import VALUES from './VALUES';
 
@@ -83,9 +81,9 @@ function areMultifactorAuthenticationFactorsSufficient(
  * - The next required authentication factor (OTP if needed)
  * - Whether the overall request was successful and is now complete
  */
-const authorizeMultifactorAuthenticationPostMethodFallback = <T extends MultifactorAuthorizationFallbackScenario>(
+const authorizeMultifactorAuthenticationPostMethod = <T extends MultifactorAuthenticationScenario>(
     status: MultifactorAuthenticationPartialStatus<MultifactorAuthenticationScenarioResponseWithSuccess, true>,
-    params: MultifactorAuthorizationFallbackScenarioParams<T>,
+    params: MultifactorAuthenticationScenarioParams<T>,
 ) => {
     const {successful, httpCode} = status.value;
     const {otp, validateCode} = params;
@@ -132,7 +130,7 @@ async function processMultifactorAuthenticationScenario<T extends MultifactorAut
     const currentScenario = MULTI_FACTOR_AUTHENTICATION_SCENARIOS[scenario] as MultifactorAuthenticationScenarioMap[T];
 
     if (factorsCheckResult.value !== true) {
-        return authorizeMultifactorAuthenticationPostMethodFallback(
+        return authorizeMultifactorAuthenticationPostMethod(
             {
                 ...factorsCheckResult,
                 value: {httpCode: undefined, successful: false},
@@ -143,7 +141,7 @@ async function processMultifactorAuthenticationScenario<T extends MultifactorAut
 
     const {httpCode, reason} = await currentScenario.action(params);
 
-    return authorizeMultifactorAuthenticationPostMethodFallback(
+    return authorizeMultifactorAuthenticationPostMethod(
         {
             value: {
                 successful: String(httpCode).startsWith('2'),

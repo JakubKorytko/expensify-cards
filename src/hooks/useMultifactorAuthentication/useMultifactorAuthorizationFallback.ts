@@ -1,16 +1,16 @@
 import {useCallback, useMemo} from 'react';
 import {requestValidateCodeAction} from '@libs/actions/User';
 import {areFactorsSufficient, processScenario} from '@libs/MultifactorAuthentication/helpers';
-import type {MultifactorAuthorizationFallbackScenario, MultifactorAuthorizationFallbackScenarioParams} from '@libs/MultifactorAuthentication/types';
+import type {MultifactorAuthenticationStep, MultifactorAuthorizationFallbackScenario, MultifactorAuthorizationFallbackScenarioParams} from '@libs/MultifactorAuthentication/types';
 import CONST from '@src/CONST';
-import type {AuthorizeUsingFallback, UseMultifactorAuthorizationFallback} from './types';
+import type {AuthorizeUsingFallback, MultifactorAuthenticationStatusMessage} from './types';
 import useMultifactorAuthenticationStatus from './useMultifactorAuthenticationStatus';
 
 /**
  * Hook that provides fallback authorization flow when multifactorial authentication is not available.
  * Uses validate code and OTP for transaction authorization instead.
  */
-function useMultifactorAuthorizationFallback<T extends MultifactorAuthorizationFallbackScenario>(scenario: T): UseMultifactorAuthorizationFallback<T> {
+function useMultifactorAuthorizationFallback() {
     const [status, setStatus] = useMultifactorAuthenticationStatus<number | undefined>(undefined, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION_FALLBACK);
 
     /**
@@ -18,7 +18,7 @@ function useMultifactorAuthorizationFallback<T extends MultifactorAuthorizationF
      * Checks both OTP and validate code against the requirements for non-multifactorial authentication devices.
      */
     const verifyFactors = useCallback(
-        (params: MultifactorAuthorizationFallbackScenarioParams<T>) =>
+        <T extends MultifactorAuthorizationFallbackScenario>(params: MultifactorAuthorizationFallbackScenarioParams<T>) =>
             areFactorsSufficient(
                 {
                     ...params,
@@ -31,17 +31,17 @@ function useMultifactorAuthorizationFallback<T extends MultifactorAuthorizationF
 
     /**
      * Authorizes a transaction using OTP and validate code when multifactorial authentication is unavailable.
-     * Handles the multi-step verification process, requesting additional factors when needed.
+     * Handles the multistep verification process, requesting additional factors when needed.
      * Updates status to reflect the current state of authorization and any required next steps.
      */
-    const authorize: AuthorizeUsingFallback<T> = useCallback(
-        async (params) => {
+    const authorize = useCallback(
+        async <T extends MultifactorAuthorizationFallbackScenario>(scenario: T, params: Parameters<AuthorizeUsingFallback<T>>[1]): ReturnType<AuthorizeUsingFallback<T>> => {
             const valueToStore = CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE;
             const parameterName = CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS_REQUIREMENTS[valueToStore].parameter;
             const storedValue = params[parameterName];
 
             const providedOrStoredFactor = storedValue ?? status.value;
-            const {reason: factorsCheckReason, step: factorsCheckStep} = verifyFactors({
+            const {reason: factorsCheckReason, step: factorsCheckStep} = verifyFactors<T>({
                 ...params,
                 ...(parameterName ? {[parameterName]: providedOrStoredFactor} : {}),
             });
@@ -78,29 +78,27 @@ function useMultifactorAuthorizationFallback<T extends MultifactorAuthorizationF
             }
             return setStatus(processResult);
         },
-        [status.value, verifyFactors, scenario, setStatus],
+        [status.value, verifyFactors, setStatus],
     );
 
     /**
      * Marks the current authorization request as fulfilled and resets the validate code.
      * Used when completing or canceling an authorization flow.
      */
-    const cancel = useCallback(
-        () =>
-            setStatus((prevStatus) => ({
-                ...prevStatus,
-                value: undefined,
-                step: {
-                    isRequestFulfilled: true,
-                    requiredFactorForNextStep: undefined,
-                    wasRecentStepSuccessful: !prevStatus.step.requiredFactorForNextStep && prevStatus.step.wasRecentStepSuccessful,
-                },
-            })),
-        [setStatus],
-    );
+    const cancel = useCallback(() => {
+        return setStatus((prevStatus) => ({
+            ...prevStatus,
+            value: undefined,
+            step: {
+                isRequestFulfilled: true,
+                requiredFactorForNextStep: undefined,
+                wasRecentStepSuccessful: undefined,
+            },
+        }));
+    }, [setStatus]);
 
     /** Memoized state values exposed to consumers */
-    const values = useMemo(() => {
+    const values: MultifactorAuthenticationStatusMessage & MultifactorAuthenticationStep = useMemo(() => {
         const {step, message, title} = status;
         return {...step, message, title};
     }, [status]);

@@ -1,6 +1,6 @@
 /* eslint-disable rulesdir/no-api-side-effects-method */
 import type {ValueOf} from 'type-fest';
-import * as API from '@libs/API';
+import {makeRequestWithSideEffects} from '@libs/API';
 import {SIDE_EFFECT_REQUEST_COMMANDS} from '@libs/API/types';
 import type {MultifactorAuthenticationResponseTranslationPath} from '@libs/MultifactorAuthentication/types';
 import CONST from '@src/CONST';
@@ -43,7 +43,7 @@ function parseHttpCode(
 
 /** Send multifactorial authentication public key to the API along with the validation code if required. */
 async function registerBiometrics({publicKey, validateCode}: {publicKey: string; validateCode?: number}) {
-    const response = await API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.REGISTER_BIOMETRICS, {publicKey, validateCode}, {});
+    const response = await makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.REGISTER_BIOMETRICS, {publicKey, validateCode}, {});
 
     const {jsonCode} = response ?? {};
     return parseHttpCode(jsonCode, CONST.MULTI_FACTOR_AUTHENTICATION.RESPONSE_TRANSLATION_PATH.REGISTER_BIOMETRICS);
@@ -51,7 +51,7 @@ async function registerBiometrics({publicKey, validateCode}: {publicKey: string;
 
 /** Ask API for the multifactorial authentication challenge. */
 async function requestBiometricChallenge() {
-    const response = await API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE, {}, {});
+    const response = await makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.REQUEST_BIOMETRIC_CHALLENGE, {}, {});
     const {jsonCode, challenge} = response ?? {};
 
     return {
@@ -73,7 +73,7 @@ async function requestBiometricChallenge() {
  * and then another one with otp + validateCode.
  */
 async function authorizeTransaction({transactionID, signedChallenge, validateCode, otp}: {transactionID: string; signedChallenge?: string; validateCode?: number; otp?: number}) {
-    const response = await API.makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.AUTHORIZE_TRANSACTION, {transactionID, signedChallenge, validateCode, otp}, {});
+    const response = await makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.AUTHORIZE_TRANSACTION, {transactionID, signedChallenge, validateCode, otp}, {});
 
     const {jsonCode} = response ?? {};
 

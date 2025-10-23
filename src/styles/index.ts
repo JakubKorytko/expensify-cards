@@ -31,10 +31,7 @@ const columnFullWidth = {
 const bottomSheetBase = {
     ...columnFullWidth,
     gap: 10,
-    position: 'absolute',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    bottom: 0,
+    height: '100%',
     padding: 30,
     backgroundColor: '#FCFBF9',
     alignItems: 'flex-start',
@@ -52,14 +49,15 @@ const styles = {
     },
     callbackContainer: {
         ...bottomSheetBase,
-        height: 200,
     },
     inputContainer: {
         ...bottomSheetBase,
-        height: 220,
     },
     gap15: {
         gap: 15,
+    },
+    headerBackButton: {
+        marginBottom: 20,
     },
     textInput: {
         backgroundColor: '#FFF',

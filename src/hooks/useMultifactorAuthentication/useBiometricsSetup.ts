@@ -6,7 +6,7 @@ import {PrivateKeyStore, PublicKeyStore} from '@libs/MultifactorAuthentication/K
 import type {MultifactorAuthenticationStatus} from '@libs/MultifactorAuthentication/types';
 import CONST from '@src/CONST';
 import {doesDeviceSupportBiometrics, isBiometryConfigured, resetKeys, Status} from './helpers';
-import type {Register, UseBiometricsSetup} from './types';
+import type {MultifactorAuthenticationStatusKeyType, Register, UseBiometricsSetup} from './types';
 import useMultifactorAuthenticationStatus from './useMultifactorAuthenticationStatus';
 
 /**
@@ -28,7 +28,7 @@ function useBiometricsSetup(): UseBiometricsSetup {
      * Marks the current authentication request as complete.
      * Clears any pending requirements while preserving success/failure state.
      */
-    const cancel = useCallback(() => setStatus(Status.createFulfillStatus), [setStatus]);
+    const cancel = useCallback(() => setStatus(Status.createCancelStatus), [setStatus]);
 
     /** Memoized check for device biometric capability */
     const deviceSupportBiometrics = useMemo(() => doesDeviceSupportBiometrics(), []);
@@ -37,10 +37,13 @@ function useBiometricsSetup(): UseBiometricsSetup {
      * Updates the biometric configuration status by checking for stored public key.
      * Safe to call frequently as it doesn't trigger authentication prompts.
      */
-    const refreshStatus = useCallback(async () => {
-        const isConfigured = await isBiometryConfigured();
-        return setStatus(Status.createRefreshStatusStatus(isConfigured));
-    }, [setStatus]);
+    const refreshStatus = useCallback(
+        async (overwriteStatus?: Partial<MultifactorAuthenticationStatus<boolean>>, overwriteType?: MultifactorAuthenticationStatusKeyType) => {
+            const isConfigured = await isBiometryConfigured();
+            return setStatus(Status.createRefreshStatusStatus(isConfigured, overwriteStatus), overwriteType);
+        },
+        [setStatus],
+    );
 
     /** Check initial biometric configuration on mount */
     useEffect(() => {
@@ -53,7 +56,17 @@ function useBiometricsSetup(): UseBiometricsSetup {
      */
     const revoke = useCallback(async () => {
         await resetKeys();
-        return refreshStatus();
+        return refreshStatus(
+            {
+                reason: 'multifactorAuthentication.reason.success.keyDeletedFromSecureStore',
+                step: {
+                    wasRecentStepSuccessful: true,
+                    isRequestFulfilled: true,
+                    requiredFactorForNextStep: undefined,
+                },
+            },
+            CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.NONE,
+        );
     }, [refreshStatus]);
 
     /**
@@ -148,8 +161,13 @@ function useBiometricsSetup(): UseBiometricsSetup {
             if (chainedWithAuthorization && isCallSuccessful) {
                 return {
                     ...privateKeyResult,
+                    step: {
+                        wasRecentStepSuccessful: true,
+                        isRequestFulfilled: false,
+                        requiredFactorForNextStep: CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.SIGNED_CHALLENGE,
+                    },
                     value: privateKey,
-                } as MultifactorAuthenticationStatus<string>;
+                };
             }
 
             return statusResult;

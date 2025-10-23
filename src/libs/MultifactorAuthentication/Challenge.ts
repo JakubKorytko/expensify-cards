@@ -2,7 +2,7 @@ import {requestBiometricChallenge} from '@libs/actions/MultifactorAuthentication
 import type {TranslationPaths} from '@src/languages/types';
 import {signToken as signTokenED25519} from './ED25519';
 import {processScenario} from './helpers';
-import {PrivateKeyStore} from './KeyStore';
+import {PrivateKeyStore, PublicKeyStore} from './KeyStore';
 import type {MultifactorAuthenticationPartialStatus, MultifactorAuthenticationScenario, MultifactorAuthenticationScenarioAdditionalParams} from './types';
 import VALUES from './VALUES';
 
@@ -43,6 +43,8 @@ class MultifactorAuthenticationChallenge<T extends MultifactorAuthenticationScen
         const syncedBE = httpCode !== 401;
 
         if (!syncedBE) {
+            await PrivateKeyStore.delete();
+            await PublicKeyStore.delete();
             return this.createErrorReturnValue('multifactorAuthentication.reason.error.keyMissingOnTheBE');
         }
 

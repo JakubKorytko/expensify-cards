@@ -33,10 +33,12 @@ const MULTI_FACTOR_AUTHENTICATION_SCENARIOS = {
     [VALUES.SCENARIO.AUTHORIZE_TRANSACTION]: {
         securityLevel: VALUES.SECURITY_LEVEL.BIOMETRICS_WITH_FALLBACK,
         action: authorizeTransaction,
+        route: 'authorizeTransaction',
     },
     [VALUES.SCENARIO.SETUP_BIOMETRICS]: {
-        securityLevel: VALUES.SECURITY_LEVEL.FALLBACK_ONLY,
+        securityLevel: VALUES.SECURITY_LEVEL.BIOMETRICS_ONLY,
         action: registerBiometrics,
+        route: 'setupBiometrics',
     },
 } as const satisfies MultifactorAuthenticationScenarioMap;
 

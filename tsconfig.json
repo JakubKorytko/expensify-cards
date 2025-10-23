@@ -5,6 +5,7 @@
     "paths": {
       "@/*": ["./*"],
       "@src/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
       "@libs/*": ["./src/libs/*"],
       "@hooks/*": ["./src/hooks/*"],
       "type-fest": ["./mocks/typeFest.ts"]

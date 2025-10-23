@@ -1,5 +1,6 @@
 import type {EmptyObject, ValueOf} from 'type-fest';
 import type {TranslationPaths} from '@src/languages/types';
+import type ROUTES from '@src/ROUTES';
 import type MULTI_FACTOR_AUTHENTICATION_SCENARIOS from './scenarios';
 import type {MultifactorAuthenticationScenarioParameters} from './scenarios';
 import type VALUES from './VALUES';
@@ -158,6 +159,9 @@ type MultifactorAuthenticationScenarioParams<T extends MultifactorAuthentication
 type MultifactorAuthorizationFallbackScenarioParams<T extends MultifactorAuthorizationFallbackScenario> = MultifactorAuthorizationFallbackFactors &
     MultifactorAuthenticationFallbackScenarioAdditionalParams<T>;
 
+type MultifactorAuthenticationScenarioParamsExtended<T extends MultifactorAuthenticationScenario> = MultifactorAuthenticationScenarioParams<T> &
+    (T extends typeof VALUES.SCENARIO.SETUP_BIOMETRICS ? {publicKey: string} : EmptyObject);
+
 /**
  * Function signature for handling a multifactorial authentication scenario
  */
@@ -168,6 +172,7 @@ type MultifactorAuthenticationScenarioMethod<T extends MultifactorAuthentication
 type MultifactorAuthenticationScenarioData<T extends MultifactorAuthenticationScenario> = {
     action: MultifactorAuthenticationScenarioMethod<T>;
     securityLevel: ValueOf<typeof VALUES.SECURITY_LEVEL>;
+    route: keyof typeof ROUTES;
 };
 
 /**
@@ -205,5 +210,6 @@ export type {
     MultifactorAuthenticationScenarioResponseWithSuccess,
     MultifactorAuthenticationStatus,
     MultifactorAuthenticationPartialStatus,
+    MultifactorAuthenticationScenarioParamsExtended,
     MultifactorAuthenticationScenarioAdditionalParams,
 };
