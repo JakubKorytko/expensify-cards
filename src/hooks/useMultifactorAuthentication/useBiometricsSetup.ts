@@ -1,4 +1,5 @@
 import {useCallback, useEffect, useMemo} from 'react';
+import useUserInformation from '@hooks/useUserInformation';
 import {requestValidateCodeAction} from '@libs/actions/User';
 import {generateKeyPair} from '@libs/MultifactorAuthentication/ED25519';
 import {processScenario} from '@libs/MultifactorAuthentication/helpers';
@@ -23,6 +24,7 @@ import useMultifactorAuthenticationStatus from './useMultifactorAuthenticationSt
 function useBiometricsSetup(): UseBiometricsSetup {
     /** Tracks whether biometrics is properly configured and ready for authentication */
     const [status, setStatus] = useMultifactorAuthenticationStatus<boolean>(false, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION);
+    const {accountID} = useUserInformation();
 
     /**
      * Marks the current authentication request as complete.
@@ -39,10 +41,10 @@ function useBiometricsSetup(): UseBiometricsSetup {
      */
     const refreshStatus = useCallback(
         async (overwriteStatus?: Partial<MultifactorAuthenticationStatus<boolean>>, overwriteType?: MultifactorAuthenticationStatusKeyType) => {
-            const isConfigured = await isBiometryConfigured();
+            const isConfigured = await isBiometryConfigured(accountID);
             return setStatus(Status.createRefreshStatusStatus(isConfigured, overwriteStatus), overwriteType);
         },
-        [setStatus],
+        [accountID, setStatus],
     );
 
     /** Check initial biometric configuration on mount */
@@ -55,7 +57,7 @@ function useBiometricsSetup(): UseBiometricsSetup {
      * Used when keys become invalid or during cleanup.
      */
     const revoke = useCallback(async () => {
-        await resetKeys();
+        await resetKeys(accountID);
         return refreshStatus(
             {
                 reason: 'multifactorAuthentication.reason.success.keyDeletedFromSecureStore',
@@ -67,7 +69,7 @@ function useBiometricsSetup(): UseBiometricsSetup {
             },
             CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.NONE,
         );
-    }, [refreshStatus]);
+    }, [accountID, refreshStatus]);
 
     /**
      * Main registration flow for setting up biometric authentication.
@@ -100,7 +102,7 @@ function useBiometricsSetup(): UseBiometricsSetup {
             const {privateKey, publicKey} = generateKeyPair();
 
             /** Save private key (handles existing/conflict cases) */
-            const privateKeyResult = await PrivateKeyStore.set(privateKey);
+            const privateKeyResult = await PrivateKeyStore.set(accountID, privateKey);
             const privateKeyExists = privateKeyResult.reason === 'multifactorAuthentication.reason.expoErrors.keyExists';
 
             if (!privateKeyResult.value) {
@@ -110,13 +112,13 @@ function useBiometricsSetup(): UseBiometricsSetup {
                      * Remove private key to unblock authentication rather than trying recovery.
                      * This should never happen in the real app.
                      */
-                    await PrivateKeyStore.delete();
+                    await PrivateKeyStore.delete(accountID);
                 }
                 return setStatus(Status.createKeyErrorStatus(privateKeyResult));
             }
 
             /** Save public key */
-            const publicKeyResult = await PublicKeyStore.set(publicKey);
+            const publicKeyResult = await PublicKeyStore.set(accountID, publicKey);
             if (!publicKeyResult.value) {
                 return setStatus(Status.createKeyErrorStatus(publicKeyResult));
             }
@@ -139,7 +141,7 @@ function useBiometricsSetup(): UseBiometricsSetup {
 
             /** Cleanup keys on failure to avoid partial state */
             if (!isCallSuccessful) {
-                await resetKeys();
+                await resetKeys(accountID);
             }
 
             const builtStatus = {
@@ -172,7 +174,7 @@ function useBiometricsSetup(): UseBiometricsSetup {
 
             return statusResult;
         },
-        [setStatus, refreshStatus, status.value],
+        [accountID, setStatus, refreshStatus, status.value],
     ) as Register;
 
     /** Memoized state values exposed to consumers */

@@ -1,20 +1,24 @@
+/** Challenge */
+type MFAChallenge = {
+    /** Nonce */
+    challenge: string;
+    /** Version */
+    timeout: number;
+    /** Expires */
+    expires: number;
+    /** Algorithm */
+    allowCredentials: Array<Record<'type', string>>;
+};
+
 /** Model of server response */
 type Response = {
     // ...
 
     /** Challenge */
-    challenge?: {
-        /** Version */
-        version: number;
-        /** Algorithm */
-        algorithm: string;
-        /** Nonce */
-        nonce: string;
-        /** Expires */
-        expires: number;
-    };
+    challenge?: MFAChallenge;
 
     // ...
 };
 
 export default Response;
+export type {MFAChallenge};

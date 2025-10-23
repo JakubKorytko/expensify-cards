@@ -1,4 +1,5 @@
 import {useCallback} from 'react';
+import useUserInformation from '@hooks/useUserInformation';
 import Challenge from '@libs/MultifactorAuthentication/Challenge';
 import type {MultifactorAuthenticationScenario} from '@libs/MultifactorAuthentication/types';
 import CONST from '@src/CONST';
@@ -18,6 +19,7 @@ import useMultifactorAuthenticationStatus from './useMultifactorAuthenticationSt
  */
 function useMultifactorAuthorization() {
     const [status, setStatus] = useMultifactorAuthenticationStatus(false, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION);
+    const {accountID} = useUserInformation();
 
     /**
      * Requests, signs and verifies a multifactorial authentication challenge for transaction authorization.
@@ -32,12 +34,12 @@ function useMultifactorAuthorization() {
             const {chainedPrivateKeyStatus} = params;
             const challenge = new Challenge(scenario, params);
 
-            const requestStatus = await challenge.request();
+            const requestStatus = await challenge.request(accountID);
             if (!requestStatus.value) {
                 return setStatus(createAuthorizeErrorStatus(requestStatus));
             }
 
-            const signature = await challenge.sign(chainedPrivateKeyStatus);
+            const signature = await challenge.sign(accountID, chainedPrivateKeyStatus);
             if (!signature.value) {
                 return setStatus(createAuthorizeErrorStatus(signature));
             }
@@ -53,7 +55,7 @@ function useMultifactorAuthorization() {
                 },
             });
         },
-        [setStatus],
+        [accountID, setStatus],
     );
 
     /**

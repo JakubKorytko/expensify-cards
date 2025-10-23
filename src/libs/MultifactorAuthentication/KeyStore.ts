@@ -10,7 +10,7 @@ import VALUES from './VALUES';
  * Also configures keychain access and credential alternatives.
  */
 const options = (key: string): SecureStore.SecureStoreOptions => {
-    const isPrivateKey = key === VALUES.KEY_ALIASES.PRIVATE_KEY;
+    const isPrivateKey = key.endsWith(VALUES.KEY_ALIASES.PRIVATE_KEY);
     return {
         failOnDuplicate: isPrivateKey,
         requireAuthentication: isPrivateKey,
@@ -46,9 +46,9 @@ class MultifactorAuthenticationKeyStore {
      * Stores a value in SecureStore. For private keys, this will trigger an auth prompt.
      * Returns success/failure status with a reason message and auth type used.
      */
-    public async set(value: string): Promise<MultifactorAuthenticationPartialStatus<boolean, true>> {
+    public async set(accountID: number, value: string): Promise<MultifactorAuthenticationPartialStatus<boolean, true>> {
         try {
-            const type = await MultifactorAuthenticationStore.set(this.key, value);
+            const type = await MultifactorAuthenticationStore.set(`${accountID}_${this.key}`, value);
             return {
                 value: true,
                 reason: 'multifactorAuthentication.reason.success.keySavedInSecureStore' as TranslationPaths,
@@ -66,9 +66,9 @@ class MultifactorAuthenticationKeyStore {
      * Removes a value from SecureStore.
      * Returns success/failure status with a reason message.
      */
-    public async delete(): Promise<MultifactorAuthenticationPartialStatus<boolean, true>> {
+    public async delete(accountID: number): Promise<MultifactorAuthenticationPartialStatus<boolean, true>> {
         try {
-            await MultifactorAuthenticationStore.delete(this.key);
+            await MultifactorAuthenticationStore.delete(`${accountID}_${this.key}`);
             return {
                 value: true,
                 reason: 'multifactorAuthentication.reason.success.keyDeletedFromSecureStore' as TranslationPaths,
@@ -85,9 +85,9 @@ class MultifactorAuthenticationKeyStore {
      * Retrieves a value from SecureStore. For private keys, this will trigger an auth prompt.
      * Returns the stored value (or null) with a reason message and auth type used.
      */
-    public async get(): Promise<MultifactorAuthenticationPartialStatus<string | null, true>> {
+    public async get(accountID: number): Promise<MultifactorAuthenticationPartialStatus<string | null, true>> {
         try {
-            const [key, type] = await MultifactorAuthenticationStore.get(this.key);
+            const [key, type] = await MultifactorAuthenticationStore.get(`${accountID}_${this.key}`);
             return {
                 value: key,
                 reason: `multifactorAuthentication.reason.success.${key ? 'keyRetrievedFromSecureStore' : 'keyNotInSecureStore'}`,

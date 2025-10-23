@@ -23,7 +23,7 @@ function areMultifactorAuthenticationFactorsSufficient(
 ): MultifactorAuthenticationPartialStatus<true | string> {
     const requiredFactors = factorsCombination.map((id) => VALUES.FACTORS_REQUIREMENTS[id]);
 
-    for (const {id, parameter, name, type, length} of requiredFactors) {
+    for (const {id, parameter, name, length} of requiredFactors) {
         if (id !== VALUES.FACTORS.VALIDATE_CODE && !isStoredFactorVerified) {
             continue;
         }
@@ -43,14 +43,6 @@ function areMultifactorAuthenticationFactorsSufficient(
         }
 
         const value = factors[parameter];
-
-        if (typeof value !== typeof type) {
-            return {
-                value: `Invalid type for factor: ${name} (${parameter}). Expected ${typeof type}, got ${typeof value}`,
-                step: unsuccessfulStep,
-                reason: 'multifactorAuthentication.reason.generic.authFactorsError',
-            };
-        }
 
         if (typeof length === 'number' && String(value).length !== length) {
             return {

@@ -1,9 +1,16 @@
 import type {EmptyObject, ValueOf} from 'type-fest';
 import type {TranslationPaths} from '@src/languages/types';
 import type ROUTES from '@src/ROUTES';
+import type {SignedChallenge} from './ED25519';
 import type MULTI_FACTOR_AUTHENTICATION_SCENARIOS from './scenarios';
 import type {MultifactorAuthenticationScenarioParameters} from './scenarios';
 import type VALUES from './VALUES';
+
+type BasicMultifactorAuthenticationRequirementTypes = {
+    [VALUES.FACTORS.SIGNED_CHALLENGE]: SignedChallenge;
+    [VALUES.FACTORS.VALIDATE_CODE]: number;
+    [VALUES.FACTORS.OTP]: number;
+};
 
 type MultifactorAuthenticationPartialStatusConditional<OmitStep> = OmitStep extends false
     ? {
@@ -109,7 +116,7 @@ type MultifactorAuthenticationFactors = {
         origin: typeof VALUES.FACTORS_ORIGIN.FALLBACK;
     }
         ? never
-        : K['parameter']]: K['type'];
+        : K['parameter']]: BasicMultifactorAuthenticationRequirementTypes[K['id']];
 };
 
 /**
@@ -120,7 +127,7 @@ type MultifactorAuthorizationFallbackFactors = {
         origin: typeof VALUES.FACTORS_ORIGIN.FALLBACK;
     }
         ? K['parameter']
-        : never]?: K['type'];
+        : never]?: BasicMultifactorAuthenticationRequirementTypes[K['id']];
 };
 
 type AllMultifactorAuthenticationFactors = Simplify<MultifactorAuthenticationFactors & MultifactorAuthorizationFallbackFactors>;

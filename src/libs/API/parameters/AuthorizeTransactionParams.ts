@@ -1,7 +1,9 @@
+import type {SignedChallenge} from '@libs/MultifactorAuthentication/ED25519';
+
 type AuthorizeTransactionParams = {
     transactionID: string;
     // this one:
-    signedChallenge?: string; // JWT
+    signedChallenge?: SignedChallenge; // JWT
     // or these two together:
     validateCode?: number; // validate code
     otp?: number; // 2FA / SMS OTP

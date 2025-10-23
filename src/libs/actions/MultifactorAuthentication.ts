@@ -2,6 +2,7 @@
 import type {ValueOf} from 'type-fest';
 import {makeRequestWithSideEffects} from '@libs/API';
 import {SIDE_EFFECT_REQUEST_COMMANDS} from '@libs/API/types';
+import type {SignedChallenge} from '@libs/MultifactorAuthentication/ED25519';
 import type {MultifactorAuthenticationResponseTranslationPath} from '@libs/MultifactorAuthentication/types';
 import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
@@ -72,7 +73,7 @@ async function requestBiometricChallenge() {
  * we actually need to make one call with validateCode only,
  * and then another one with otp + validateCode.
  */
-async function authorizeTransaction({transactionID, signedChallenge, validateCode, otp}: {transactionID: string; signedChallenge?: string; validateCode?: number; otp?: number}) {
+async function authorizeTransaction({transactionID, signedChallenge, validateCode, otp}: {transactionID: string; signedChallenge?: SignedChallenge; validateCode?: number; otp?: number}) {
     const response = await makeRequestWithSideEffects(SIDE_EFFECT_REQUEST_COMMANDS.AUTHORIZE_TRANSACTION, {transactionID, signedChallenge, validateCode, otp}, {});
 
     const {jsonCode} = response ?? {};

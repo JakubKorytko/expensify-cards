@@ -1,4 +1,5 @@
 import type {ValueOf} from 'type-fest';
+import type {SignedChallenge} from '@libs/MultifactorAuthentication/ED25519';
 import {PrivateKeyStore, PublicKeyStore} from '@libs/MultifactorAuthentication/KeyStore';
 import type {
     MultifactorAuthenticationFactor,
@@ -11,6 +12,7 @@ import type {
     MultifactorAuthorizationFallbackScenarioParams,
 } from '@libs/MultifactorAuthentication/types';
 import CONST from '@src/CONST';
+import type {MFAChallenge} from '@src/types/onyx/Response';
 import type {AuthTypeName, MultifactorAuthenticationScenarioStatus, MultifactorAuthenticationStatusKeyType} from './types';
 
 const failedStep = {
@@ -55,6 +57,10 @@ function areMultifactorAuthorizationFallbackParamsValid<T extends MultifactorAut
     });
 }
 
+function isChallengeSigned(challenge: MFAChallenge | SignedChallenge): challenge is SignedChallenge {
+    return 'rawId' in challenge;
+}
+
 /**
  * Checks if the device supports either multifactorial authentication (like fingerprint/face)
  * or device credentials (like PIN/pattern) by querying the key store capabilities.
@@ -68,16 +74,16 @@ function doesDeviceSupportBiometrics() {
  * Checks if multifactorial authentication is already set up by looking for a public key in secure storage.
  * A stored public key indicates successful prior configuration.
  */
-async function isBiometryConfigured() {
-    return !!(await PublicKeyStore.get()).value;
+async function isBiometryConfigured(accountID: number) {
+    return !!(await PublicKeyStore.get(accountID)).value;
 }
 
 /**
  * Cleans up multifactorial authentication configuration by removing both private and public keys
  * from secure storage. Used when resetting or recovering from failed setup.
  */
-async function resetKeys() {
-    await Promise.all([PrivateKeyStore.delete(), PublicKeyStore.delete()]);
+async function resetKeys(accountID: number) {
+    await Promise.all([PrivateKeyStore.delete(accountID), PublicKeyStore.delete(accountID)]);
 }
 
 /**
@@ -324,6 +330,7 @@ export {
     shouldAllowFallback,
     convertScenarioToType,
     shouldAllowBiometrics,
+    isChallengeSigned,
     convertResultIntoMFAStatus,
     EMPTY_MULTIFACTOR_AUTHENTICATION_STATUS,
     MergedHooksStatus,

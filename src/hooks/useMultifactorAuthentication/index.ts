@@ -252,16 +252,14 @@ function useMultifactorAuthentication(): UseMultifactorAuthentication {
             isBiometryConfigured: BiometricsSetup.isBiometryConfigured,
             deviceSupportBiometrics: BiometricsSetup.deviceSupportBiometrics,
             process,
-            revoke: async () =>
-                setStatus(
-                    convertResultIntoMFAStatus(
-                        await BiometricsSetup.revoke(),
-                        CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS,
-                        CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION,
-                        false,
-                    ),
+            revoke: async () => {
+                const revokeStatus = await BiometricsSetup.revoke();
+                return setStatus(
+                    (prevStatus) =>
+                        convertResultIntoMFAStatus(revokeStatus, prevStatus.value.scenario, prevStatus.value.type ?? CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION, false),
                     CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.NONE,
-                ),
+                );
+            },
             register: (params: Parameters<Register>[0]) => register({...params, chainedWithAuthorization: false}, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS),
             provideFactor,
             cancel,

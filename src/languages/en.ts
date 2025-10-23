@@ -40,6 +40,7 @@ const translations = {
                 tokenMissing: 'Token is missing',
                 keyMissing: 'Key is missing',
                 signatureMissing: 'Signature is missing',
+                challengeIsAlreadySigned: 'Challenge has already been signed',
                 challengeRejected: 'Challenge rejected by API',
                 validateCodeMissing: 'Validation code is missing',
                 otpMissing: 'OTP code is missing',

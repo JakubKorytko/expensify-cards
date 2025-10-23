@@ -1,5 +1,8 @@
+import {isChallengeSigned} from '@hooks/useMultifactorAuthentication/helpers';
 import {requestBiometricChallenge} from '@libs/actions/MultifactorAuthentication';
 import type {TranslationPaths} from '@src/languages/types';
+import type {MFAChallenge} from '@src/types/onyx/Response';
+import type {SignedChallenge} from './ED25519';
 import {signToken as signTokenED25519} from './ED25519';
 import {processScenario} from './helpers';
 import {PrivateKeyStore, PublicKeyStore} from './KeyStore';
@@ -19,7 +22,7 @@ import VALUES from './VALUES';
  */
 class MultifactorAuthenticationChallenge<T extends MultifactorAuthenticationScenario> {
     /** Tracks the current state and status of the authentication process */
-    private auth: MultifactorAuthenticationPartialStatus<string | undefined, true> = {
+    private auth: MultifactorAuthenticationPartialStatus<MFAChallenge | SignedChallenge | undefined, true> = {
         value: undefined,
         reason: 'multifactorAuthentication.reason.generic.notRequested',
     };
@@ -38,21 +41,20 @@ class MultifactorAuthenticationChallenge<T extends MultifactorAuthenticationScen
      * Initiates the challenge process by requesting a new challenge from the API.
      * Verifies the backend is properly synced and handles the challenge response.
      */
-    public async request(): Promise<MultifactorAuthenticationPartialStatus<boolean, true>> {
+    public async request(accountID: number): Promise<MultifactorAuthenticationPartialStatus<boolean, true>> {
         const {httpCode, challenge, reason: apiReason} = await requestBiometricChallenge();
         const syncedBE = httpCode !== 401;
 
         if (!syncedBE) {
-            await PrivateKeyStore.delete();
-            await PublicKeyStore.delete();
+            await PrivateKeyStore.delete(accountID);
+            await PublicKeyStore.delete(accountID);
             return this.createErrorReturnValue('multifactorAuthentication.reason.error.keyMissingOnTheBE');
         }
 
-        const challengeString = challenge ? JSON.stringify(challenge) : undefined;
         const reason = apiReason.endsWith('unknownResponse') ? 'multifactorAuthentication.reason.error.badToken' : apiReason;
 
         this.auth = {
-            value: challengeString,
+            value: challenge,
             reason: challenge ? 'multifactorAuthentication.reason.success.tokenReceived' : reason,
         };
 
@@ -64,19 +66,26 @@ class MultifactorAuthenticationChallenge<T extends MultifactorAuthenticationScen
      * Triggers a biometric authentication prompt when accessing the private key.
      * Can reuse a previously fetched private key status to avoid multiple auth prompts.
      */
-    public async sign(chainedPrivateKeyStatus?: MultifactorAuthenticationPartialStatus<string | null, true>): Promise<MultifactorAuthenticationPartialStatus<boolean, true>> {
+    public async sign(
+        accountID: number,
+        chainedPrivateKeyStatus?: MultifactorAuthenticationPartialStatus<string | null, true>,
+    ): Promise<MultifactorAuthenticationPartialStatus<boolean, true>> {
         if (!this.auth.value) {
             return this.createErrorReturnValue('multifactorAuthentication.reason.error.tokenMissing');
         }
 
-        const {value, type, reason} = chainedPrivateKeyStatus?.value ? chainedPrivateKeyStatus : await PrivateKeyStore.get();
+        if (isChallengeSigned(this.auth.value)) {
+            return this.createErrorReturnValue('multifactorAuthentication.reason.error.challengeIsAlreadySigned');
+        }
+
+        const {value, type, reason} = chainedPrivateKeyStatus?.value ? chainedPrivateKeyStatus : await PrivateKeyStore.get(accountID);
 
         if (!value) {
             return this.createErrorReturnValue(reason || 'multifactorAuthentication.reason.error.keyMissing');
         }
 
         this.auth = {
-            value: signTokenED25519(this.auth.value, value),
+            value: signTokenED25519(accountID, this.auth.value, value),
             reason: 'multifactorAuthentication.reason.success.tokenSigned',
             type,
         };
@@ -90,7 +99,7 @@ class MultifactorAuthenticationChallenge<T extends MultifactorAuthenticationScen
      * For not configured devices or re-registration, requires a validation code.
      */
     public async send(): Promise<MultifactorAuthenticationPartialStatus<boolean, true>> {
-        if (!this.auth.value) {
+        if (!this.auth.value || !isChallengeSigned(this.auth.value)) {
             return this.createErrorReturnValue('multifactorAuthentication.reason.error.signatureMissing');
         }
 

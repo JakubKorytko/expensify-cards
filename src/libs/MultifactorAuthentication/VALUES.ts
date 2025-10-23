@@ -76,6 +76,10 @@ const MULTI_FACTOR_AUTHENTICATION_FACTORS = {
 const MULTI_FACTOR_AUTHENTICATION_VALUES = {
     /** Name of the service associated with the keys in SecureStore */
     KEYCHAIN_SERVICE: 'Expensify',
+    /** Type sent to the API to indicate that ED25519 was used */
+    ED25519_TYPE: 'biometrics',
+    /** RPID (Relying Party ID) sent to the API */
+    RPID: 'expensify.com',
     /** Names that the keys are stored under in the SecureStore.  */
     KEY_ALIASES: {
         PUBLIC_KEY: '3DS_SCA_KEY_PUBLIC',
@@ -119,7 +123,6 @@ const MULTI_FACTOR_AUTHENTICATION_VALUES = {
             id: MULTI_FACTOR_AUTHENTICATION_FACTORS.SIGNED_CHALLENGE,
             name: 'Signed Challenge',
             parameter: 'signedChallenge',
-            type: String(),
             length: undefined,
             origin: MULTI_FACTOR_AUTHENTICATION_FACTOR_ORIGIN.MULTI_FACTOR_AUTHENTICATION,
         },
@@ -127,7 +130,6 @@ const MULTI_FACTOR_AUTHENTICATION_VALUES = {
             id: MULTI_FACTOR_AUTHENTICATION_FACTORS.VALIDATE_CODE,
             name: 'Email One-Time Password',
             parameter: 'validateCode',
-            type: Number(),
             length: 6,
             origin: MULTI_FACTOR_AUTHENTICATION_FACTOR_ORIGIN.FALLBACK,
         },
@@ -135,7 +137,6 @@ const MULTI_FACTOR_AUTHENTICATION_VALUES = {
             id: MULTI_FACTOR_AUTHENTICATION_FACTORS.OTP,
             name: 'Two-Factor Authentication or SMS One-Time Password',
             parameter: 'otp',
-            type: Number(),
             length: 6,
             origin: MULTI_FACTOR_AUTHENTICATION_FACTOR_ORIGIN.FALLBACK,
         },
