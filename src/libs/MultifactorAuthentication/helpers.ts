@@ -20,11 +20,12 @@ function areMultifactorAuthenticationFactorsSufficient(
     factors: Partial<AllMultifactorAuthenticationFactors>,
     factorsCombination: ValueOf<typeof VALUES.FACTOR_COMBINATIONS>,
     isStoredFactorVerified = true,
+    is2FAEnabled = false,
 ): MultifactorAuthenticationPartialStatus<true | string> {
     const requiredFactors = factorsCombination.map((id) => VALUES.FACTORS_REQUIREMENTS[id]);
 
     for (const {id, parameter, name, length} of requiredFactors) {
-        if (id !== VALUES.FACTORS.VALIDATE_CODE && !isStoredFactorVerified) {
+        if (id !== VALUES.FACTORS.VALIDATE_CODE && !isStoredFactorVerified && !is2FAEnabled) {
             continue;
         }
 

@@ -1,4 +1,5 @@
 import {useCallback, useMemo} from 'react';
+import useUserInformation from '@hooks/useUserInformation';
 import {requestValidateCodeAction} from '@libs/actions/User';
 import {areFactorsSufficient, processScenario} from '@libs/MultifactorAuthentication/helpers';
 import type {MultifactorAuthenticationStep, MultifactorAuthorizationFallbackScenario, MultifactorAuthorizationFallbackScenarioParams} from '@libs/MultifactorAuthentication/types';
@@ -12,6 +13,7 @@ import useMultifactorAuthenticationStatus from './useMultifactorAuthenticationSt
  */
 function useMultifactorAuthorizationFallback() {
     const [status, setStatus] = useMultifactorAuthenticationStatus<number | undefined>(undefined, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION_FALLBACK);
+    const {is2FAEnabled} = useUserInformation();
 
     /**
      * Verifies that all required authentication factors are provided.
@@ -25,8 +27,9 @@ function useMultifactorAuthorizationFallback() {
                 },
                 CONST.MULTI_FACTOR_AUTHENTICATION.FACTOR_COMBINATIONS.FALLBACK,
                 !!status.value,
+                is2FAEnabled,
             ),
-        [status.value],
+        [is2FAEnabled, status.value],
     );
 
     /**
@@ -51,10 +54,13 @@ function useMultifactorAuthorizationFallback() {
                     requestValidateCodeAction();
                 }
 
+                const shouldStoreValidateCode = factorsCheckStep.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.OTP && is2FAEnabled;
+
                 return setStatus((prevStatus) => ({
                     ...prevStatus,
                     step: factorsCheckStep,
                     reason: factorsCheckReason,
+                    value: shouldStoreValidateCode ? (storedValue ?? undefined) : undefined,
                 }));
             }
 
@@ -78,7 +84,7 @@ function useMultifactorAuthorizationFallback() {
             }
             return setStatus(processResult);
         },
-        [status.value, verifyFactors, setStatus],
+        [status.value, verifyFactors, setStatus, is2FAEnabled],
     );
 
     /**

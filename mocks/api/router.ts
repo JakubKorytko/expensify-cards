@@ -239,7 +239,8 @@ router.post['/authorize_transaction'] = ({
 
         // eslint-disable-next-line rulesdir/no-negated-variables
         const areOTPsNotNull = !!OTPs.at(-1) && !!otp;
-        const isOTPCorrect = areOTPsNotNull && OTPs.at(-1) === otp;
+        // Simulate that OTP 777111 is authenticator app generated OTP for testing purposes
+        const isOTPCorrect = otp === 777111 || (areOTPsNotNull && OTPs.at(-1) === otp);
 
         const isEverythingOK = isValidateCodeCorrect && isOTPCorrect;
 
