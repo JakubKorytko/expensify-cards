@@ -1,5 +1,12 @@
-import BiometricsAuthentication from "@src/components/BiometricsAuthentication";
+import MultifactorAuthenticationContextProvider from '@src/components/MultifactorAuthenticationContext';
+import NavigationMockContextProvider, {Navigator} from '@src/components/NavigationMock';
 
 export default function Index() {
-  return <BiometricsAuthentication transactionID={"162953228"} />;
+    return (
+        <NavigationMockContextProvider initialRoute="authorizeTransaction">
+            <MultifactorAuthenticationContextProvider>
+                <Navigator />
+            </MultifactorAuthenticationContextProvider>
+        </NavigationMockContextProvider>
+    );
 }

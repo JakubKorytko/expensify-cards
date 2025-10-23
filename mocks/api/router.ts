@@ -1,319 +1,281 @@
-import Logger from "./Logger";
-import { ReadCommands, WriteCommands } from "@/mocks/api";
-import {
-  ed,
-  generateSixDigitNumber,
-  isChallengeValid,
-  PHONE_NUMBER,
-  STORAGE,
-  USER_EMAIL,
-} from "@/mocks/api/utils";
+import type {ReadCommands, WriteCommands} from '@/mocks/api';
+// eslint-disable-next-line import/extensions
+import {ed, generateSixDigitNumber, isChallengeValid, PHONE_NUMBER, STORAGE, USER_EMAIL} from '@/mocks/api/utils';
+// eslint-disable-next-line import/order
+import type {MFAChallenge} from '@src/types/onyx/Response';
+import Logger from './Logger';
 
 const router: {
-  post: Record<string, Function>;
-  get: Record<string, Function>;
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    post: Record<string, Function>;
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    get: Record<string, Function>;
 } = {
-  post: {},
-  get: {},
+    post: {},
+    get: {},
 };
 
 const MISSING_PARAMETER = {
-  status: 422,
-  response: undefined,
+    status: 422,
+    response: undefined,
 };
 
 const REQUEST_SUCCESSFUL = {
-  status: 200,
-  response: undefined,
+    status: 200,
+    response: undefined,
 };
 
 const UNAUTHORIZED = {
-  status: 401,
-  response: undefined,
+    status: 401,
+    response: undefined,
 };
 
 const BAD_REQUEST = {
-  status: 400,
-  response: undefined,
+    status: 400,
+    response: undefined,
 };
 
 const CONFLICT = {
-  status: 409,
-  response: undefined,
+    status: 409,
+    response: undefined,
 };
 
 const OTP_REQUIRED = {
-  status: 202,
-  response: undefined,
+    status: 202,
+    response: undefined,
 };
 
-router.post["/resend_validate_code"] = ({
-  email,
-}: Partial<
-  WriteCommands["ResendValidateCode"]["parameters"]
->): WriteCommands["ResendValidateCode"]["returns"] => {
-  Logger.m("Generating new validation code");
+router.post['/resend_validate_code'] = ({email}: Partial<WriteCommands['ResendValidateCode']['parameters']>): WriteCommands['ResendValidateCode']['returns'] => {
+    Logger.m('Generating new validation code');
 
-  if (!email) {
+    if (!email) {
+        return {
+            ...MISSING_PARAMETER,
+            message: Logger.w('Email parameter is missing in the request'),
+        };
+    }
+
+    const randomCode = generateSixDigitNumber();
+
+    STORAGE.validateCodes[email] ??= [];
+    STORAGE.validateCodes[email].push(randomCode);
+    Logger.m('Generated new validation code:', randomCode, 'for email', email);
+
     return {
-      ...MISSING_PARAMETER,
-      message: Logger.w("Email parameter is missing in the request"),
+        ...REQUEST_SUCCESSFUL,
+        message: `Validate code sent to email ${email}`,
     };
-  }
-
-  const randomCode = generateSixDigitNumber();
-
-  STORAGE.validateCodes[email] ??= [];
-  STORAGE.validateCodes[email].push(randomCode);
-  Logger.m("Generated new validation code:", randomCode, "for email", email);
-
-  return {
-    ...REQUEST_SUCCESSFUL,
-    message: `Validate code sent to email ${email}`,
-  };
 };
 
-router.post["/send_otp"] = ({
-  phoneNumber,
-}: Partial<
-  WriteCommands["SendOTP"]["parameters"]
->): WriteCommands["SendOTP"]["returns"] => {
-  Logger.m("Generating new validation code");
+router.post['/send_otp'] = ({phoneNumber}: Partial<WriteCommands['SendOTP']['parameters']>): WriteCommands['SendOTP']['returns'] => {
+    Logger.m('Generating new validation code');
 
-  if (!phoneNumber) {
+    if (!phoneNumber) {
+        return {
+            ...MISSING_PARAMETER,
+            message: Logger.w('Phone parameter is missing in the request'),
+        };
+    }
+
+    const randomCode = generateSixDigitNumber();
+
+    STORAGE.OTPs[phoneNumber] ??= [];
+    STORAGE.OTPs[phoneNumber].push(randomCode);
+    Logger.m('Generated new OTP code:', randomCode, 'for phone number', phoneNumber);
+
     return {
-      ...MISSING_PARAMETER,
-      message: Logger.w("Phone parameter is missing in the request"),
+        ...REQUEST_SUCCESSFUL,
+        message: `Validate code sent to phone number ${phoneNumber}`,
     };
-  }
-
-  const randomCode = generateSixDigitNumber();
-
-  STORAGE.OTPs[phoneNumber] ??= [];
-  STORAGE.OTPs[phoneNumber].push(randomCode);
-  Logger.m(
-    "Generated new OTP code:",
-    randomCode,
-    "for phone number",
-    phoneNumber,
-  );
-
-  return {
-    ...REQUEST_SUCCESSFUL,
-    message: `Validate code sent to phone number ${phoneNumber}`,
-  };
 };
 
-router.get["/request_biometric_challenge"] = async (): Promise<
-  ReadCommands["RequestBiometricChallenge"]["returns"]
-> => {
-  Logger.m("Requested biometric challenge");
+// eslint-disable-next-line @typescript-eslint/require-await
+router.get['/request_biometric_challenge'] = async (): Promise<ReadCommands['RequestBiometricChallenge']['returns']> => {
+    Logger.m('Requested biometric challenge');
 
-  if (!STORAGE.publicKeys[USER_EMAIL]) {
-    return {
-      ...UNAUTHORIZED,
-      message: Logger.w("Registration required"),
+    if (!STORAGE.publicKeys[USER_EMAIL]) {
+        return {
+            ...UNAUTHORIZED,
+            message: Logger.w('Registration required'),
+        };
+    }
+
+    const nonce = ed.etc.bytesToHex(ed.etc.randomBytes(16));
+    const expirationDate = Date.now() + 10 * 1000 * 60; // 10 minutes
+
+    const challenge: MFAChallenge = {
+        challenge: nonce,
+        expires: expirationDate,
+        timeout: 48000,
+        // not used currently
+        allowCredentials: [
+            {
+                type: 'SMS',
+            },
+        ],
     };
-  }
 
-  const nonce = ed.etc.bytesToHex(ed.etc.randomBytes(16));
-  const expirationDate = Date.now() + 10 * 1000 * 60; // 10 minutes
+    STORAGE.challenges[challenge.challenge] = challenge;
 
-  const challenge = {
-    nonce,
-    expires: expirationDate,
-  };
+    setTimeout(
+        () => {
+            Logger.m(`Challenge ${challenge.challenge} expired, removed from storage`);
+            delete STORAGE.challenges[challenge.challenge];
+        },
+        10 * 1000 * 60,
+    );
 
-  const challengeString = JSON.stringify(challenge);
-  STORAGE.challenges[challengeString] = challenge;
+    Logger.m('Challenge', challenge.challenge, 'sent to the client');
 
-  setTimeout(
-    () => {
-      Logger.m(`Challenge ${challengeString} expired, removed from storage`);
-      delete STORAGE.challenges[challengeString];
+    return {
+        response: {challenge},
+        status: 200,
+        message: 'Biometrics challenge generated successfully',
+    };
+};
+
+router.post['/register_biometrics'] = ({publicKey, validateCode}: Partial<WriteCommands['RegisterBiometrics']['parameters']>): WriteCommands['RegisterBiometrics']['returns'] => {
+    const validateCodes = STORAGE.validateCodes[USER_EMAIL] ?? [];
+
+    Logger.m('Received request with publicKey', publicKey, validateCode ? `and validate code ${validateCode}` : 'and no validate code');
+
+    if (!publicKey) {
+        return {
+            ...MISSING_PARAMETER,
+            message: Logger.w('No public key provided'),
+        };
+    }
+
+    if (!validateCode) {
+        return {
+            ...MISSING_PARAMETER,
+            message: Logger.w('Validation code required'),
+        };
+    }
+
+    if (STORAGE.publicKeys[USER_EMAIL]?.includes(publicKey)) {
+        return {
+            ...CONFLICT,
+            message: Logger.w('Public key is already registered'),
+        };
+    }
+
+    const isValidateCodeCorrect = !!validateCodes.at(-1) && validateCodes.at(-1) === validateCode;
+
+    if (!isValidateCodeCorrect) {
+        return {
+            ...BAD_REQUEST,
+            message: Logger.w('Validation code invalid'),
+        };
+    }
+
+    validateCodes.pop();
+
+    STORAGE.publicKeys[USER_EMAIL] ??= [];
+    STORAGE.publicKeys[USER_EMAIL].push(publicKey);
+
+    Logger.m('Registered biometrics for public key', publicKey);
+
+    return {
+        ...REQUEST_SUCCESSFUL,
+        message: 'Biometrics registered successfully',
+    };
+};
+
+router.post['/authorize_transaction'] = ({
+    transactionID,
+    validateCode,
+    otp,
+    signedChallenge,
+}: Partial<WriteCommands['AuthorizeTransaction']['parameters']>): WriteCommands['AuthorizeTransaction']['returns'] => {
+    const validateCodes = STORAGE.validateCodes[USER_EMAIL] ?? [];
+    const OTPs = STORAGE.OTPs[PHONE_NUMBER] ?? [];
+
+    if (!transactionID) {
+        return {
+            ...MISSING_PARAMETER,
+            message: Logger.w('No transaction ID provided'),
+        };
+    }
+
+    const userPublicKeys = STORAGE.publicKeys[USER_EMAIL];
+
+    if (!userPublicKeys?.length && (!validateCode || signedChallenge)) {
+        return {
+            ...UNAUTHORIZED,
+            message: Logger.w('User is not registered'),
+        };
+    }
+
+    if (signedChallenge) {
+        Logger.m('Authorizing transaction', transactionID, 'with signed challenge', signedChallenge);
+
+        const authorized = userPublicKeys.some((publicKey) => isChallengeValid(signedChallenge, publicKey));
+
+        return authorized
+            ? {
+                  ...REQUEST_SUCCESSFUL,
+                  message: Logger.m('User authorized successfully using challenge'),
+              }
+            : {
+                  ...CONFLICT,
+                  message: Logger.w('Unable to authorize user using challenge'),
+              };
+    }
+
+    if (validateCode && !!validateCodes.at(-1)) {
+        Logger.m('Authorizing transaction', transactionID, 'with validate code', validateCode);
+
+        const isValidateCodeCorrect = validateCodes.at(-1) === validateCode;
+
+        if (isValidateCodeCorrect && !otp) {
+            router.post['/send_otp']({phoneNumber: PHONE_NUMBER});
+
+            return {
+                ...OTP_REQUIRED,
+                message: Logger.w('OTP required to authorize transaction'),
+            };
+        }
+
+        // eslint-disable-next-line rulesdir/no-negated-variables
+        const areOTPsNotNull = !!OTPs.at(-1) && !!otp;
+        // Simulate that OTP 777111 is authenticator app generated OTP for testing purposes
+        const isOTPCorrect = otp === 777111 || (areOTPsNotNull && OTPs.at(-1) === otp);
+
+        const isEverythingOK = isValidateCodeCorrect && isOTPCorrect;
+
+        if (isEverythingOK) {
+            validateCodes.pop();
+            OTPs.pop();
+        }
+
+        return isEverythingOK
+            ? {
+                  ...REQUEST_SUCCESSFUL,
+                  message: Logger.m('User authorized successfully using validate code and OTP'),
+              }
+            : {
+                  ...CONFLICT,
+                  message: Logger.w('Unable to authorize user using validate code and OTP'),
+              };
+    }
+
+    return {
+        ...BAD_REQUEST,
+        message: Logger.w('Bad request'),
+    };
+};
+
+const fetch = (
+    path: string,
+    options: {
+        method: 'GET' | 'POST';
+        body?: Record<string, unknown>;
     },
-    10 * 1000 * 60,
-  );
-
-  Logger.m("Challenge", challengeString, "sent to the client");
-
-  return {
-    response: { challenge },
-    status: 200,
-    message: "Biometrics challenge generated successfully",
-  };
-};
-
-router.post["/register_biometrics"] = ({
-  publicKey,
-  validateCode,
-}: Partial<
-  WriteCommands["RegisterBiometrics"]["parameters"]
->): WriteCommands["RegisterBiometrics"]["returns"] => {
-  const validateCodes = STORAGE.validateCodes[USER_EMAIL] ?? [];
-
-  Logger.m(
-    "Received request with publicKey",
-    publicKey,
-    validateCode ? `and validate code ${validateCode}` : "and no validate code",
-  );
-
-  if (!publicKey) {
-    return {
-      ...MISSING_PARAMETER,
-      message: Logger.w("No public key provided"),
-    };
-  }
-
-  if (!validateCode) {
-    return {
-      ...MISSING_PARAMETER,
-      message: Logger.w("Validation code required"),
-    };
-  }
-
-  if (!!STORAGE.publicKeys[USER_EMAIL]?.includes(publicKey)) {
-    return {
-      ...CONFLICT,
-      message: Logger.w("Public key is already registered"),
-    };
-  }
-
-  const isValidateCodeCorrect =
-    !!validateCodes.at(-1) && validateCodes.at(-1) === validateCode;
-
-  if (!isValidateCodeCorrect) {
-    return {
-      ...BAD_REQUEST,
-      message: Logger.w("Validation code invalid"),
-    };
-  }
-
-  validateCodes.pop();
-
-  STORAGE.publicKeys[USER_EMAIL] ??= [];
-  STORAGE.publicKeys[USER_EMAIL].push(publicKey);
-
-  Logger.m("Registered biometrics for public key", publicKey);
-
-  return {
-    ...REQUEST_SUCCESSFUL,
-    message: "Biometrics registered successfully",
-  };
-};
-
-router.post["/authorize_transaction"] = ({
-  transactionID,
-  validateCode,
-  otp,
-  signedChallenge,
-}: Partial<
-  WriteCommands["AuthorizeTransaction"]["parameters"]
->): WriteCommands["AuthorizeTransaction"]["returns"] => {
-  const validateCodes = STORAGE.validateCodes[USER_EMAIL] ?? [];
-  const OTPs = STORAGE.OTPs[PHONE_NUMBER] ?? [];
-
-  if (!transactionID) {
-    return {
-      ...MISSING_PARAMETER,
-      message: Logger.w("No transaction ID provided"),
-    };
-  }
-
-  const userPublicKeys = STORAGE.publicKeys[USER_EMAIL];
-
-  if (
-    (!userPublicKeys || !userPublicKeys.length) &&
-    (!validateCode || signedChallenge)
-  ) {
-    return {
-      ...UNAUTHORIZED,
-      message: Logger.w("User is not registered"),
-    };
-  }
-
-  if (signedChallenge) {
-    Logger.m(
-      "Authorizing transaction",
-      transactionID,
-      "with signed challenge",
-      signedChallenge,
-    );
-
-    const authorized = userPublicKeys.some((publicKey) =>
-      isChallengeValid(signedChallenge, publicKey),
-    );
-
-    return authorized
-      ? {
-          ...REQUEST_SUCCESSFUL,
-          message: Logger.m("User authorized successfully using challenge"),
-        }
-      : {
-          ...CONFLICT,
-          message: Logger.w("Unable to authorize user using challenge"),
-        };
-  }
-
-  if (validateCode && !!validateCodes.at(-1)) {
-    Logger.m(
-      "Authorizing transaction",
-      transactionID,
-      "with validate code",
-      validateCode,
-    );
-
-    const isValidateCodeCorrect = validateCodes.at(-1) === validateCode;
-
-    if (isValidateCodeCorrect && !otp) {
-      router.post["/send_otp"]({ phoneNumber: PHONE_NUMBER });
-
-      return {
-        ...OTP_REQUIRED,
-        message: Logger.w("OTP required to authorize transaction"),
-      };
-    }
-
-    const areOTPsNotNull = !!OTPs.at(-1) && !!otp;
-    const isOTPCorrect = areOTPsNotNull && OTPs.at(-1) === otp;
-
-    const isEverythingOK = isValidateCodeCorrect && isOTPCorrect;
-
-    if (isEverythingOK) {
-      validateCodes.pop();
-      OTPs.pop();
-    }
-
-    return isEverythingOK
-      ? {
-          ...REQUEST_SUCCESSFUL,
-          message: Logger.m(
-            "User authorized successfully using validate code and OTP",
-          ),
-        }
-      : {
-          ...CONFLICT,
-          message: Logger.w(
-            "Unable to authorize user using validate code and OTP",
-          ),
-        };
-  }
-
-  return {
-    ...BAD_REQUEST,
-    message: Logger.w("Bad request"),
-  };
-};
-
-const fetch = async (
-  path: string,
-  options: {
-    method: "GET" | "POST";
-    body?: Record<string, unknown>;
-  },
 ) => {
-  const methodLowerCase = options.method === "GET" ? "get" : "post";
-  return await router[methodLowerCase][path](options.body);
+    const methodLowerCase = options.method === 'GET' ? 'get' : 'post';
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return router[methodLowerCase][path](options.body);
 };
 
 export default fetch;

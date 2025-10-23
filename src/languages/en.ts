@@ -1,76 +1,98 @@
+/**
+ * Translation strings for the application.
+ * Contains translations for multifactorial authentication-related messages, including success/failure states,
+ * error messages, and API responses.
+ */
 const translations = {
-  // ...
-  biometrics: {
-    feedbackMessage: {
-      successMessage: (authorization?: boolean, using?: string) =>
-        `You’ve successfully ${authorization ? "authorized challenge" : "authenticated"}${using ? ` using ${using}` : ""}`,
-      failedMessage: (authorization?: boolean, because?: string) =>
-        `Your ${authorization ? "authorization" : "authentication"} attempt ${because ? `failed with error: ${because}` : "was unsuccessful."}`,
-      successTitle: (authorization?: boolean) =>
-        `${authorization ? "Authorization" : "Authentication"} successful`,
-      failedTitle: (authorization?: boolean) =>
-        `${authorization ? "Authorization" : "Authentication"} failed`,
+    // ...
+    multifactorAuthentication: {
+        /** Messages and titles displayed after multifactorial authentication operations */
+        statusMessage: {
+            successMessage: ({authorization, because}: {authorization?: boolean; because?: string}) =>
+                `You have successfully ${authorization ? 'authorized the challenge' : 'authenticated'}${because ? ` using ${because}` : ''}`,
+            failedMessage: ({authorization, because}: {authorization?: boolean; because?: string}) =>
+                `Your ${authorization ? 'authorization' : 'authentication'} ${because ? `failed: ${because}` : 'was unsuccessful'}`,
+            successTitle: ({authorization}: {authorization?: boolean}) => `${authorization ? 'Authorization' : 'Authentication'} successful`,
+            failedTitle: ({authorization}: {authorization?: boolean}) => `${authorization ? 'Authorization' : 'Authentication'} failed`,
+            successTitleGeneral: 'Operation successful',
+            failedTitleGeneral: 'Operation failed',
+        },
+        /** Title indicating multifactorial authentication registration status */
+        title: ({registered = true}: {registered?: boolean}) => `Multifactor Authentication (${registered ? 'Registered' : 'Not registered'})`,
+        reason: {
+            /** Success messages for multifactorial authentication operations */
+            success: {
+                keySavedInSecureStore: 'Key successfully saved in SecureStore',
+                keyRetrievedFromSecureStore: 'Key successfully retrieved from SecureStore',
+                keyNotInSecureStore: 'No key found in SecureStore',
+                keyPairGenerated: 'Key pair successfully generated',
+                tokenReceived: 'Token received successfully',
+                tokenSigned: 'Token signed successfully',
+                verificationSuccess: 'Verification completed successfully',
+                keyDeletedFromSecureStore: 'Key successfully deleted from SecureStore',
+            },
+            /** Error messages for multifactorial authentication operation failures */
+            error: {
+                unableToSaveKey: 'Failed to save key in SecureStore',
+                unableToRetrieve: 'Failed to retrieve key from SecureStore',
+                unableToDelete: 'Failed to delete key from SecureStore',
+                badToken: 'Invalid or missing token',
+                tokenMissing: 'Token is missing',
+                keyMissing: 'Key is missing',
+                signatureMissing: 'Signature is missing',
+                challengeIsAlreadySigned: 'Challenge has already been signed',
+                challengeRejected: 'Challenge rejected by API',
+                validateCodeMissing: 'Validation code is missing',
+                otpMissing: 'OTP code is missing',
+                keyMissingOnTheBE: 'Key is stored locally but not found on server',
+                multifactorAuthenticationNotSupported: 'This device does not support multifactorial authentication',
+                badRequest: 'Bad request',
+                fallbackNotAllowed: 'This device does not support biometrics and fallback is not allowed',
+                biometricsNotAllowed: 'The biometrics actions are not allowed for this scenario',
+            },
+            /** Error messages specific to Expo's SecureStore */
+            expoErrors: {
+                notInForeground: 'Application must be in the foreground',
+                alreadyInProgress: 'Authentication already in progress',
+                canceled: 'Authentication canceled by user',
+                generic: 'An error occurred',
+                keyExists: 'This key already exists',
+                noAuthentication: 'No authentication methods available',
+                oldAndroid: 'This feature is not supported on your device',
+            },
+            /** Generic status messages */
+            generic: {
+                notRequested: 'No request made yet',
+                apiError: 'API error occurred',
+                authFactorsError: 'Authentication factors error',
+                authFactorsSufficient: 'Authentication factors verified',
+            },
+        },
+        /** API response messages */
+        apiResponse: {
+            registrationRequired: 'Registration is required',
+            challengeGenerated: 'Challenge generated successfully',
+            noPublicKey: 'Public key not provided',
+            keyAlreadyRegistered: 'This public key is already registered',
+            validationCodeRequired: 'Please provide a validation code',
+            validationCodeInvalid: 'Invalid validation code',
+            otpCodeInvalid: 'Invalid OTP code',
+            otpCodeRequired: 'Please provide an OTP code',
+            multifactorAuthenticationSuccess: 'Multi-factor authentication registration successful',
+            noTransactionID: 'Transaction ID not provided',
+            userNotRegistered: 'User registration not found',
+            unableToAuthorize: 'Authorization failed with provided credentials',
+            userAuthorized: 'User authorized successfully',
+            badRequest: 'Invalid request',
+            unknownResponse: 'Unrecognized response type',
+        },
+        /** User input prompts during multifactorial authentication flows */
+        provideValidateCode: 'Enter your verification code to continue',
+        provideOTPCode: 'Enter your one-time password to continue',
+        softPromptTitle: 'Verify yourself with your face or fingerprint',
+        softPromptDescription: 'Enable quick, secure verification using your face or fingerprint - no passwords or codes required.',
     },
-    reason: {
-      success: {
-        keySavedInSecureStore: "Successfully saved key in the SecureStore",
-        keyRetrievedFromSecureStore:
-          "Successfully retrieved key from the SecureStore",
-        keyNotInSecureStore: "SecureStore entry for the key is empty",
-        keyPairGenerated: "Key pair generated successfully",
-        tokenReceived: "Successfully received token",
-        tokenSigned: "Successfully signed token",
-        verificationSuccess: "Verification was successful",
-        keyDeletedFromSecureStore:
-          "Successfully deleted key from the SecureStore",
-      },
-      error: {
-        unableToSaveKey: "Unable to save the key in the SecureStore",
-        unableToRetrieve: "Unable to retrieve the key from the SecureStore",
-        unableToDelete: "Unable to delete the key from the SecureStore",
-        badToken: "Requested token is missing or invalid",
-        tokenMissing: "Token is missing",
-        keyMissing: "Key is missing",
-        signatureMissing: "Signature is missing",
-        challengeRejected: "API rejected the challenge",
-        validateCodeMissing: "Validation code is missing",
-        otpMissing: "OTP code is missing",
-      },
-      expoErrors: {
-        notInForeground: "App is not in the foreground",
-        alreadyInProgress: "Authentication is already in progress",
-        canceled: "Authentication was canceled",
-        generic: "Something went wrong",
-        keyExists: "Key already exists",
-        noAuthentication: "No authentication method available",
-        oldAndroid: "This functionality is not available on your device",
-      },
-      generic: {
-        notRequested: "Not requested yet",
-        apiError: "API error",
-        authFactorsError: "Auth factors error",
-        authFactorsSufficient: "Auth factors are sufficient",
-      },
-    },
-    apiResponse: {
-      registrationRequired: "Registration required",
-      challengeGenerated: "Challenge generated successfully",
-      noPublicKey: "No public key provided",
-      keyAlreadyRegistered: "Public key is already registered",
-      validationCodeRequired: "Validation code is required",
-      validationCodeInvalid: "Validation code is invalid",
-      biometricsSuccess: "Biometrics registered successfully",
-      noTransactionID: "No transaction ID provided",
-      userNotRegistered: "User is not registered",
-      unableToAuthorize: "Unable to authorize user using provided parameters",
-      userAuthorized: "User authorized successfully",
-      badRequest: "Bad request",
-      unknownResponse: "Unknown response type",
-    },
-    provideValidateCode: "You need to provide the validate code to proceed",
-    provideOTPCode: "You need to provide the OTP code to proceed",
-  },
-  // ...
+    // ...
 };
 
 export default translations;

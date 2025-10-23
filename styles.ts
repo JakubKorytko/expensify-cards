@@ -1,26 +1,62 @@
+const centerContent = {
+  alignItems: "center",
+  justifyContent: "center",
+} as const;
+
+const buttonContainerBase = {
+  ...centerContent,
+  borderRadius: 20,
+  paddingHorizontal: 14,
+} as const;
+
+const boldTextBase = {
+  fontWeight: "bold",
+} as const;
+
+const boldText11 = {
+  ...boldTextBase,
+  fontSize: 11,
+} as const;
+
+const boldTextWhite = {
+  ...boldTextBase,
+  color: "white",
+} as const;
+
+const columnFullWidth = {
+  flexDirection: "column",
+  width: "100%",
+} as const;
+
+const bottomSheetBase = {
+  ...columnFullWidth,
+  gap: 10,
+  position: "absolute",
+  borderTopLeftRadius: 20,
+  borderTopRightRadius: 20,
+  bottom: 0,
+  padding: 30,
+  backgroundColor: "#FCFBF9",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+} as const;
+
 const styles = {
   container: {
     display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
+    ...centerContent,
     width: "90%",
     gap: 5,
     backgroundColor: "#F8F4F0",
     borderRadius: 5,
   },
   callbackContainer: {
-    width: "100%",
-    gap: 10,
-    position: "absolute",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    bottom: 0,
-    flexDirection: "column",
-    padding: 30,
-    backgroundColor: "#FCFBF9",
+    ...bottomSheetBase,
     height: 200,
-    alignItems: "flex-start",
-    justifyContent: "space-between",
+  },
+  inputContainer: {
+    ...bottomSheetBase,
+    height: 220,
   },
   gap15: {
     gap: 15,
@@ -31,11 +67,17 @@ const styles = {
     borderColor: "#E6E1DA",
     width: 250,
     borderRadius: 10,
+    height: 60,
     textAlign: "center",
     letterSpacing: 5,
     alignSelf: "center",
     fontSize: 20,
     marginBottom: 5,
+  },
+  innerInputContainer: {
+    ...columnFullWidth,
+    gap: 10,
+    justifyContent: "flex-end",
   },
   layoutContainerWithModal: {
     backgroundColor: "#EBE6DF",
@@ -43,8 +85,7 @@ const styles = {
   },
   layoutContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    ...centerContent,
     backgroundColor: "#FCFBF9",
     gap: 40,
   },
@@ -56,44 +97,38 @@ const styles = {
     padding: 20,
   },
   button: {
+    ...buttonContainerBase,
     backgroundColor: "#E6E1DA",
-    borderRadius: 20,
-    paddingHorizontal: 14,
     paddingVertical: 9,
-    alignItems: "center",
-    justifyContent: "center",
   },
   buttonText: {
-    fontWeight: "bold",
-    fontSize: 11,
+    ...boldText11,
   },
   greenButtonText: {
-    fontWeight: "bold",
-    color: "white",
+    ...boldTextWhite,
     fontSize: 15,
   },
   greenButton: {
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
+    ...buttonContainerBase,
     paddingVertical: 10,
+    width: "100%",
     backgroundColor: "#03D47C",
   },
   buttonNegative: {
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
+    ...buttonContainerBase,
     paddingVertical: 10,
+    width: "100%",
+    backgroundColor: "#F25730",
+  },
+  buttonNegativeSmall: {
+    ...buttonContainerBase,
+    paddingVertical: 10,
+    width: 80,
     backgroundColor: "#F25730",
   },
   buttonTextNegative: {
+    ...boldText11,
     color: "#fff",
-    fontWeight: "bold",
-    fontSize: 11,
   },
   title: {
     fontSize: 15,
