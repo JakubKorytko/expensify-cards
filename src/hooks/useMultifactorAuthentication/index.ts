@@ -17,7 +17,6 @@ import type ROUTES from '@src/ROUTES';
 import {areMultifactorAuthorizationFallbackParamsValid, convertResultIntoMFAStatus, MergedHooksStatus, shouldAllowBiometrics, shouldAllowFallback} from './helpers';
 import type {MultifactorAuthenticationScenarioStatus, Register, UseMultifactorAuthentication} from './types';
 import useBiometricsSetup from './useBiometricsSetup';
-import useMultifactorAuthenticationSoftPrompt from './useMultifactorAuthenticationSoftPrompt';
 import useMultifactorAuthenticationStatus from './useMultifactorAuthenticationStatus';
 import useMultifactorAuthorization from './useMultifactorAuthorization';
 import useMultifactorAuthorizationFallback from './useMultifactorAuthorizationFallback';
@@ -26,7 +25,6 @@ function useMultifactorAuthentication(): UseMultifactorAuthentication {
     const BiometricsSetup = useBiometricsSetup();
     const MultifactorAuthorizationFallback = useMultifactorAuthorizationFallback();
     const MultifactorAuthorization = useMultifactorAuthorization();
-    const MultifactorAuthenticationSoftPrompt = useMultifactorAuthenticationSoftPrompt();
     const [mergedStatus, setMergedStatus] = useMultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>(
         {
             scenario: undefined,
@@ -37,10 +35,16 @@ function useMultifactorAuthentication(): UseMultifactorAuthentication {
     const {navigate, route} = useNavigation();
     const success = useRef<boolean | undefined>(undefined);
     // to avoid waiting for next render
-    const wasSoftPromptAccepted = useRef<boolean | undefined>(undefined);
+    const softPromptStore = useRef<{
+        accepted: boolean | undefined;
+        validateCode: number | undefined;
+    }>({
+        accepted: undefined,
+        validateCode: undefined,
+    });
 
     const navigateWithClear = useCallback(
-        (status: MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>) => {
+        (status: MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>, softPrompt?: boolean) => {
             const {
                 step,
                 value: {scenario},
@@ -50,7 +54,10 @@ function useMultifactorAuthentication(): UseMultifactorAuthentication {
 
             let shouldClear = false;
 
-            if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE && route !== 'magicCode') {
+            if (softPrompt) {
+                navigate('softPrompt');
+                shouldClear = true;
+            } else if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE && route !== 'magicCode') {
                 navigate('magicCode');
                 shouldClear = true;
             } else if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.OTP && route !== 'otp') {
@@ -77,12 +84,12 @@ function useMultifactorAuthentication(): UseMultifactorAuthentication {
     );
 
     const setStatus = useCallback(
-        (...args: Parameters<typeof setMergedStatus>) => {
-            const [status, typeOverride] = args;
+        (...args: [...Parameters<typeof setMergedStatus>, softPrompt?: boolean]) => {
+            const [status, typeOverride, softPrompt] = args;
 
             const merged = setMergedStatus(status, typeOverride ?? (typeof status === 'function' ? undefined : status?.value.type));
 
-            navigateWithClear(merged);
+            navigateWithClear(merged, softPrompt);
 
             return merged;
         },
@@ -96,10 +103,10 @@ function useMultifactorAuthentication(): UseMultifactorAuthentication {
             return {
                 fallback: shouldAllowFallback(securityLevel),
                 // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-                biometrics: shouldAllowBiometrics(securityLevel) && (MultifactorAuthenticationSoftPrompt.accepted || wasSoftPromptAccepted.current),
+                biometrics: shouldAllowBiometrics(securityLevel) && (BiometricsSetup.isBiometryConfigured || softPromptStore.current.accepted),
             };
         },
-        [MultifactorAuthenticationSoftPrompt.accepted],
+        [BiometricsSetup.isBiometryConfigured],
     );
 
     const register = useCallback(
@@ -159,6 +166,8 @@ function useMultifactorAuthentication(): UseMultifactorAuthentication {
 
     const cancel = useCallback(() => {
         const {scenario, type} = mergedStatus.value;
+        softPromptStore.current.accepted = undefined;
+        softPromptStore.current.validateCode = undefined;
 
         if (type === CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION) {
             return setStatus(convertResultIntoMFAStatus(MultifactorAuthorization.cancel(), scenario, type, false));
@@ -175,30 +184,34 @@ function useMultifactorAuthentication(): UseMultifactorAuthentication {
             scenario: T,
             params?: MultifactorAuthenticationScenarioParams<T>,
         ): Promise<MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>> => {
-            if (MultifactorAuthenticationSoftPrompt.accepted === undefined && wasSoftPromptAccepted.current === undefined) {
-                const {validateCode} = params ?? {};
+            if (!BiometricsSetup.isBiometryConfigured && softPromptStore.current.accepted === undefined) {
+                const {validateCode} = params ?? softPromptStore.current;
                 if (!validateCode) {
                     requestValidateCodeAction();
-                    return setStatus((prevStatus) =>
+                }
+
+                softPromptStore.current.validateCode = validateCode;
+
+                return setStatus(
+                    (prevStatus) =>
                         convertResultIntoMFAStatus(
                             {
                                 ...prevStatus,
-                                step: {
-                                    isRequestFulfilled: false,
-                                    requiredFactorForNextStep: CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE,
-                                    wasRecentStepSuccessful: undefined,
-                                },
+                                step: validateCode
+                                    ? prevStatus.step
+                                    : {
+                                          isRequestFulfilled: false,
+                                          requiredFactorForNextStep: CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE,
+                                          wasRecentStepSuccessful: undefined,
+                                      },
                             },
                             scenario,
                             CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.NONE,
                             params ?? false,
                         ),
-                    );
-                }
-
-                MultifactorAuthenticationSoftPrompt.storeScenarioData(scenario, params);
-                navigate('softPrompt');
-                return mergedStatus;
+                    undefined,
+                    !!validateCode,
+                );
             }
 
             if (scenario === CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS) {
@@ -251,20 +264,24 @@ function useMultifactorAuthentication(): UseMultifactorAuthentication {
 
             return result;
         },
-        [BiometricsSetup, MultifactorAuthenticationSoftPrompt, allowedMethods, authorize, authorizeFallback, mergedStatus, navigate, register, setStatus],
+        [BiometricsSetup, allowedMethods, authorize, authorizeFallback, register, setStatus],
     );
 
     const softPromptDecision = useCallback(
         async (accepted: boolean) => {
-            MultifactorAuthenticationSoftPrompt.decision(accepted);
-            wasSoftPromptAccepted.current = accepted;
-            const {scenario, params} = MultifactorAuthenticationSoftPrompt.retrieveScenarioData() ?? {};
-            if (!scenario) {
+            softPromptStore.current.accepted = accepted;
+            const {scenario, payload} = mergedStatus.value;
+            const {validateCode} = softPromptStore.current;
+
+            if (!scenario || !isPayloadSufficient(scenario, payload)) {
                 return setStatus(MergedHooksStatus.badRequestStatus(mergedStatus));
             }
-            return process(scenario, params);
+            return process(scenario, {
+                validateCode,
+                ...payload,
+            });
         },
-        [MultifactorAuthenticationSoftPrompt, mergedStatus, process, setStatus],
+        [mergedStatus, process, setStatus],
     );
 
     const provideFactor = useCallback(
