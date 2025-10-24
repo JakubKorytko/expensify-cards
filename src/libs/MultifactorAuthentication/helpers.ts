@@ -1,6 +1,6 @@
 import type {ValueOf} from 'type-fest';
+import MULTI_FACTOR_AUTHENTICATION_SCENARIOS from '@components/MultifactorAuthenticationContext/scenarios';
 import type {TranslationPaths} from '@src/languages/types';
-import MULTI_FACTOR_AUTHENTICATION_SCENARIOS from './scenarios';
 import type {
     AllMultifactorAuthenticationFactors,
     MultifactorAuthenticationPartialStatus,

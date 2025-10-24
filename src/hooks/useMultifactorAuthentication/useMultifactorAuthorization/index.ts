@@ -2,11 +2,11 @@ import {useCallback} from 'react';
 import {createAuthorizeErrorStatus} from '@hooks/useMultifactorAuthentication/helpers';
 import type {MultifactorAuthorization} from '@hooks/useMultifactorAuthentication/types';
 import useMultifactorAuthenticationStatus from '@hooks/useMultifactorAuthentication/useMultifactorAuthenticationStatus';
-import useBiometricsSetup from '@hooks/useMultifactorAuthentication/useMultifactorAuthorization/useBiometricsSetup';
 import useUserInformation from '@hooks/useUserInformation';
 import Challenge from '@libs/MultifactorAuthentication/Challenge';
 import type {MultifactorAuthenticationScenario} from '@libs/MultifactorAuthentication/types';
 import CONST from '@src/CONST';
+import useBiometricsSetup from './useBiometricsSetup';
 
 /**
  * Hook that manages multifactorial authentication authorization for transactions.

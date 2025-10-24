@@ -1,6 +1,6 @@
 import {useCallback, useMemo, useRef} from 'react';
+import MULTI_FACTOR_AUTHENTICATION_SCENARIOS from '@components/MultifactorAuthenticationContext/scenarios';
 import {requestValidateCodeAction} from '@libs/actions/User';
-import MULTI_FACTOR_AUTHENTICATION_SCENARIOS from '@libs/MultifactorAuthentication/scenarios';
 import type {
     AllMultifactorAuthenticationFactors,
     MultifactorAuthenticationPartialStatus,

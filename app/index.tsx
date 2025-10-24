@@ -1,4 +1,4 @@
-import MultifactorAuthenticationContextProvider from '@src/components/MultifactorAuthenticationContext';
+import MultifactorAuthenticationContextProvider from '@components/MultifactorAuthenticationContext';
 import NavigationMockContextProvider, {Navigator} from '@src/components/NavigationMock';
 
 export default function Index() {

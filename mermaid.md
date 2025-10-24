@@ -17,14 +17,16 @@ sequenceDiagram
     end
 
 
-    box rgba(150,150,99,0.5) Flow trigger
-        participant SOT as Notification or In-App action
+    box rgba(150,150,99,0.5) Action trigger
+        actor User
     end
 
-
+    
     Note over MFACTX,RHPRHP: Context wraps the Navigator
-    SOT->>RHPRHP: Navigate to relevant MFAScreen with parameters
-        Note over SOT,RHPRHP: The payload (e.g. transactionID) is passed in the URL params
+    User->>RHPRHP: Navigate to relevant MFAScreen with parameters
+    Note over User,RHPRHP: Trigger action (e.g. notification tap, enter relevant screen).<br />The payload (e.g. transactionID) is passed in the URL params
+    User->>RHPRHP: Take action (e.g. click "Authorize" button)
+    
     RHPRHP->>MFACTX: Run the process method with scenario & params as arguments
         Note over RHPRHP,MFACTX: The scenario is identified based on the screen navigated to
     MFACTX-->>SC: Read details related to the scenario
@@ -36,17 +38,21 @@ sequenceDiagram
         MFACTX->>RHPRHP: Navigate to the Failure Screen
     else Flow can be executed but biometrics is required and not configured
         MFACTX->>RHPRHP: Navigate to the validate code input screen
+        User->>RHPRHP: Provide the validateCode value and submit
         RHPRHP->>MFACTX: Pass the validateCode value provided by the user
         MFACTX->>MFACTX: Store the validateCode value
         MFACTX->>RHPRHP: Navigate to the Soft Prompt screen
+        User->>RHPRHP: Accept/Reject the Soft Prompt
         RHPRHP->>MFACTX: Pass the Soft Prompt acceptance/rejection
         MFACTX->>MFACTX: Add stored validateCode & soft prompt decision to the params for the given flow
     end
     MFACTX->>Module: Pass scenario & params to the relevant module
         Note over MFACTX,Module: The module is a hook used to run the given flow (fallback/biometrics)
     loop
+        Note over Module,MFACTX: This section will vary based on the selected module.<br />Details for each module in their respective release
         Module->>MFACTX: Pass the info about the required factor type
         MFACTX->>RHPRHP: Navigate to the relevant screen for the factor retrieval
+        User->>RHPRHP: Provide the factor value and submit
         RHPRHP->>MFACTX: Pass the factor value provided by the user
         MFACTX->>Module: Pass the factor value
         Module-->>Server: Validate the factor/s with the backend

@@ -1,8 +1,8 @@
 import {useState} from 'react';
 import {TextInput, View} from 'react-native';
+import {useMultifactorAuthenticationContext} from '@components/MultifactorAuthenticationContext';
 import useLocalize from '@hooks/useLocalize';
 import HeaderWithBackButton from '@src/components/HeaderWithBackButton';
-import {useMultifactorAuthenticationContext} from '@src/components/MultifactorAuthenticationContext';
 import {Pressable} from '@src/components/Pressable';
 import Text from '@src/components/Text';
 import styles from '@src/styles';
