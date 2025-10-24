@@ -1,4 +1,7 @@
 import {useCallback, useEffect, useMemo} from 'react';
+import {doesDeviceSupportBiometrics, isBiometryConfigured, resetKeys, Status} from '@hooks/useMultifactorAuthentication/helpers';
+import type {MultifactorAuthenticationStatusKeyType, Register, UseBiometricsSetup} from '@hooks/useMultifactorAuthentication/types';
+import useMultifactorAuthenticationStatus from '@hooks/useMultifactorAuthentication/useMultifactorAuthenticationStatus';
 import useUserInformation from '@hooks/useUserInformation';
 import {requestValidateCodeAction} from '@libs/actions/User';
 import {generateKeyPair} from '@libs/MultifactorAuthentication/ED25519';
@@ -6,9 +9,6 @@ import {processScenario} from '@libs/MultifactorAuthentication/helpers';
 import {PrivateKeyStore, PublicKeyStore} from '@libs/MultifactorAuthentication/KeyStore';
 import type {MultifactorAuthenticationStatus} from '@libs/MultifactorAuthentication/types';
 import CONST from '@src/CONST';
-import {doesDeviceSupportBiometrics, isBiometryConfigured, resetKeys, Status} from './helpers';
-import type {MultifactorAuthenticationStatusKeyType, Register, UseBiometricsSetup} from './types';
-import useMultifactorAuthenticationStatus from './useMultifactorAuthenticationStatus';
 
 /**
  * Core hook that manages biometric authentication setup and state.

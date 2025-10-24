@@ -1,11 +1,12 @@
 import {useCallback} from 'react';
+import {createAuthorizeErrorStatus} from '@hooks/useMultifactorAuthentication/helpers';
+import type {MultifactorAuthorization} from '@hooks/useMultifactorAuthentication/types';
+import useMultifactorAuthenticationStatus from '@hooks/useMultifactorAuthentication/useMultifactorAuthenticationStatus';
+import useBiometricsSetup from '@hooks/useMultifactorAuthentication/useMultifactorAuthorization/useBiometricsSetup';
 import useUserInformation from '@hooks/useUserInformation';
 import Challenge from '@libs/MultifactorAuthentication/Challenge';
 import type {MultifactorAuthenticationScenario} from '@libs/MultifactorAuthentication/types';
 import CONST from '@src/CONST';
-import {createAuthorizeErrorStatus} from './helpers';
-import type {MultifactorAuthorization} from './types';
-import useMultifactorAuthenticationStatus from './useMultifactorAuthenticationStatus';
 
 /**
  * Hook that manages multifactorial authentication authorization for transactions.
@@ -19,6 +20,7 @@ import useMultifactorAuthenticationStatus from './useMultifactorAuthenticationSt
  */
 function useMultifactorAuthorization() {
     const [status, setStatus] = useMultifactorAuthenticationStatus(false, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION);
+    const BiometricsSetup = useBiometricsSetup();
     const {accountID} = useUserInformation();
 
     /**
@@ -73,7 +75,7 @@ function useMultifactorAuthorization() {
         }));
     }, [setStatus]);
 
-    return {status, authorize, cancel};
+    return {status, authorize, cancel, setup: BiometricsSetup};
 }
 
 export default useMultifactorAuthorization;
