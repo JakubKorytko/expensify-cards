@@ -2,6 +2,7 @@ NEW VERSION:
 
 ```mermaid
 sequenceDiagram
+    autonumber
     box rgba(150,66,99,0.5) Backend
         participant Server as Auth
     end
@@ -13,7 +14,7 @@ sequenceDiagram
 
     box rgba(99,66,33,0.5) App Component Stack
         participant MFACTX as MultifactorAuthenticationContext
-        participant RHPRHP as RHP Navigator
+        participant RHPRHP as RHP Navigator (Screen)
     end
 
 
@@ -26,12 +27,13 @@ sequenceDiagram
     User->>RHPRHP: Navigate to relevant MFAScreen with parameters
     Note over User,RHPRHP: Trigger action (e.g. notification tap, enter relevant screen).<br />The payload (e.g. transactionID) is passed in the URL params
     User->>RHPRHP: Take action (e.g. click "Authorize" button)
-    
     RHPRHP->>MFACTX: Run the process method with scenario & params as arguments
         Note over RHPRHP,MFACTX: The scenario is identified based on the screen navigated to
     MFACTX-->>SC: Read details related to the scenario
     SC-->>MFACTX: ;
-        Note over MFACTX,SC: i.e. security level, required payload etc.
+        Note over MFACTX,SC: i.e. security level, required payload etc. 
+    MFACTX-->>Server: Request the biometrics challenge along with registered credentials list
+    Server->>MFACTX: ;
     MFACTX-->MFACTX: Determine whether the biometrics is configured<br /> and the flow can be executed based on the scenario details, device configuration
         Note over MFACTX: This check includes only essential factors (e.g. required payload present, security level supported) <br /> It does not include user-provided factors (e.g. validateCode correctness)
     alt Flow can't be executed
@@ -42,11 +44,11 @@ sequenceDiagram
         RHPRHP->>MFACTX: Pass the validateCode value provided by the user
         MFACTX->>MFACTX: Store the validateCode value
         MFACTX->>RHPRHP: Navigate to the Soft Prompt screen
-        User->>RHPRHP: Accept/Reject the Soft Prompt
+        User->>RHPRHP: Accept/reject the Soft Prompt
         RHPRHP->>MFACTX: Pass the Soft Prompt acceptance/rejection
         MFACTX->>MFACTX: Add stored validateCode & soft prompt decision to the params for the given flow
     end
-    MFACTX->>Module: Pass scenario & params to the relevant module
+    MFACTX->>Module: Pass scenario, params and challenge to the relevant module
         Note over MFACTX,Module: The module is a hook used to run the given flow (fallback/biometrics)
     loop
         Note over Module,MFACTX: This section will vary based on the selected module.<br />Details for each module in their respective release
