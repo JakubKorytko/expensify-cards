@@ -39,7 +39,7 @@ const MULTI_FACTOR_AUTHENTICATION_SCENARIOS = {
     [VALUES.SCENARIO.SETUP_BIOMETRICS]: {
         securityLevel: VALUES.SECURITY_LEVEL.BIOMETRICS_ONLY,
         action: registerBiometrics,
-        route: ROUTES.SETUP_BIOMETRICS,
+        route: ROUTES.NOT_FOUND,
     },
 } as const satisfies MultifactorAuthenticationScenarioMap;
 

@@ -150,10 +150,9 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
             params: MultifactorAuthenticationScenarioParams<T> & {
                 chainedWithAuthorization?: boolean;
             },
-            potentialScenario?: T,
+            scenario: T,
         ) => {
             const {chainedWithAuthorization} = params;
-            const scenario = potentialScenario ?? CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS;
 
             if (!allowedMethods(scenario).biometrics) {
                 return setStatus(...MergedHooksStatus.createBiometricsNotAllowedStatus(scenario, params));
@@ -359,14 +358,13 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
                     CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.NONE,
                 );
             },
-            register: (params: Parameters<Register>[0]) => register({...params, chainedWithAuthorization: false}, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS),
             provideFactor,
             cancel,
             done,
             success: success.current,
             softPromptDecision,
         }),
-        [NativeBiometrics.setup, cancel, done, mergedStatus.message, mergedStatus.step, mergedStatus.title, process, provideFactor, register, setStatus, softPromptDecision],
+        [NativeBiometrics.setup, cancel, done, mergedStatus.message, mergedStatus.step, mergedStatus.title, process, provideFactor, setStatus, softPromptDecision],
     );
 
     return <MultifactorAuthenticationContext.Provider value={MultifactorAuthenticationData}>{children}</MultifactorAuthenticationContext.Provider>;

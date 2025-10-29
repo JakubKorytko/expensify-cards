@@ -6,7 +6,6 @@ const ROUTES = {
     SUCCESS: 'SuccessPage',
     FAILURE: 'FailurePage',
     AUTHORIZE_TRANSACTION: 'AuthorizeTransactionPage',
-    SETUP_BIOMETRICS: 'SetupBiometricsPage',
     NOT_FOUND: 'NotFoundPage',
     SOFT_PROMPT: 'SoftPromptPage',
 } as const;

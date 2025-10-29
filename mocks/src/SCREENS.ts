@@ -8,7 +8,6 @@ const SCREENS = {
     SuccessPage: React.lazy(() => import('../../src/pages/SuccessPage')),
     FailurePage: React.lazy(() => import('../../src/pages/FailurePage')),
     AuthorizeTransactionPage: React.lazy(() => import('../../src/pages/AuthorizeTransactionPage')),
-    SetupBiometricsPage: React.lazy(() => import('../../src/pages/SetupBiometricsPage')),
     NotFoundPage: React.lazy(() => import('../../src/pages/NotFoundPage')),
     SoftPromptPage: React.lazy(() => import('../../src/pages/SoftPromptPage')),
 } as const satisfies Record<Route, React.LazyExoticComponent<ComponentType<unknown>>>;
