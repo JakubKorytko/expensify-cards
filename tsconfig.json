@@ -1,15 +1,14 @@
 {
-  "extends": "expo/tsconfig.base",
-  "compilerOptions": {
-    "strict": true,
-    "paths": {
-      "@/*": ["./*"],
-      "@src/*": ["./src/*"],
-      "@components/*": ["./src/components/*"],
-      "@libs/*": ["./src/libs/*"],
-      "@hooks/*": ["./src/hooks/*"],
-      "type-fest": ["./mocks/typeFest.ts"]
-    }
-  },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
+    "extends": "expo/tsconfig.base",
+    "compilerOptions": {
+        "strict": true,
+        "paths": {
+            "@src/*": ["./src/*", "./mocks/src/*"],
+            "@components/*": ["./src/components/*", "./mocks/src/components/*"],
+            "@libs/*": ["./src/libs/*", "./mocks/src/libs/*"],
+            "@hooks/*": ["./src/hooks/*", "./mocks/src/hooks/*"],
+            "type-fest": ["./mocks/typeFest.ts"]
+        }
+    },
+    "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
 }

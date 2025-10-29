@@ -1,9 +1,10 @@
 import {useCallback, useMemo} from 'react';
-import useUserInformation from '@hooks/useUserInformation';
+import useOnyx from '@hooks/useOnyx';
 import {requestValidateCodeAction} from '@libs/actions/User';
 import {areFactorsSufficient, processScenario} from '@libs/MultifactorAuthentication/helpers';
 import type {MultifactorAuthenticationStep, MultifactorAuthorizationFallbackScenario, MultifactorAuthorizationFallbackScenarioParams} from '@libs/MultifactorAuthentication/types';
 import CONST from '@src/CONST';
+import ONYXKEYS from '@src/ONYXKEYS';
 import type {AuthorizeUsingFallback, MultifactorAuthenticationStatusMessage} from './types';
 import useMultifactorAuthenticationStatus from './useMultifactorAuthenticationStatus';
 
@@ -13,7 +14,9 @@ import useMultifactorAuthenticationStatus from './useMultifactorAuthenticationSt
  */
 function useMultifactorAuthorizationFallback() {
     const [status, setStatus] = useMultifactorAuthenticationStatus<number | undefined>(undefined, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION_FALLBACK);
-    const {is2FAEnabled} = useUserInformation();
+    const [account] = useOnyx(ONYXKEYS.ACCOUNT, {canBeMissing: true});
+
+    const is2FAEnabled = !!account.requiresTwoFactorAuth;
 
     /**
      * Verifies that all required authentication factors are provided.

@@ -1,8 +1,8 @@
 // eslint-disable-next-line import/extensions,import/order
-import fetch from '@/mocks/api/router';
 import type {EmptyObject} from 'type-fest';
 import type {SignedChallenge} from '@libs/MultifactorAuthentication/ED25519';
 import type Response from '@src/types/onyx/Response';
+import fetch from './router';
 
 /* eslint-disable rulesdir/no-api-in-views */
 

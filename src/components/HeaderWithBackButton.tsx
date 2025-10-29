@@ -1,7 +1,7 @@
+import {Pressable} from '@components/Pressable';
+import Text from '@components/Text';
 import styles from '@src/styles';
 import {useMultifactorAuthenticationContext} from './MultifactorAuthenticationContext';
-import {Pressable} from './Pressable';
-import Text from './Text';
 
 function HeaderWithBackButton() {
     const {cancel} = useMultifactorAuthenticationContext();

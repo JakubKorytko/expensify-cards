@@ -1,9 +1,7 @@
-import type {ReadCommands, WriteCommands} from '@/mocks/api';
-// eslint-disable-next-line import/extensions
-import {ed, generateSixDigitNumber, isChallengeValid, PHONE_NUMBER, STORAGE, USER_EMAIL} from '@/mocks/api/utils';
-// eslint-disable-next-line import/order
 import type {MFAChallenge} from '@src/types/onyx/Response';
+import type {ReadCommands, WriteCommands} from './index';
 import Logger from './Logger';
+import {ed, generateSixDigitNumber, isChallengeValid, PHONE_NUMBER, STORAGE, USER_EMAIL} from './utils';
 
 const router: {
     // eslint-disable-next-line @typescript-eslint/ban-types

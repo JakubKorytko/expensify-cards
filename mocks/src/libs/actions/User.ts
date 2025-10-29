@@ -1,9 +1,6 @@
-// eslint-disable-next-line import/extensions
-import {WRITE_COMMANDS} from '@/mocks/api';
-// eslint-disable-next-line import/extensions
-import {USER_EMAIL} from '@/mocks/api/utils';
-// eslint-disable-next-line import/order
 import {write} from '@libs/API';
+import {WRITE_COMMANDS} from '../../../api';
+import {USER_EMAIL} from '../../../api/utils';
 
 /**
  * Resend a validation link to a given login

@@ -1,8 +1,8 @@
 import {useCallback} from 'react';
+import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import {createAuthorizeErrorStatus} from '@hooks/useMultifactorAuthentication/helpers';
 import type {MultifactorAuthorization} from '@hooks/useMultifactorAuthentication/types';
 import useMultifactorAuthenticationStatus from '@hooks/useMultifactorAuthentication/useMultifactorAuthenticationStatus';
-import useUserInformation from '@hooks/useUserInformation';
 import Challenge from '@libs/MultifactorAuthentication/Challenge';
 import type {MultifactorAuthenticationScenario} from '@libs/MultifactorAuthentication/types';
 import CONST from '@src/CONST';
@@ -21,7 +21,7 @@ import useBiometricsSetup from './useBiometricsSetup';
 function useMultifactorAuthorization() {
     const [status, setStatus] = useMultifactorAuthenticationStatus(false, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION);
     const BiometricsSetup = useBiometricsSetup();
-    const {accountID} = useUserInformation();
+    const {accountID} = useCurrentUserPersonalDetails();
 
     /**
      * Requests, signs and verifies a multifactorial authentication challenge for transaction authorization.

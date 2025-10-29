@@ -1,8 +1,8 @@
 import {useCallback, useEffect, useMemo} from 'react';
+import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
 import {doesDeviceSupportBiometrics, isBiometryConfigured, resetKeys, Status} from '@hooks/useMultifactorAuthentication/helpers';
 import type {MultifactorAuthenticationStatusKeyType, Register, UseBiometricsSetup} from '@hooks/useMultifactorAuthentication/types';
 import useMultifactorAuthenticationStatus from '@hooks/useMultifactorAuthentication/useMultifactorAuthenticationStatus';
-import useUserInformation from '@hooks/useUserInformation';
 import {requestValidateCodeAction} from '@libs/actions/User';
 import {generateKeyPair} from '@libs/MultifactorAuthentication/ED25519';
 import {processScenario} from '@libs/MultifactorAuthentication/helpers';
@@ -24,7 +24,7 @@ import CONST from '@src/CONST';
 function useBiometricsSetup(): UseBiometricsSetup {
     /** Tracks whether biometrics is properly configured and ready for authentication */
     const [status, setStatus] = useMultifactorAuthenticationStatus<boolean>(false, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION);
-    const {accountID} = useUserInformation();
+    const {accountID} = useCurrentUserPersonalDetails();
 
     /**
      * Marks the current authentication request as complete.

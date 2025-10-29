@@ -1,10 +1,10 @@
 import MultifactorAuthenticationContextProvider from '@components/MultifactorAuthenticationContext';
 import NavigationMockContextProvider, {Navigator} from '@src/components/NavigationMock';
-import ROUTES from '@src/ROUTES';
+import CONFIG from '../mocks/config';
 
 export default function Index() {
     return (
-        <NavigationMockContextProvider initialRoute={ROUTES.AUTHORIZE_TRANSACTION}>
+        <NavigationMockContextProvider initialRoute={CONFIG.initialRoute}>
             <MultifactorAuthenticationContextProvider>
                 <Navigator />
             </MultifactorAuthenticationContextProvider>
