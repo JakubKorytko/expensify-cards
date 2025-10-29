@@ -39,6 +39,10 @@ const bottomSheetBase = {
 } as const;
 
 const styles = {
+    safeAreaView: {
+        flex: 1,
+        backgroundColor: '#051c09',
+    },
     container: {
         display: 'flex',
         ...centerContent,

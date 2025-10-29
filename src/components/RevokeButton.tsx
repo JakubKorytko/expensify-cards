@@ -1,5 +1,5 @@
 // eslint-disable-next-line import/extensions
-import styles from '@/styles';
+import styles from '@src/styles';
 import {Pressable} from './Pressable';
 import Text from './Text';
 

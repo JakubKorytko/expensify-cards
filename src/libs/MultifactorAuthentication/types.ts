@@ -2,7 +2,7 @@ import type {EmptyObject, ValueOf} from 'type-fest';
 import type MULTI_FACTOR_AUTHENTICATION_SCENARIOS from '@components/MultifactorAuthenticationContext/scenarios';
 import type {MultifactorAuthenticationScenarioParameters} from '@components/MultifactorAuthenticationContext/scenarios';
 import type {TranslationPaths} from '@src/languages/types';
-import type ROUTES from '@src/ROUTES';
+import type {Route} from '@src/ROUTES';
 import type {SignedChallenge} from './ED25519';
 import type VALUES from './VALUES';
 
@@ -179,7 +179,7 @@ type MultifactorAuthenticationScenarioMethod<T extends MultifactorAuthentication
 type MultifactorAuthenticationScenarioData<T extends MultifactorAuthenticationScenario> = {
     action: MultifactorAuthenticationScenarioMethod<T>;
     securityLevel: ValueOf<typeof VALUES.SECURITY_LEVEL>;
-    route: keyof typeof ROUTES;
+    route: Route;
 };
 
 /**

@@ -1,27 +1,29 @@
 import type {ReactNode} from 'react';
 import React, {createContext, useContext, useMemo, useState} from 'react';
+import type {HomeScreen, Route} from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 
 type NavigationMockProps = {
-    navigate: (newRoute: keyof typeof ROUTES | 'homeScreen') => void;
-    route: keyof typeof ROUTES;
+    navigate: (newRoute: Route | HomeScreen) => void;
+    route: Route;
 };
 
 const NavigationMockContext = createContext<NavigationMockProps>({
     navigate: () => {},
-    route: 'authorizeTransaction',
+    route: ROUTES.AUTHORIZE_TRANSACTION,
 });
 
-function NavigationMockContextProvider({children, initialRoute}: {children: ReactNode; initialRoute: keyof typeof ROUTES}) {
-    const [route, setRoute] = useState<keyof typeof ROUTES>(initialRoute);
+function NavigationMockContextProvider({children, initialRoute}: {children: ReactNode; initialRoute: Route}) {
+    const [route, setRoute] = useState<Route>(initialRoute);
 
     const contextValue = useMemo(
         () => ({
-            navigate: (newRoute: keyof typeof ROUTES | 'homeScreen') => {
-                setRoute(newRoute === 'homeScreen' ? initialRoute : newRoute);
+            navigate: (newRoute: Route | HomeScreen) => {
+                setRoute(newRoute === ROUTES.HOME_SCREEN ? initialRoute : newRoute);
             },
             route,
+            homeScreen: initialRoute,
         }),
         [initialRoute, route],
     );
@@ -32,7 +34,7 @@ function NavigationMockContextProvider({children, initialRoute}: {children: Reac
 function Navigator() {
     const {route} = useNavigation();
 
-    const Component = SCREENS[ROUTES[route]];
+    const Component = SCREENS[route];
 
     return <Component />;
 }

@@ -3,6 +3,7 @@ import {useNavigation} from '@components/NavigationMock';
 import HeaderWithBackButton from '@src/components/HeaderWithBackButton';
 import {Pressable} from '@src/components/Pressable';
 import Text from '@src/components/Text';
+import ROUTES from '@src/ROUTES';
 import styles from '@src/styles';
 
 // eslint-disable-next-line rulesdir/no-negated-variables
@@ -21,7 +22,7 @@ function NotFoundPage() {
             <Pressable
                 accessibilityRole="button"
                 style={styles.greenButton}
-                onPress={() => navigate('homeScreen')}
+                onPress={() => navigate(ROUTES.HOME_SCREEN)}
             >
                 <Text style={styles.greenButtonText}>Got it</Text>
             </Pressable>

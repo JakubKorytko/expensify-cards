@@ -1,4 +1,6 @@
+import type {ComponentType} from 'react';
 import React from 'react';
+import type {Route} from './ROUTES';
 
 const SCREENS = {
     OTPCodePage: React.lazy(() => import('./pages/OTPCodePage')),
@@ -9,6 +11,6 @@ const SCREENS = {
     SetupBiometricsPage: React.lazy(() => import('./pages/SetupBiometricsPage')),
     NotFoundPage: React.lazy(() => import('./pages/NotFoundPage')),
     SoftPromptPage: React.lazy(() => import('./pages/SoftPromptPage')),
-} as const;
+} as const satisfies Record<Route, React.LazyExoticComponent<ComponentType<unknown>>>;
 
 export default SCREENS;

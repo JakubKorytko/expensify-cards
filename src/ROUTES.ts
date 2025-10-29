@@ -1,12 +1,25 @@
+import type {ValueOf} from 'type-fest';
+
 const ROUTES = {
-    otp: 'OTPCodePage',
-    magicCode: 'MagicCodePage',
-    success: 'SuccessPage',
-    failure: 'FailurePage',
-    authorizeTransaction: 'AuthorizeTransactionPage',
-    setupBiometrics: 'SetupBiometricsPage',
-    notFound: 'NotFoundPage',
-    softPrompt: 'SoftPromptPage',
+    OTP: 'OTPCodePage',
+    MAGIC_CODE: 'MagicCodePage',
+    SUCCESS: 'SuccessPage',
+    FAILURE: 'FailurePage',
+    AUTHORIZE_TRANSACTION: 'AuthorizeTransactionPage',
+    SETUP_BIOMETRICS: 'SetupBiometricsPage',
+    NOT_FOUND: 'NotFoundPage',
+    SOFT_PROMPT: 'SoftPromptPage',
 } as const;
 
-export default ROUTES;
+type Route = ValueOf<typeof ROUTES>;
+
+const HOME_SCREEN = 'HomeScreenPage';
+
+type HomeScreen = typeof HOME_SCREEN;
+
+export default {
+    ...ROUTES,
+    HOME_SCREEN,
+} as const;
+
+export type {Route, HomeScreen};

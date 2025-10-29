@@ -6,6 +6,7 @@
 import {authorizeTransaction, registerBiometrics} from '@libs/actions/MultifactorAuthentication';
 import type {MultifactorAuthenticationScenarioMap} from '@libs/MultifactorAuthentication/types';
 import VALUES from '@libs/MultifactorAuthentication/VALUES';
+import ROUTES from '@src/ROUTES';
 
 /**
  * Defines the required parameters for each multifactorial authentication scenario type.
@@ -33,12 +34,12 @@ const MULTI_FACTOR_AUTHENTICATION_SCENARIOS = {
     [VALUES.SCENARIO.AUTHORIZE_TRANSACTION]: {
         securityLevel: VALUES.SECURITY_LEVEL.BIOMETRICS_WITH_FALLBACK,
         action: authorizeTransaction,
-        route: 'authorizeTransaction',
+        route: ROUTES.AUTHORIZE_TRANSACTION,
     },
     [VALUES.SCENARIO.SETUP_BIOMETRICS]: {
         securityLevel: VALUES.SECURITY_LEVEL.BIOMETRICS_ONLY,
         action: registerBiometrics,
-        route: 'setupBiometrics',
+        route: ROUTES.SETUP_BIOMETRICS,
     },
 } as const satisfies MultifactorAuthenticationScenarioMap;
 

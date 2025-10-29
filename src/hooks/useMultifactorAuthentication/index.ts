@@ -13,7 +13,8 @@ import type {
 } from '@libs/MultifactorAuthentication/types';
 import {useNavigation} from '@src/components/NavigationMock';
 import CONST from '@src/CONST';
-import type ROUTES from '@src/ROUTES';
+import type {Route} from '@src/ROUTES';
+import ROUTES from '@src/ROUTES';
 import {areMultifactorAuthorizationFallbackParamsValid, convertResultIntoMFAStatus, MergedHooksStatus, shouldAllowBiometrics, shouldAllowFallback} from './helpers';
 import type {MultifactorAuthenticationScenarioStatus, Register, UseMultifactorAuthentication} from './types';
 import useMultifactorAuthenticationStatus from './useMultifactorAuthenticationStatus';
@@ -48,25 +49,25 @@ function useMultifactorAuthentication(): UseMultifactorAuthentication {
                 value: {scenario},
             } = status;
 
-            const scenarioRoute: keyof typeof ROUTES = scenario ? MULTI_FACTOR_AUTHENTICATION_SCENARIOS[scenario].route : 'notFound';
+            const scenarioRoute: Route = scenario ? MULTI_FACTOR_AUTHENTICATION_SCENARIOS[scenario].route : ROUTES.NOT_FOUND;
 
             let shouldClear = false;
 
             if (softPrompt) {
-                navigate('softPrompt');
+                navigate(ROUTES.SOFT_PROMPT);
                 shouldClear = true;
-            } else if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE && route !== 'magicCode') {
-                navigate('magicCode');
+            } else if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE && route !== ROUTES.MAGIC_CODE) {
+                navigate(ROUTES.MAGIC_CODE);
                 shouldClear = true;
-            } else if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.OTP && route !== 'otp') {
-                navigate('otp');
+            } else if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.OTP && route !== ROUTES.OTP) {
+                navigate(ROUTES.OTP);
                 shouldClear = true;
             } else if (step.isRequestFulfilled) {
-                if (step.wasRecentStepSuccessful && route !== 'success') {
-                    navigate('success');
+                if (step.wasRecentStepSuccessful && route !== ROUTES.SUCCESS) {
+                    navigate(ROUTES.SUCCESS);
                     success.current = true;
-                } else if (step.wasRecentStepSuccessful === false && route !== 'failure') {
-                    navigate('failure');
+                } else if (step.wasRecentStepSuccessful === false && route !== ROUTES.FAILURE) {
+                    navigate(ROUTES.FAILURE);
                     success.current = false;
                 } else if (step.wasRecentStepSuccessful === undefined && route !== scenarioRoute) {
                     navigate(scenarioRoute);
