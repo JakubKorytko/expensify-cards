@@ -2,8 +2,8 @@
 import type {ValueOf} from 'type-fest';
 import {makeRequestWithSideEffects} from '@libs/API';
 import {SIDE_EFFECT_REQUEST_COMMANDS} from '@libs/API/types';
-import type {SignedChallenge} from '@libs/MultifactorAuthentication/ED25519';
-import type {MultifactorAuthenticationResponseTranslationPath} from '@libs/MultifactorAuthentication/types';
+import type {SignedChallenge} from '@libs/MultifactorAuthentication/Biometrics/ED25519';
+import type {MultifactorAuthenticationResponseTranslationPath} from '@libs/MultifactorAuthentication/Biometrics/types';
 import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
 

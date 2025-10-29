@@ -9,24 +9,8 @@ import type {
     MultifactorAuthenticationStep,
     MultifactorAuthorizationFallbackScenario,
     MultifactorAuthorizationFallbackScenarioParams,
-} from '@libs/MultifactorAuthentication/types';
+} from '@libs/MultifactorAuthentication/Biometrics/types';
 import type CONST from '@src/CONST';
-
-/**
- * Represents the most recent multifactorial authentication status and method to cancel it
- */
-type MultifactorAuthenticationRecentStatus = {
-    status: MultifactorAuthenticationStatus<boolean>;
-    cancel: () => MultifactorAuthenticationStatus<unknown>;
-};
-
-/**
- * Factory function type for creating a MultifactorAuthenticationRecentStatus object
- */
-type CreateMultifactorAuthenticationRecentStatus = (
-    result: MultifactorAuthenticationStatus<unknown>,
-    cancel: () => MultifactorAuthenticationStatus<unknown>,
-) => MultifactorAuthenticationRecentStatus;
 
 /**
  * Function that handles multifactorial authentication authorization of transactions.
@@ -157,8 +141,6 @@ export type {
     AuthorizeUsingFallback,
     MultifactorAuthorization,
     UseMultifactorAuthentication,
-    MultifactorAuthenticationRecentStatus,
-    CreateMultifactorAuthenticationRecentStatus,
     MultifactorAuthenticationScenarioStatus,
     MultifactorAuthenticationStatusMessage,
 };

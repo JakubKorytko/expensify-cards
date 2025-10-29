@@ -1,13 +1,13 @@
 import {useCallback, useEffect, useMemo} from 'react';
+import {doesDeviceSupportBiometrics, isBiometryConfigured, resetKeys, Status} from '@hooks/MultifactorAuthentication/helpers';
+import type {MultifactorAuthenticationStatusKeyType, Register, UseBiometricsSetup} from '@hooks/MultifactorAuthentication/types';
+import useMultifactorAuthenticationStatus from '@hooks/MultifactorAuthentication/useMultifactorAuthenticationStatus';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
-import {doesDeviceSupportBiometrics, isBiometryConfigured, resetKeys, Status} from '@hooks/useMultifactorAuthentication/helpers';
-import type {MultifactorAuthenticationStatusKeyType, Register, UseBiometricsSetup} from '@hooks/useMultifactorAuthentication/types';
-import useMultifactorAuthenticationStatus from '@hooks/useMultifactorAuthentication/useMultifactorAuthenticationStatus';
 import {requestValidateCodeAction} from '@libs/actions/User';
-import {generateKeyPair} from '@libs/MultifactorAuthentication/ED25519';
-import {processScenario} from '@libs/MultifactorAuthentication/helpers';
-import {PrivateKeyStore, PublicKeyStore} from '@libs/MultifactorAuthentication/KeyStore';
-import type {MultifactorAuthenticationStatus} from '@libs/MultifactorAuthentication/types';
+import {generateKeyPair} from '@libs/MultifactorAuthentication/Biometrics/ED25519';
+import {processScenario} from '@libs/MultifactorAuthentication/Biometrics/helpers';
+import {PrivateKeyStore, PublicKeyStore} from '@libs/MultifactorAuthentication/Biometrics/KeyStore';
+import type {MultifactorAuthenticationStatus} from '@libs/MultifactorAuthentication/Biometrics/types';
 import CONST from '@src/CONST';
 
 /**
@@ -21,7 +21,7 @@ import CONST from '@src/CONST';
  *
  * Returns current biometric state and methods to control the setup process.
  */
-function useBiometricsSetup(): UseBiometricsSetup {
+function useNativeBiometricsSetup(): UseBiometricsSetup {
     /** Tracks whether biometrics is properly configured and ready for authentication */
     const [status, setStatus] = useMultifactorAuthenticationStatus<boolean>(false, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION);
     const {accountID} = useCurrentUserPersonalDetails();
@@ -206,4 +206,4 @@ function useBiometricsSetup(): UseBiometricsSetup {
     };
 }
 
-export default useBiometricsSetup;
+export default useNativeBiometricsSetup;

@@ -1,6 +1,8 @@
 import type {ValueOf} from 'type-fest';
 import MULTI_FACTOR_AUTHENTICATION_SCENARIOS from '@components/MultifactorAuthenticationContext/scenarios';
 import type {TranslationPaths} from '@src/languages/types';
+import type {MFAChallenge} from '@src/types/onyx/Response';
+import type {SignedChallenge} from './ED25519';
 import type {
     AllMultifactorAuthenticationFactors,
     MultifactorAuthenticationPartialStatus,
@@ -185,8 +187,13 @@ const decodeMultifactorAuthenticationExpoMessage = (message: unknown, fallback?:
     return decodedMessage === 'multifactorAuthentication.reason.expoErrors.generic' && fallback ? fallback : decodedMessage;
 };
 
+function isChallengeSigned(challenge: MFAChallenge | SignedChallenge): challenge is SignedChallenge {
+    return 'rawId' in challenge;
+}
+
 export {
     processMultifactorAuthenticationScenario as processScenario,
     areMultifactorAuthenticationFactorsSufficient as areFactorsSufficient,
     decodeMultifactorAuthenticationExpoMessage as decodeExpoMessage,
+    isChallengeSigned,
 };

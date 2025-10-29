@@ -1,4 +1,4 @@
-import type {SignedChallenge} from '@libs/MultifactorAuthentication/ED25519';
+import type {SignedChallenge} from '@libs/MultifactorAuthentication/Biometrics/ED25519';
 
 type AuthorizeTransactionParams = {
     transactionID: string;

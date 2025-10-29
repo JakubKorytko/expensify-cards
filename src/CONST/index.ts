@@ -1,4 +1,4 @@
-import MULTI_FACTOR_AUTHENTICATION_VALUES from '@libs/MultifactorAuthentication/VALUES';
+import MULTI_FACTOR_AUTHENTICATION_VALUES from '@libs/MultifactorAuthentication/Biometrics/VALUES';
 
 const CONST = {
     // ...

@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/extensions
 import {Pressable} from '@components/Pressable';
 import Text from '@components/Text';
 import styles from '@src/styles';

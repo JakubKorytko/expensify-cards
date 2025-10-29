@@ -1,9 +1,9 @@
 import {View} from 'react-native';
+import RevokeButton from '@components/MultifactorAuthentication/RevokeButton';
 import {useMultifactorAuthenticationContext} from '@components/MultifactorAuthenticationContext';
 import {Pressable} from '@components/Pressable';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
-import RevokeButton from '@src/components/RevokeButton';
 import CONST from '@src/CONST';
 import styles from '@src/styles';
 

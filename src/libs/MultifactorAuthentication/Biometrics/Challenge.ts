@@ -1,10 +1,9 @@
-import {isChallengeSigned} from '@hooks/useMultifactorAuthentication/helpers';
 import {requestBiometricChallenge} from '@libs/actions/MultifactorAuthentication';
 import type {TranslationPaths} from '@src/languages/types';
 import type {MFAChallenge} from '@src/types/onyx/Response';
 import type {SignedChallenge} from './ED25519';
 import {signToken as signTokenED25519} from './ED25519';
-import {processScenario} from './helpers';
+import {isChallengeSigned, processScenario} from './helpers';
 import {PrivateKeyStore, PublicKeyStore} from './KeyStore';
 import type {MultifactorAuthenticationPartialStatus, MultifactorAuthenticationScenario, MultifactorAuthenticationScenarioAdditionalParams} from './types';
 import VALUES from './VALUES';

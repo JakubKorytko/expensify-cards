@@ -1,6 +1,6 @@
 import {View} from 'react-native';
+import HeaderWithBackButton from '@components/MultifactorAuthentication/HeaderWithBackButton';
 import {useMultifactorAuthenticationContext} from '@components/MultifactorAuthenticationContext';
-import HeaderWithBackButton from '@src/components/HeaderWithBackButton';
 import {Pressable} from '@src/components/Pressable';
 import Text from '@src/components/Text';
 import styles from '@src/styles';

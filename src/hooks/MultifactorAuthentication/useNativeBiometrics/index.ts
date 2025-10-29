@@ -1,12 +1,12 @@
 import {useCallback} from 'react';
+import {createAuthorizeErrorStatus} from '@hooks/MultifactorAuthentication/helpers';
+import type {MultifactorAuthorization} from '@hooks/MultifactorAuthentication/types';
+import useMultifactorAuthenticationStatus from '@hooks/MultifactorAuthentication/useMultifactorAuthenticationStatus';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
-import {createAuthorizeErrorStatus} from '@hooks/useMultifactorAuthentication/helpers';
-import type {MultifactorAuthorization} from '@hooks/useMultifactorAuthentication/types';
-import useMultifactorAuthenticationStatus from '@hooks/useMultifactorAuthentication/useMultifactorAuthenticationStatus';
-import Challenge from '@libs/MultifactorAuthentication/Challenge';
-import type {MultifactorAuthenticationScenario} from '@libs/MultifactorAuthentication/types';
+import Challenge from '@libs/MultifactorAuthentication/Biometrics/Challenge';
+import type {MultifactorAuthenticationScenario} from '@libs/MultifactorAuthentication/Biometrics/types';
 import CONST from '@src/CONST';
-import useBiometricsSetup from './useBiometricsSetup';
+import useNativeBiometricsSetup from './useNativeBiometricsSetup';
 
 /**
  * Hook that manages multifactorial authentication authorization for transactions.
@@ -18,9 +18,9 @@ import useBiometricsSetup from './useBiometricsSetup';
  *
  * Returns current authorization status and methods to control the flow.
  */
-function useMultifactorAuthorization() {
+function useNativeBiometrics() {
     const [status, setStatus] = useMultifactorAuthenticationStatus(false, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION);
-    const BiometricsSetup = useBiometricsSetup();
+    const BiometricsSetup = useNativeBiometricsSetup();
     const {accountID} = useCurrentUserPersonalDetails();
 
     /**
@@ -78,4 +78,4 @@ function useMultifactorAuthorization() {
     return {status, authorize, cancel, setup: BiometricsSetup};
 }
 
-export default useMultifactorAuthorization;
+export default useNativeBiometrics;

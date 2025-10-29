@@ -1,6 +1,5 @@
 import type {ValueOf} from 'type-fest';
-import type {SignedChallenge} from '@libs/MultifactorAuthentication/ED25519';
-import {PrivateKeyStore, PublicKeyStore} from '@libs/MultifactorAuthentication/KeyStore';
+import {PrivateKeyStore, PublicKeyStore} from '@libs/MultifactorAuthentication/Biometrics/KeyStore';
 import type {
     MultifactorAuthenticationFactor,
     MultifactorAuthenticationPartialStatus,
@@ -10,9 +9,8 @@ import type {
     MultifactorAuthenticationStatus,
     MultifactorAuthorizationFallbackScenario,
     MultifactorAuthorizationFallbackScenarioParams,
-} from '@libs/MultifactorAuthentication/types';
+} from '@libs/MultifactorAuthentication/Biometrics/types';
 import CONST from '@src/CONST';
-import type {MFAChallenge} from '@src/types/onyx/Response';
 import type {AuthTypeName, MultifactorAuthenticationScenarioStatus, MultifactorAuthenticationStatusKeyType} from './types';
 
 const failedStep = {
@@ -55,10 +53,6 @@ function areMultifactorAuthorizationFallbackParamsValid<T extends MultifactorAut
             (factor) => CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS_REQUIREMENTS[factor].parameter !== key,
         );
     });
-}
-
-function isChallengeSigned(challenge: MFAChallenge | SignedChallenge): challenge is SignedChallenge {
-    return 'rawId' in challenge;
 }
 
 /**
@@ -275,19 +269,6 @@ function convertResultIntoMFAStatus<T extends MultifactorAuthenticationScenario>
     };
 }
 
-function convertScenarioToType<T extends MultifactorAuthenticationScenario>(scenario: T | undefined, fallback?: boolean): MultifactorAuthenticationStatusKeyType {
-    if (!scenario) {
-        return CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.NONE;
-    }
-    if (scenario === CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS) {
-        return CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION;
-    }
-    if (fallback) {
-        return CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION_FALLBACK;
-    }
-    return CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION;
-}
-
 const badRequestStatus = (
     currentStatus: MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>,
 ): MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus> => {
@@ -328,9 +309,7 @@ export {
     resetKeys,
     createAuthorizeErrorStatus,
     shouldAllowFallback,
-    convertScenarioToType,
     shouldAllowBiometrics,
-    isChallengeSigned,
     convertResultIntoMFAStatus,
     EMPTY_MULTIFACTOR_AUTHENTICATION_STATUS,
     MergedHooksStatus,

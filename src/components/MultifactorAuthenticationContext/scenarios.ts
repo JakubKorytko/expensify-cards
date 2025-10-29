@@ -4,8 +4,8 @@
  * The scenarios include setting up multifactorial authentication and authorizing transactions with different authentication flows.
  */
 import {authorizeTransaction, registerBiometrics} from '@libs/actions/MultifactorAuthentication';
-import type {MultifactorAuthenticationScenarioMap} from '@libs/MultifactorAuthentication/types';
-import VALUES from '@libs/MultifactorAuthentication/VALUES';
+import type {MultifactorAuthenticationScenarioMap} from '@libs/MultifactorAuthentication/Biometrics/types';
+import VALUES from '@libs/MultifactorAuthentication/Biometrics/VALUES';
 import ROUTES from '@src/ROUTES';
 
 /**

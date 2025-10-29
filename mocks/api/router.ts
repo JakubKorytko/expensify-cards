@@ -1,4 +1,5 @@
 import type {MFAChallenge} from '@src/types/onyx/Response';
+import CONFIG from '../config';
 import type {ReadCommands, WriteCommands} from './index';
 import Logger from './Logger';
 import {ed, generateSixDigitNumber, isChallengeValid, PHONE_NUMBER, STORAGE, USER_EMAIL} from './utils';
@@ -237,8 +238,7 @@ router.post['/authorize_transaction'] = ({
 
         // eslint-disable-next-line rulesdir/no-negated-variables
         const areOTPsNotNull = !!OTPs.at(-1) && !!otp;
-        // Simulate that OTP 777111 is authenticator app generated OTP for testing purposes
-        const isOTPCorrect = otp === 777111 || (areOTPsNotNull && OTPs.at(-1) === otp);
+        const isOTPCorrect = otp === CONFIG.authenticatorCode || (areOTPsNotNull && OTPs.at(-1) === otp);
 
         const isEverythingOK = isValidateCodeCorrect && isOTPCorrect;
 

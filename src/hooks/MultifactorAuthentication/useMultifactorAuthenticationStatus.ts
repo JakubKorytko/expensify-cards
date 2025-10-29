@@ -1,6 +1,6 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
 import useLocalize from '@hooks/useLocalize';
-import type {MultifactorAuthenticationPartialStatus, MultifactorAuthenticationStatus} from '@libs/MultifactorAuthentication/types';
+import type {MultifactorAuthenticationPartialStatus, MultifactorAuthenticationStatus} from '@libs/MultifactorAuthentication/Biometrics/types';
 import CONST from '@src/CONST';
 import {getAuthTypeName} from './helpers';
 import type {MultifactorAuthenticationStatusKeyType, SetMultifactorAuthenticationStatus, UseMultifactorAuthenticationStatus} from './types';

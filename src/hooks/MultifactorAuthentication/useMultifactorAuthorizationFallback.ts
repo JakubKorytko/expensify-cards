@@ -1,8 +1,8 @@
 import {useCallback, useMemo} from 'react';
 import useOnyx from '@hooks/useOnyx';
 import {requestValidateCodeAction} from '@libs/actions/User';
-import {areFactorsSufficient, processScenario} from '@libs/MultifactorAuthentication/helpers';
-import type {MultifactorAuthenticationStep, MultifactorAuthorizationFallbackScenario, MultifactorAuthorizationFallbackScenarioParams} from '@libs/MultifactorAuthentication/types';
+import {areFactorsSufficient, processScenario} from '@libs/MultifactorAuthentication/Biometrics/helpers';
+import type {MultifactorAuthenticationStep, MultifactorAuthorizationFallbackScenario, MultifactorAuthorizationFallbackScenarioParams} from '@libs/MultifactorAuthentication/Biometrics/types';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {AuthorizeUsingFallback, MultifactorAuthenticationStatusMessage} from './types';
