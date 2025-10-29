@@ -275,6 +275,11 @@ config:
 ---
 sequenceDiagram
     autonumber
+    box rgba(150,66,99,1) Backend
+        participant Server as Auth
+    end
+        
+        
     box rgba(33,66,99,1) MultifactorAuthentication Library
         participant Module as Module
     end
@@ -292,11 +297,19 @@ sequenceDiagram
 
     Note over MFACTX,RHPRHP: Context wraps the Navigator
     User->>RHPRHP: Navigate to the revoke MFA screen
+    RHPRHP->>MFACTX: Ask if the biometrics is configured
+    MFACTX-->Module: Ask module if the public key is stored locally
+    Module-->MFACTX: ;
+    alt Biometrics is not configured
+        MFACTX->>RHPRHP: Navigate to the info screen
+    end
+    MFACTX->>RHPRHP: Navigate to the revoke screen
     User->>RHPRHP: Take action (i.e. click "Revoke access" button and confirm it afterwards)
     RHPRHP->>MFACTX: Run the revoke method
     MFACTX->>Module: Pass the info that the revoke was called
         Note over MFACTX,Module: The module is a hook used to run the biometrics flow
     Module->>Module: Revoke locally stored keys
+        Module->>Server: Call API to revoke stored public key
     Module->>MFACTX: Pass the info that the access was revoked
     MFACTX->>RHPRHP: Navigate to the Success screen
 ```
