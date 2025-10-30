@@ -69,6 +69,7 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
     );
     const {navigate, route} = useNavigation();
     const success = useRef<boolean | undefined>(undefined);
+    const afterRevoke = useRef<boolean>(false);
     // to avoid waiting for next render
     const softPromptStore = useRef<{
         accepted: boolean | undefined;
@@ -89,7 +90,11 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
 
             let shouldClear = false;
 
-            if (softPrompt) {
+            if (afterRevoke.current) {
+                afterRevoke.current = false;
+                navigate(ROUTES.HOME_SCREEN);
+                shouldClear = true;
+            } else if (softPrompt) {
                 navigate(ROUTES.SOFT_PROMPT);
                 shouldClear = true;
             } else if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE && route !== ROUTES.MAGIC_CODE) {
@@ -120,12 +125,16 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
     );
 
     const setStatus = useCallback(
-        (...args: [...Parameters<typeof setMergedStatus>, softPrompt?: boolean]) => {
-            const [status, typeOverride, softPrompt] = args;
+        (...args: [...Parameters<typeof setMergedStatus>, softPrompt?: boolean, revoke?: boolean]) => {
+            const [status, typeOverride, softPrompt, revoke] = args;
 
             const merged = setMergedStatus(status, typeOverride ?? (typeof status === 'function' ? undefined : status?.value.type));
 
             navigateWithClear(merged, softPrompt);
+
+            if (revoke) {
+                afterRevoke.current = true;
+            }
 
             return merged;
         },
@@ -348,6 +357,8 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
                     (prevStatus) =>
                         convertResultIntoMFAStatus(revokeStatus, prevStatus.value.scenario, prevStatus.value.type ?? CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION, false),
                     CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.NONE,
+                    false,
+                    true,
                 );
             },
             provideFactor,

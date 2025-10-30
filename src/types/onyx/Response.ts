@@ -2,12 +2,24 @@
 type MFAChallenge = {
     /** Nonce */
     challenge: string;
-    /** Version */
+
+    /** RP ID */
+    rpId: string;
+
+    /** Allow Credentials */
+    allowCredentials: Array<{
+        /** Type */
+        type: string;
+
+        /** ID */
+        id: string;
+    }>;
+
+    /** User Verification */
+    userVerification: string;
+
+    /** Timeout */
     timeout: number;
-    /** Expires */
-    expires: number;
-    /** Algorithm */
-    allowCredentials: Array<Record<'type', string>>;
 };
 
 /** Model of server response */

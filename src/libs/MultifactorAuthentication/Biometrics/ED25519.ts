@@ -71,8 +71,8 @@ const createFlag = (up: boolean, uv: boolean): ChallengeFlag => {
 };
 /* eslint-enable no-bitwise */
 
-const createBinaryData = (): Bytes => {
-    const RPID = sha256(VALUES.RPID);
+const createBinaryData = (rpId: string): Bytes => {
+    const RPID = sha256(rpId);
 
     const flagsArray = new Uint8Array([createFlag(true, true)]);
 
@@ -95,7 +95,7 @@ const signToken = (accountID: number, token: MFAChallenge, key: string): SignedC
     const rawId: Base64URL<string> = base64URL(`${accountID}_${VALUES.KEY_ALIASES.PUBLIC_KEY}`);
     const type = VALUES.ED25519_TYPE;
 
-    const binaryData = createBinaryData();
+    const binaryData = createBinaryData(token.rpId);
     const authenticatorData: Base64URL<BinaryData> = base64URL(ed.etc.bytesToHex(binaryData));
 
     const message = ed.etc.concatBytes(binaryData, sha256(JSON.stringify(token)));

@@ -51,7 +51,7 @@ function base64URLToUint8Array(base64URL: string) {
 const getOriginalChallengeJWT = (signedChallenge: SignedChallenge, key: string) => {
     const challenges = Object.values(STORAGE.challenges);
 
-    const binaryData = __doNotUseCreateBinaryData();
+    const binaryData = __doNotUseCreateBinaryData('expensify.com');
     const signature = base64URLToUint8Array(signedChallenge.response.signature);
 
     const challengeJWT = challenges.find((challenge) => {
@@ -86,22 +86,17 @@ const isChallengeValid = function (signedChallenge: SignedChallenge, publicKey: 
 
         const challengeString = challengeJWT.challenge;
 
-        const {challenge, expires} = STORAGE.challenges[challengeString] ?? {};
+        const {challenge, timeout} = STORAGE.challenges[challengeString] ?? {};
 
-        if (!challenge || !expires) {
+        if (!challenge || !timeout) {
             return false;
         }
 
         delete STORAGE.challenges[challengeString];
-        const challengeExpired = expires < Date.now();
 
-        if (challengeExpired) {
-            Logger.m(`Challenge ${challengeString} expired, removed from storage`);
-        } else {
-            Logger.m(`Challenge ${challengeString} success, removed from storage`);
-        }
+        Logger.m(`Challenge ${challengeString} success, removed from storage`);
 
-        return !challengeExpired;
+        return true;
     } catch (e) {
         return false;
     }

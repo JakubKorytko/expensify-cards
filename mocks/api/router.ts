@@ -1,8 +1,18 @@
+import {Buffer} from 'buffer';
+import VALUES from '@libs/MultifactorAuthentication/Biometrics/VALUES';
 import type {MFAChallenge} from '@src/types/onyx/Response';
 import CONFIG from '../config';
 import type {ReadCommands, WriteCommands} from './index';
 import Logger from './Logger';
 import {ed, generateSixDigitNumber, isChallengeValid, PHONE_NUMBER, STORAGE, USER_EMAIL} from './utils';
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type Base64URL<T> = string;
+
+/** RN polyfill for base64url encoding */
+const base64URL = <T>(value: string): Base64URL<T> => {
+    return Buffer.from(value).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
 
 const router: {
     // eslint-disable-next-line @typescript-eslint/ban-types
@@ -100,29 +110,27 @@ router.get['/request_biometric_challenge'] = async (): Promise<ReadCommands['Req
     }
 
     const nonce = ed.etc.bytesToHex(ed.etc.randomBytes(16));
-    const expirationDate = Date.now() + 10 * 1000 * 60; // 10 minutes
 
     const challenge: MFAChallenge = {
         challenge: nonce,
-        expires: expirationDate,
-        timeout: 48000,
+        rpId: 'expensify.com',
         // not used currently
         allowCredentials: [
             {
-                type: 'SMS',
+                type: 'biometrics',
+                id: base64URL(`${CONFIG.accountID}_${VALUES.KEY_ALIASES.PUBLIC_KEY}`),
             },
         ],
+        userVerification: 'required',
+        timeout: 480000,
     };
 
     STORAGE.challenges[challenge.challenge] = challenge;
 
-    setTimeout(
-        () => {
-            Logger.m(`Challenge ${challenge.challenge} expired, removed from storage`);
-            delete STORAGE.challenges[challenge.challenge];
-        },
-        10 * 1000 * 60,
-    );
+    setTimeout(() => {
+        Logger.m(`Challenge ${challenge.challenge} expired, removed from storage`);
+        delete STORAGE.challenges[challenge.challenge];
+    }, 480000);
 
     Logger.m('Challenge', challenge.challenge, 'sent to the client');
 
