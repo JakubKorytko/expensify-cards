@@ -10,7 +10,7 @@ import styles from '@src/styles';
 function MagicCodePage() {
     const [inputValue, setInputValue] = useState('');
     const {translate} = useLocalize();
-    const {provideFactor} = useMultifactorAuthenticationContext();
+    const {update} = useMultifactorAuthenticationContext();
     const title = translate(`multifactorAuthentication.provideValidateCode`);
 
     return (
@@ -33,7 +33,7 @@ function MagicCodePage() {
                     accessibilityRole="button"
                     style={styles.greenButton}
                     onPress={() => {
-                        provideFactor({
+                        update({
                             validateCode: Number(inputValue),
                         });
                     }}

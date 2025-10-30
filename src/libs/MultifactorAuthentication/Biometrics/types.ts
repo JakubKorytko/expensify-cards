@@ -19,6 +19,8 @@ type MultifactorAuthenticationPartialStatusConditional<OmitStep> = OmitStep exte
       }
     : EmptyObject;
 
+type MultifactorAuthenticationTrigger = ValueOf<typeof VALUES.TRIGGER>;
+
 /**
  * Represents the core status information for multifactorial authentication operations.
  * @template T - The type of the value of the multifactorial authentication operation.
@@ -215,4 +217,5 @@ export type {
     MultifactorAuthenticationStatus,
     MultifactorAuthenticationPartialStatus,
     MultifactorAuthenticationScenarioAdditionalParams,
+    MultifactorAuthenticationTrigger,
 };

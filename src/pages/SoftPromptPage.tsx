@@ -8,7 +8,7 @@ import styles from '@src/styles';
 
 function SoftPromptPage() {
     const {translate} = useLocalize();
-    const {softPromptDecision} = useMultifactorAuthenticationContext();
+    const {update} = useMultifactorAuthenticationContext();
 
     const title = translate(`multifactorAuthentication.softPromptTitle`);
     const description = translate(`multifactorAuthentication.softPromptDescription`);
@@ -27,7 +27,7 @@ function SoftPromptPage() {
                     accessibilityRole="button"
                     style={styles.grayButton}
                     onPress={() => {
-                        softPromptDecision(false);
+                        update({softPromptDecision: false});
                     }}
                 >
                     <Text style={styles.grayButtonText}>Not now</Text>
@@ -36,7 +36,7 @@ function SoftPromptPage() {
                     accessibilityRole="button"
                     style={styles.greenButton}
                     onPress={() => {
-                        softPromptDecision(true);
+                        update({softPromptDecision: true});
                     }}
                 >
                     <Text style={styles.greenButtonText}>Continue</Text>

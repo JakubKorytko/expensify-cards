@@ -3,22 +3,25 @@ import HeaderWithBackButton from '@components/MultifactorAuthentication/HeaderWi
 import {useMultifactorAuthenticationContext} from '@components/MultifactorAuthenticationContext';
 import {Pressable} from '@src/components/Pressable';
 import Text from '@src/components/Text';
+import CONST from '@src/CONST';
 import styles from '@src/styles';
 
 function FailurePage() {
-    const {title, message, cancel} = useMultifactorAuthenticationContext();
+    const {info, trigger} = useMultifactorAuthenticationContext();
 
     return (
         <View style={styles.callbackContainer}>
             <View style={styles.gap15}>
                 <HeaderWithBackButton />
-                <Text style={styles.hugeText}>{title}</Text>
-                <Text>{message}</Text>
+                <Text style={styles.hugeText}>{info.title}</Text>
+                <Text>{info.message}</Text>
             </View>
             <Pressable
                 accessibilityRole="button"
                 style={styles.buttonNegative}
-                onPress={cancel}
+                onPress={() => {
+                    trigger(CONST.MULTI_FACTOR_AUTHENTICATION.TRIGGER.CANCEL);
+                }}
             >
                 <Text style={styles.buttonTextNegative}>Got it</Text>
             </Pressable>

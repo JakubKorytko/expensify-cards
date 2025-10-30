@@ -9,14 +9,14 @@ import styles from '@src/styles';
 
 function AuthorizeTransactionPage() {
     const transactionID = '123456789';
-    const {process, success, isBiometryConfigured, revoke} = useMultifactorAuthenticationContext();
+    const {process, trigger, info} = useMultifactorAuthenticationContext();
     const {translate} = useLocalize();
 
     return (
         <View style={[styles.layoutContainer]}>
             <View style={styles.container}>
                 <View style={styles.content}>
-                    <Text style={styles.title}>{translate('multifactorAuthentication.title', {registered: isBiometryConfigured})}</Text>
+                    <Text style={styles.title}>{translate('multifactorAuthentication.title', {registered: info.isBiometryConfigured})}</Text>
                     <View style={styles.buttonContainer}>
                         <Pressable
                             accessibilityRole="button"
@@ -28,13 +28,15 @@ function AuthorizeTransactionPage() {
                             <Text style={styles.buttonText}>Test</Text>
                         </Pressable>
                         <RevokeButton
-                            revoke={revoke}
-                            show={isBiometryConfigured}
+                            revoke={() => {
+                                trigger(CONST.MULTI_FACTOR_AUTHENTICATION.TRIGGER.REVOKE);
+                            }}
+                            show={info.isBiometryConfigured}
                         />
                     </View>
                 </View>
             </View>
-            {success ? <Text style={styles.hugeText}>I am the secret!</Text> : <Text style={styles.hugeText}>Secret is hidden!</Text>}
+            {info.success ? <Text style={styles.hugeText}>I am the secret!</Text> : <Text style={styles.hugeText}>Secret is hidden!</Text>}
         </View>
     );
 }

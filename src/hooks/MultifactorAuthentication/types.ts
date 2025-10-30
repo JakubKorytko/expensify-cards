@@ -7,6 +7,7 @@ import type {
     MultifactorAuthenticationScenarioParams,
     MultifactorAuthenticationStatus,
     MultifactorAuthenticationStep,
+    MultifactorAuthenticationTrigger,
     MultifactorAuthorizationFallbackScenario,
     MultifactorAuthorizationFallbackScenarioParams,
 } from '@libs/MultifactorAuthentication/Biometrics/types';
@@ -90,20 +91,22 @@ type UseBiometricsSetup = MultifactorAuthenticationStep &
         cancel: () => MultifactorAuthenticationStatus<boolean>;
     };
 
-type UseMultifactorAuthentication = MultifactorAuthenticationInfo &
-    MultifactorAuthenticationStep &
-    MultifactorAuthenticationStatusMessage & {
-        process: <T extends MultifactorAuthenticationScenario>(
-            scenario: T,
-            params?: MultifactorAuthenticationScenarioParams<T>,
-        ) => Promise<MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>>;
-        provideFactor: (params: Partial<AllMultifactorAuthenticationFactors>) => Promise<MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>>;
-        revoke: () => Promise<MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>>;
-        cancel: () => MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>;
-        done: () => MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>;
-        success: undefined | boolean;
-        softPromptDecision: (accepted: boolean) => Promise<MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>>;
-    };
+type UseMultifactorAuthentication = {
+    info: MultifactorAuthenticationInfo &
+        MultifactorAuthenticationStatusMessage & {
+            success: undefined | boolean;
+        };
+    process: <T extends MultifactorAuthenticationScenario>(
+        scenario: T,
+        params?: MultifactorAuthenticationScenarioParams<T>,
+    ) => Promise<MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>>;
+    update: (
+        params: Partial<AllMultifactorAuthenticationFactors> & {
+            softPromptDecision?: boolean;
+        },
+    ) => Promise<MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>>;
+    trigger: (triggerType: MultifactorAuthenticationTrigger) => Promise<MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>>;
+};
 
 type MultifactorAuthenticationScenarioStatus = {
     scenario: MultifactorAuthenticationScenario | undefined;

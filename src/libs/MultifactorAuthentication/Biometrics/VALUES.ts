@@ -94,6 +94,11 @@ const MULTI_FACTOR_AUTHENTICATION_VALUES = {
         AUTHORIZATION_FALLBACK: 'AuthorizationFallback',
         AUTHENTICATION: 'Authentication',
     },
+    TRIGGER: {
+        REVOKE: 'REVOKE',
+        CANCEL: 'CANCEL',
+        FULFILL: 'FULFILL',
+    },
     /**
      * Used to obtain the reason for the error from its message,
      * enabling it to be mapped into our text for translation.

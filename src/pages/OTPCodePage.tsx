@@ -10,7 +10,7 @@ import styles from '@src/styles';
 function OTPCodePage() {
     const [inputValue, setInputValue] = useState('');
     const {translate} = useLocalize();
-    const {provideFactor} = useMultifactorAuthenticationContext();
+    const {update} = useMultifactorAuthenticationContext();
     const title = translate(`multifactorAuthentication.provideOTPCode`);
 
     return (
@@ -34,7 +34,7 @@ function OTPCodePage() {
                     accessibilityRole="button"
                     style={styles.greenButton}
                     onPress={() => {
-                        provideFactor({
+                        update({
                             otp: Number(inputValue),
                         });
                     }}
