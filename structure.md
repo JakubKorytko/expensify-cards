@@ -297,19 +297,23 @@ sequenceDiagram
 
     Note over MFACTX,RHPRHP: Context wraps the Navigator
     User->>RHPRHP: Navigate to the revoke MFA screen
-    RHPRHP->>MFACTX: Ask if the biometrics is configured
-    MFACTX-->Module: Ask module if the public key is stored locally
-    Module-->MFACTX: ;
-    alt Biometrics is not configured
+    RHPRHP->>MFACTX: Ask if the biometrics is configured on any device
+    MFACTX->>Module: Ask if any device is registered
+        Note over MFACTX,Module: The module is a hook used to run the biometrics flow
+    Module-->Server: Request the challenge<br/> to retrieve registered device list
+    Server-->Module: ;
+    Module->>MFACTX: Send info on whether any devices are registered
+    alt No devices are enrolled
         MFACTX->>RHPRHP: Navigate to the info screen
     end
     MFACTX->>RHPRHP: Navigate to the revoke screen
     User->>RHPRHP: Take action (i.e. click "Revoke access" button and confirm it afterwards)
     RHPRHP->>MFACTX: Run the revoke method
     MFACTX->>Module: Pass the info that the revoke was called
-        Note over MFACTX,Module: The module is a hook used to run the biometrics flow
+    alt If the current device is enrolled
     Module->>Module: Revoke locally stored keys
-        Module->>Server: Call API to revoke stored public key
+    end
+        Module->>Server: Call API to revoke stored public keys
     Module->>MFACTX: Pass the info that the access was revoked
     MFACTX->>RHPRHP: Navigate to the Success screen
 ```
