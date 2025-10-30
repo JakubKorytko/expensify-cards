@@ -198,7 +198,7 @@ const shouldAllowFallback = (securityLevel: ValueOf<typeof CONST.MULTI_FACTOR_AU
     securityLevel === CONST.MULTI_FACTOR_AUTHENTICATION.SECURITY_LEVEL.FALLBACK_ONLY || securityLevel === CONST.MULTI_FACTOR_AUTHENTICATION.SECURITY_LEVEL.BIOMETRICS_WITH_FALLBACK;
 
 const shouldAllowBiometrics = (securityLevel: ValueOf<typeof CONST.MULTI_FACTOR_AUTHENTICATION.SECURITY_LEVEL>) =>
-    securityLevel === CONST.MULTI_FACTOR_AUTHENTICATION.SECURITY_LEVEL.BIOMETRICS_ONLY || securityLevel === CONST.MULTI_FACTOR_AUTHENTICATION.SECURITY_LEVEL.BIOMETRICS_WITH_FALLBACK;
+    securityLevel === CONST.MULTI_FACTOR_AUTHENTICATION.SECURITY_LEVEL.BIOMETRICS_WITH_FALLBACK;
 
 // eslint-disable-next-line rulesdir/no-negated-variables
 const createBiometricsNotAllowedStatus = <T extends MultifactorAuthenticationScenario>(

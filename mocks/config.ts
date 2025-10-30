@@ -1,7 +1,7 @@
 import ROUTES from '@src/ROUTES';
 
 const CONFIG = {
-    is2FAEnabled: true,
+    is2FAEnabled: false,
     initialRoute: ROUTES.AUTHORIZE_TRANSACTION,
     accountID: 18234051,
     // Simulate that OTP 777111 is authenticator app generated OTP for testing purposes

@@ -84,6 +84,7 @@ const translations = {
             unableToAuthorize: 'Authorization failed with provided credentials',
             userAuthorized: 'User authorized successfully',
             badRequest: 'Invalid request',
+            signatureInvalid: 'Signature is invalid',
             unknownResponse: 'Unrecognized response type',
         },
         /** User input prompts during multifactorial authentication flows */

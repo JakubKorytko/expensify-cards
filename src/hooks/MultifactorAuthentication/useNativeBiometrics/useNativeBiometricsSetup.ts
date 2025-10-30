@@ -3,9 +3,8 @@ import {doesDeviceSupportBiometrics, isBiometryConfigured, resetKeys, Status} fr
 import type {MultifactorAuthenticationStatusKeyType, Register, UseBiometricsSetup} from '@hooks/MultifactorAuthentication/types';
 import useMultifactorAuthenticationStatus from '@hooks/MultifactorAuthentication/useMultifactorAuthenticationStatus';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
-import {requestValidateCodeAction} from '@libs/actions/User';
 import {generateKeyPair} from '@libs/MultifactorAuthentication/Biometrics/ED25519';
-import {processScenario} from '@libs/MultifactorAuthentication/Biometrics/helpers';
+import {processRegistration} from '@libs/MultifactorAuthentication/Biometrics/helpers';
 import {PrivateKeyStore, PublicKeyStore} from '@libs/MultifactorAuthentication/Biometrics/KeyStore';
 import type {MultifactorAuthenticationStatus} from '@libs/MultifactorAuthentication/Biometrics/types';
 import CONST from '@src/CONST';
@@ -94,7 +93,6 @@ function useNativeBiometricsSetup(): UseBiometricsSetup {
 
             /** Guard missing validation code and request it */
             if (!validateCode) {
-                requestValidateCodeAction();
                 return setStatus(Status.createValidateCodeMissingStatus);
             }
 
@@ -127,14 +125,10 @@ function useNativeBiometricsSetup(): UseBiometricsSetup {
             const {
                 step: {wasRecentStepSuccessful, isRequestFulfilled},
                 reason,
-            } = await processScenario(
-                CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS,
-                {
-                    publicKey,
-                    validateCode,
-                },
-                CONST.MULTI_FACTOR_AUTHENTICATION.FACTOR_COMBINATIONS.REGISTRATION,
-            );
+            } = await processRegistration({
+                publicKey,
+                validateCode,
+            });
 
             const successMessage = 'multifactorAuthentication.reason.success.keyPairGenerated';
             const isCallSuccessful = wasRecentStepSuccessful && isRequestFulfilled;

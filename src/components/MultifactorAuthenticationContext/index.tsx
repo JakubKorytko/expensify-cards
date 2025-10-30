@@ -27,13 +27,12 @@ import type {
 import CONST from '@src/CONST';
 import type {Route} from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
-import MULTI_FACTOR_AUTHENTICATION_SCENARIOS from './scenarios';
+import MULTI_FACTOR_AUTHENTICATION_SCENARIOS from './config';
 
 function isPayloadSufficient(
-    scenario: MultifactorAuthenticationScenario,
     payload: MultifactorAuthenticationScenarioAdditionalParams<MultifactorAuthenticationScenario> | undefined,
 ): payload is MultifactorAuthenticationScenarioAdditionalParams<MultifactorAuthenticationScenario> {
-    return !!payload || scenario === CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS;
+    return !!payload;
 }
 
 const MultifactorAuthenticationContext = createContext<UseMultifactorAuthentication>({
@@ -94,6 +93,7 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
                 navigate(ROUTES.SOFT_PROMPT);
                 shouldClear = true;
             } else if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE && route !== ROUTES.MAGIC_CODE) {
+                requestValidateCodeAction();
                 navigate(ROUTES.MAGIC_CODE);
                 shouldClear = true;
             } else if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.OTP && route !== ROUTES.OTP) {
@@ -219,10 +219,6 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
         ): Promise<MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>> => {
             if (!NativeBiometrics.setup.isBiometryConfigured && softPromptStore.current.accepted === undefined) {
                 const {validateCode} = params ?? softPromptStore.current;
-                if (!validateCode) {
-                    requestValidateCodeAction();
-                }
-
                 softPromptStore.current.validateCode = validateCode;
 
                 return setStatus(
@@ -245,10 +241,6 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
                     undefined,
                     !!validateCode,
                 );
-            }
-
-            if (scenario === CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO.SETUP_BIOMETRICS) {
-                return setStatus(convertResultIntoMFAStatus(await register(params ?? {}, scenario), scenario, CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION, false));
             }
 
             if (!params) {
@@ -306,7 +298,7 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
             const {scenario, payload} = mergedStatus.value;
             const {validateCode} = softPromptStore.current;
 
-            if (!scenario || !isPayloadSufficient(scenario, payload)) {
+            if (!scenario || !isPayloadSufficient(payload)) {
                 return setStatus(MergedHooksStatus.badRequestStatus(mergedStatus));
             }
             return process(scenario, {
@@ -322,7 +314,7 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
             const {scenario, payload} = mergedStatus.value;
             const {isRequestFulfilled} = mergedStatus.step;
 
-            if (!scenario || isRequestFulfilled || !isPayloadSufficient(scenario, payload)) {
+            if (!scenario || isRequestFulfilled || !isPayloadSufficient(payload)) {
                 return setStatus(MergedHooksStatus.badRequestStatus(mergedStatus));
             }
 

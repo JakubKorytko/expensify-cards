@@ -1,4 +1,5 @@
 import {AUTH_TYPE as SECURE_STORE_AUTH_TYPE} from 'expo-secure-store';
+import SCENARIO from '@components/MultifactorAuthenticationContext/scenarios';
 
 /** Type of used authentication method returned by the SecureStore mapped to names */
 const AUTH_TYPE = {
@@ -147,13 +148,8 @@ const MULTI_FACTOR_AUTHENTICATION_VALUES = {
         BIOMETRICS_AUTHENTICATION: [MULTI_FACTOR_AUTHENTICATION_FACTORS.SIGNED_CHALLENGE],
     },
     FACTORS_ORIGIN: MULTI_FACTOR_AUTHENTICATION_FACTOR_ORIGIN,
-    /** Defines the different scenarios that can be performed in the multifactorial authentication process */
-    SCENARIO: {
-        SETUP_BIOMETRICS: 'SETUP_BIOMETRICS',
-        AUTHORIZE_TRANSACTION: 'AUTHORIZE_TRANSACTION',
-    },
+    SCENARIO,
     SECURITY_LEVEL: {
-        BIOMETRICS_ONLY: 'BIOMETRICS_ONLY',
         BIOMETRICS_WITH_FALLBACK: 'BIOMETRICS_WITH_FALLBACK',
         FALLBACK_ONLY: 'FALLBACK_ONLY',
     },

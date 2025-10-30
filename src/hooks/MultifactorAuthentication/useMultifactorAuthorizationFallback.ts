@@ -1,6 +1,5 @@
 import {useCallback, useMemo} from 'react';
 import useOnyx from '@hooks/useOnyx';
-import {requestValidateCodeAction} from '@libs/actions/User';
 import {areFactorsSufficient, processScenario} from '@libs/MultifactorAuthentication/Biometrics/helpers';
 import type {MultifactorAuthenticationStep, MultifactorAuthorizationFallbackScenario, MultifactorAuthorizationFallbackScenarioParams} from '@libs/MultifactorAuthentication/Biometrics/types';
 import CONST from '@src/CONST';
@@ -53,10 +52,6 @@ function useMultifactorAuthorizationFallback() {
             });
 
             if (factorsCheckStep.requiredFactorForNextStep) {
-                if (factorsCheckStep.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE) {
-                    requestValidateCodeAction();
-                }
-
                 const shouldStoreValidateCode = factorsCheckStep.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.OTP && is2FAEnabled;
 
                 return setStatus((prevStatus) => ({

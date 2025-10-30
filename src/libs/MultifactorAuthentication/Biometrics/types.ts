@@ -1,6 +1,6 @@
 import type {EmptyObject, ValueOf} from 'type-fest';
-import type MULTI_FACTOR_AUTHENTICATION_SCENARIOS from '@components/MultifactorAuthenticationContext/scenarios';
-import type {MultifactorAuthenticationScenarioParameters} from '@components/MultifactorAuthenticationContext/scenarios';
+import type MULTI_FACTOR_AUTHENTICATION_SCENARIOS from '@components/MultifactorAuthenticationContext/config';
+import type {MultifactorAuthenticationScenarioParameters} from '@components/MultifactorAuthenticationContext/config';
 import type {TranslationPaths} from '@src/languages/types';
 import type {Route} from '@src/ROUTES';
 import type {SignedChallenge} from './ED25519';
@@ -195,7 +195,7 @@ type MultifactorAuthenticationResponseTranslationPath = typeof VALUES.RESPONSE_T
 
 type MultifactorAuthenticationKeyType = ValueOf<typeof VALUES.KEY_ALIASES>;
 
-export type {MultifactorAuthenticationScenarioParameters} from '@components/MultifactorAuthenticationContext/scenarios';
+export type {MultifactorAuthenticationScenarioParameters} from '@components/MultifactorAuthenticationContext/config';
 
 export type {
     MultifactorAuthenticationFactor,

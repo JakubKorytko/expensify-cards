@@ -1,10 +1,12 @@
 import type {ValueOf} from 'type-fest';
-import MULTI_FACTOR_AUTHENTICATION_SCENARIOS from '@components/MultifactorAuthenticationContext/scenarios';
+import MULTI_FACTOR_AUTHENTICATION_SCENARIOS from '@components/MultifactorAuthenticationContext/config';
+import {registerBiometrics} from '@libs/actions/MultifactorAuthentication';
 import type {TranslationPaths} from '@src/languages/types';
 import type {MFAChallenge} from '@src/types/onyx/Response';
 import type {SignedChallenge} from './ED25519';
 import type {
     AllMultifactorAuthenticationFactors,
+    MultifactorAuthenticationFactor,
     MultifactorAuthenticationPartialStatus,
     MultifactorAuthenticationScenario,
     MultifactorAuthenticationScenarioMap,
@@ -12,6 +14,38 @@ import type {
     MultifactorAuthenticationScenarioResponseWithSuccess,
 } from './types';
 import VALUES from './VALUES';
+
+function factorMissingReason(factor: MultifactorAuthenticationFactor): TranslationPaths {
+    if (factor === VALUES.FACTORS.VALIDATE_CODE) {
+        return 'multifactorAuthentication.reason.error.validateCodeMissing';
+    }
+
+    if (factor === VALUES.FACTORS.OTP) {
+        return 'multifactorAuthentication.reason.error.otpMissing';
+    }
+
+    if (factor === VALUES.FACTORS.SIGNED_CHALLENGE) {
+        return 'multifactorAuthentication.reason.error.signatureMissing';
+    }
+
+    return 'multifactorAuthentication.reason.generic.authFactorsError';
+}
+
+function factorInvalidReason(factor: MultifactorAuthenticationFactor): TranslationPaths {
+    if (factor === VALUES.FACTORS.VALIDATE_CODE) {
+        return 'multifactorAuthentication.apiResponse.validationCodeInvalid';
+    }
+
+    if (factor === VALUES.FACTORS.OTP) {
+        return 'multifactorAuthentication.apiResponse.otpCodeInvalid';
+    }
+
+    if (factor === VALUES.FACTORS.SIGNED_CHALLENGE) {
+        return 'multifactorAuthentication.apiResponse.signatureInvalid';
+    }
+
+    return 'multifactorAuthentication.reason.generic.authFactorsError';
+}
 
 /**
  * Validates that all required authentication factors are present and of the correct type/format.
@@ -41,7 +75,7 @@ function areMultifactorAuthenticationFactorsSufficient(
             return {
                 value: `Missing required factor: ${name} (${parameter})`,
                 step: unsuccessfulStep,
-                reason: 'multifactorAuthentication.reason.generic.authFactorsError',
+                reason: factorMissingReason(id),
             };
         }
 
@@ -51,7 +85,7 @@ function areMultifactorAuthenticationFactorsSufficient(
             return {
                 value: `Invalid length for factor: ${name} (${parameter}). Expected length ${length}, got length ${String(value).length}`,
                 step: unsuccessfulStep,
-                reason: 'multifactorAuthentication.reason.generic.authFactorsError',
+                reason: factorInvalidReason(id),
             };
         }
     }
@@ -79,6 +113,7 @@ function areMultifactorAuthenticationFactorsSufficient(
 const authorizeMultifactorAuthenticationPostMethod = <T extends MultifactorAuthenticationScenario>(
     status: MultifactorAuthenticationPartialStatus<MultifactorAuthenticationScenarioResponseWithSuccess, true>,
     params: MultifactorAuthenticationScenarioParams<T>,
+    failedFactor?: MultifactorAuthenticationFactor,
 ) => {
     const {successful, httpCode} = status.value;
     const {otp, validateCode} = params;
@@ -99,13 +134,73 @@ const authorizeMultifactorAuthenticationPostMethod = <T extends MultifactorAuthe
         ...status,
         value: validateCode && isOTPRequired && successful ? validateCode : undefined,
         step: {
-            requiredFactorForNextStep: isOTPRequired ? VALUES.FACTORS.OTP : undefined,
+            requiredFactorForNextStep: isOTPRequired ? VALUES.FACTORS.OTP : failedFactor,
             wasRecentStepSuccessful: successful,
-            isRequestFulfilled: !successful || !isOTPRequired,
+            isRequestFulfilled: !failedFactor && !isOTPRequired,
         },
         reason,
     };
 };
+
+const registerMultifactorAuthenticationPostMethod = (
+    status: MultifactorAuthenticationPartialStatus<MultifactorAuthenticationScenarioResponseWithSuccess, true>,
+    params: Partial<AllMultifactorAuthenticationFactors> & {publicKey: string},
+    failedFactor?: MultifactorAuthenticationFactor,
+) => {
+    const {successful} = status.value;
+    const {validateCode} = params;
+
+    let reason = status.reason;
+
+    if (status.reason !== 'multifactorAuthentication.apiResponse.unableToAuthorize') {
+        reason = status.reason;
+    } else if (validateCode) {
+        reason = 'multifactorAuthentication.apiResponse.validationCodeInvalid';
+    } else if (!validateCode) {
+        reason = 'multifactorAuthentication.reason.error.validateCodeMissing';
+    }
+
+    return {
+        ...status,
+        value: successful,
+        step: {
+            requiredFactorForNextStep: failedFactor,
+            wasRecentStepSuccessful: successful,
+            isRequestFulfilled: !failedFactor,
+        },
+        reason,
+    };
+};
+
+async function processMultifactorAuthenticationRegistration(
+    params: Partial<AllMultifactorAuthenticationFactors> & {publicKey: string},
+): Promise<MultifactorAuthenticationPartialStatus<boolean>> {
+    const factorsCheckResult = areMultifactorAuthenticationFactorsSufficient(params, VALUES.FACTOR_COMBINATIONS.REGISTRATION, true);
+
+    if (factorsCheckResult.value !== true) {
+        return registerMultifactorAuthenticationPostMethod(
+            {
+                ...factorsCheckResult,
+                value: {httpCode: undefined, successful: false},
+            },
+            params,
+            factorsCheckResult.step.requiredFactorForNextStep,
+        );
+    }
+
+    const {httpCode, reason} = await registerBiometrics(params);
+
+    return registerMultifactorAuthenticationPostMethod(
+        {
+            value: {
+                successful: String(httpCode).startsWith('2'),
+                httpCode,
+            },
+            reason,
+        },
+        params,
+    );
+}
 
 /**
  * Main authorization function that handles different multifactorial authentication scenarios.
@@ -131,6 +226,7 @@ async function processMultifactorAuthenticationScenario<T extends MultifactorAut
                 value: {httpCode: undefined, successful: false},
             },
             params,
+            factorsCheckResult.step.requiredFactorForNextStep,
         );
     }
 
@@ -196,4 +292,5 @@ export {
     areMultifactorAuthenticationFactorsSufficient as areFactorsSufficient,
     decodeMultifactorAuthenticationExpoMessage as decodeExpoMessage,
     isChallengeSigned,
+    processMultifactorAuthenticationRegistration as processRegistration,
 };
