@@ -2,9 +2,8 @@ import * as ed from '@noble/ed25519';
 import {sha256, sha512} from '@noble/hashes/sha2';
 import {Buffer} from 'buffer';
 import 'react-native-get-random-values';
-import type {SignedChallenge} from '@libs/MultifactorAuthentication/Biometrics/ED25519';
 import {__doNotUseCreateBinaryData} from '@libs/MultifactorAuthentication/Biometrics/ED25519';
-import type {MFAChallenge} from '@src/types/onyx/Response';
+import type {MFAChallenge, SignedChallenge} from '@libs/MultifactorAuthentication/Biometrics/types';
 import Logger from './Logger';
 
 ed.hashes.sha512 = sha512;

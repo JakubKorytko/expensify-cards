@@ -50,6 +50,9 @@ type MultifactorAuthenticationContextProviderProps = {
 };
 
 function MultifactorAuthenticationContextProvider({children}: MultifactorAuthenticationContextProviderProps) {
+    /** Mock */
+    const Navigation = useNavigation();
+
     const MultifactorAuthorizationFallback = useMultifactorAuthorizationFallback();
     const NativeBiometrics = useNativeBiometrics();
     const [mergedStatus, setMergedStatus] = useMultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>(
@@ -59,7 +62,6 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
         },
         CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.NONE,
     );
-    const {navigate, route} = useNavigation();
     const success = useRef<boolean | undefined>(undefined);
     const afterRevoke = useRef<boolean>(false);
     // to avoid waiting for next render
@@ -84,27 +86,27 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
 
             if (afterRevoke.current) {
                 afterRevoke.current = false;
-                navigate(ROUTES.HOME_SCREEN);
+                Navigation.navigate(scenarioRoute.getRoute());
                 shouldClear = true;
             } else if (softPrompt) {
-                navigate(ROUTES.SOFT_PROMPT);
+                Navigation.navigate(ROUTES.SOFT_PROMPT.getRoute());
                 shouldClear = true;
-            } else if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE && route !== ROUTES.MAGIC_CODE) {
+            } else if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE && !Navigation.isActiveRoute(ROUTES.MAGIC_CODE)) {
                 requestValidateCodeAction();
-                navigate(ROUTES.MAGIC_CODE);
+                Navigation.navigate(ROUTES.MAGIC_CODE.getRoute());
                 shouldClear = true;
-            } else if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.OTP && route !== ROUTES.OTP) {
-                navigate(ROUTES.OTP);
+            } else if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.OTP && !Navigation.isActiveRoute(ROUTES.OTP)) {
+                Navigation.navigate(ROUTES.OTP.getRoute());
                 shouldClear = true;
             } else if (step.isRequestFulfilled) {
-                if (step.wasRecentStepSuccessful && route !== ROUTES.SUCCESS) {
-                    navigate(ROUTES.SUCCESS);
+                if (step.wasRecentStepSuccessful && !Navigation.isActiveRoute(ROUTES.SUCCESS)) {
+                    Navigation.navigate(ROUTES.SUCCESS.getRoute());
                     success.current = true;
-                } else if (step.wasRecentStepSuccessful === false && route !== ROUTES.FAILURE) {
-                    navigate(ROUTES.FAILURE);
+                } else if (step.wasRecentStepSuccessful === false && !Navigation.isActiveRoute(ROUTES.FAILURE)) {
+                    Navigation.navigate(ROUTES.FAILURE.getRoute());
                     success.current = false;
-                } else if (step.wasRecentStepSuccessful === undefined && route !== scenarioRoute) {
-                    navigate(scenarioRoute);
+                } else if (step.wasRecentStepSuccessful === undefined && !Navigation.isActiveRoute(scenarioRoute)) {
+                    Navigation.navigate(scenarioRoute.getRoute());
                     shouldClear = true;
                 }
             }
@@ -113,7 +115,7 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
                 success.current = undefined;
             }
         },
-        [navigate, route],
+        [Navigation],
     );
 
     const setStatus = useCallback(

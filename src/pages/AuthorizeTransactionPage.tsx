@@ -9,7 +9,7 @@ import styles from '@src/styles';
 
 function AuthorizeTransactionPage() {
     const transactionID = '123456789';
-    const {process, trigger, info} = useMultifactorAuthenticationContext();
+    const {process, info} = useMultifactorAuthenticationContext();
     const {translate} = useLocalize();
 
     return (
@@ -27,12 +27,7 @@ function AuthorizeTransactionPage() {
                         >
                             <Text style={styles.buttonText}>Test</Text>
                         </Pressable>
-                        <RevokeButton
-                            revoke={() => {
-                                trigger(CONST.MULTI_FACTOR_AUTHENTICATION.TRIGGER.REVOKE);
-                            }}
-                            show={info.isBiometryConfigured}
-                        />
+                        <RevokeButton />
                     </View>
                 </View>
             </View>

@@ -1,6 +1,6 @@
 import {Buffer} from 'buffer';
+import type {MFAChallenge} from '@libs/MultifactorAuthentication/Biometrics/types';
 import VALUES from '@libs/MultifactorAuthentication/Biometrics/VALUES';
-import type {MFAChallenge} from '@src/types/onyx/Response';
 import CONFIG from '../config';
 import type {ReadCommands, WriteCommands} from './index';
 import Logger from './Logger';

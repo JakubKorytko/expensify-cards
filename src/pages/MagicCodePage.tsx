@@ -9,15 +9,14 @@ import styles from '@src/styles';
 
 function MagicCodePage() {
     const [inputValue, setInputValue] = useState('');
-    const {translate} = useLocalize();
     const {update} = useMultifactorAuthenticationContext();
-    const title = translate(`multifactorAuthentication.provideValidateCode`);
+    const {translate} = useLocalize();
 
     return (
         <View style={styles.inputContainer}>
             <View>
                 <HeaderWithBackButton />
-                <Text style={styles.hugeText}>{title}</Text>
+                <Text style={styles.hugeText}>{translate(`multifactorAuthentication.provideValidateCode`)}</Text>
             </View>
             <View style={styles.innerInputContainer}>
                 <TextInput

@@ -1,14 +1,14 @@
 import {View} from 'react-native';
 import HeaderWithBackButton from '@components/MultifactorAuthentication/HeaderWithBackButton';
-import {useNavigation} from '@components/NavigationMock';
+import {useMultifactorAuthenticationContext} from '@components/MultifactorAuthenticationContext';
 import {Pressable} from '@src/components/Pressable';
 import Text from '@src/components/Text';
-import ROUTES from '@src/ROUTES';
+import CONST from '@src/CONST';
 import styles from '@src/styles';
 
 // eslint-disable-next-line rulesdir/no-negated-variables
 function NotFoundPage() {
-    const {navigate} = useNavigation();
+    const {trigger} = useMultifactorAuthenticationContext();
 
     return (
         <View style={styles.callbackContainer}>
@@ -22,7 +22,9 @@ function NotFoundPage() {
             <Pressable
                 accessibilityRole="button"
                 style={styles.greenButton}
-                onPress={() => navigate(ROUTES.HOME_SCREEN)}
+                onPress={() => {
+                    trigger(CONST.MULTI_FACTOR_AUTHENTICATION.TRIGGER.CANCEL);
+                }}
             >
                 <Text style={styles.greenButtonText}>Got it</Text>
             </Pressable>

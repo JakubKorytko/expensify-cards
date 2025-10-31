@@ -8,37 +8,11 @@ import type {Bytes} from '@noble/ed25519';
 import {sha256, sha512} from '@noble/hashes/sha2';
 import {Buffer} from 'buffer';
 import 'react-native-get-random-values';
-import type {MFAChallenge} from '@src/types/onyx/Response';
+import type {Base64URL, BinaryData, ChallengeFlag, MFAChallenge, SignedChallenge} from './types';
 import VALUES from './VALUES';
 
 ed.hashes.sha512 = sha512;
 ed.hashes.sha512Async = (m: Uint8Array) => Promise.resolve(sha512(m));
-
-type Hex = string;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type Base64URL<T> = string;
-
-type ChallengeFlag = number;
-
-type ChallengeJSON = {
-    challenge: Base64URL<string>; // Base64-encoded challenge string
-};
-
-type BinaryData = {
-    RPID: Bytes[]; // RELYING PARTY ID - i.e., 'expensify.com'
-    FLAGS: Bytes[]; // Authenticator flags
-    SIGN_COUNT: Bytes[]; // Signature counter
-};
-
-type SignedChallenge = {
-    rawId: Base64URL<string>; // CREDENTIAL_ID - key identifier
-    type: string; // e.g., 'public-key'; 'biometrics' for SecureStore.
-    response: {
-        authenticatorData: Base64URL<BinaryData>;
-        clientDataJSON: Base64URL<ChallengeJSON>;
-        signature: Base64URL<Hex>;
-    };
-};
 
 /** RN polyfill for base64url encoding */
 const base64URL = <T>(value: string): Base64URL<T> => {
@@ -116,4 +90,3 @@ const signToken = (accountID: number, token: MFAChallenge, key: string): SignedC
 };
 
 export {generateKeyPair, signToken, createBinaryData as __doNotUseCreateBinaryData};
-export type {SignedChallenge};

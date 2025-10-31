@@ -1,6 +1,6 @@
 // eslint-disable-next-line import/extensions,import/order
 import type {EmptyObject} from 'type-fest';
-import type {SignedChallenge} from '@libs/MultifactorAuthentication/Biometrics/ED25519';
+import type {SignedChallenge} from '@libs/MultifactorAuthentication/Biometrics/types';
 import type Response from '@src/types/onyx/Response';
 import fetch from './router';
 

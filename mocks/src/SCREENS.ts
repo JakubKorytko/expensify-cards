@@ -10,6 +10,6 @@ const SCREENS = {
     AuthorizeTransactionPage: React.lazy(() => import('../../src/pages/AuthorizeTransactionPage')),
     NotFoundPage: React.lazy(() => import('../../src/pages/NotFoundPage')),
     SoftPromptPage: React.lazy(() => import('../../src/pages/SoftPromptPage')),
-} as const satisfies Record<Route, React.LazyExoticComponent<ComponentType<unknown>>>;
+} as const satisfies Record<Route['screen'], React.LazyExoticComponent<ComponentType<unknown>>>;
 
 export default SCREENS;
