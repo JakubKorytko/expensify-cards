@@ -171,33 +171,19 @@ function useNativeBiometricsSetup(): UseBiometricsSetup {
         [accountID, setStatus, refreshStatus, status.value],
     ) as Register;
 
-    /** Memoized state values exposed to consumers */
-    const values = useMemo(() => {
-        const {step, value, message, title} = status;
-
-        return {
-            ...step,
-            deviceSupportBiometrics,
-            isBiometryConfigured: value,
-            message,
-            title,
-        };
-    }, [deviceSupportBiometrics, status]);
-
-    /** Memoized scenarios exposed to consumers */
-    const scenarios = useMemo(
+    return useMemo(
         () => ({
+            ...status.step,
+            deviceSupportBiometrics,
+            isBiometryConfigured: status.value,
+            message: status.message,
+            title: status.title,
             register,
             revoke,
             cancel,
         }),
-        [register, revoke, cancel],
+        [cancel, deviceSupportBiometrics, register, revoke, status.message, status.step, status.title, status.value],
     );
-
-    return {
-        ...values,
-        ...scenarios,
-    };
 }
 
 export default useNativeBiometricsSetup;

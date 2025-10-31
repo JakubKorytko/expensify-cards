@@ -73,7 +73,7 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
         validateCode: undefined,
     });
 
-    const navigateWithClear = useCallback(
+    const navigate = useCallback(
         (status: MultifactorAuthenticationStatus<MultifactorAuthenticationScenarioStatus>, softPrompt?: boolean) => {
             const {
                 step,
@@ -82,36 +82,50 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
 
             const scenarioRoute: Route = scenario ? MULTI_FACTOR_AUTHENTICATION_SCENARIOS[scenario].route : ROUTES.NOT_FOUND;
 
-            let shouldClear = false;
-
             if (afterRevoke.current) {
                 afterRevoke.current = false;
                 Navigation.navigate(scenarioRoute.getRoute());
-                shouldClear = true;
-            } else if (softPrompt) {
-                Navigation.navigate(ROUTES.SOFT_PROMPT.getRoute());
-                shouldClear = true;
-            } else if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE && !Navigation.isActiveRoute(ROUTES.MAGIC_CODE)) {
-                requestValidateCodeAction();
-                Navigation.navigate(ROUTES.MAGIC_CODE.getRoute());
-                shouldClear = true;
-            } else if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.OTP && !Navigation.isActiveRoute(ROUTES.OTP)) {
-                Navigation.navigate(ROUTES.OTP.getRoute());
-                shouldClear = true;
-            } else if (step.isRequestFulfilled) {
-                if (step.wasRecentStepSuccessful && !Navigation.isActiveRoute(ROUTES.SUCCESS)) {
-                    Navigation.navigate(ROUTES.SUCCESS.getRoute());
-                    success.current = true;
-                } else if (step.wasRecentStepSuccessful === false && !Navigation.isActiveRoute(ROUTES.FAILURE)) {
-                    Navigation.navigate(ROUTES.FAILURE.getRoute());
-                    success.current = false;
-                } else if (step.wasRecentStepSuccessful === undefined && !Navigation.isActiveRoute(scenarioRoute)) {
-                    Navigation.navigate(scenarioRoute.getRoute());
-                    shouldClear = true;
-                }
+                success.current = undefined;
+                return;
             }
 
-            if (shouldClear) {
+            if (softPrompt) {
+                Navigation.navigate(ROUTES.SOFT_PROMPT.getRoute());
+                success.current = undefined;
+                return;
+            }
+
+            if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.VALIDATE_CODE && !Navigation.isActiveRoute(ROUTES.MAGIC_CODE)) {
+                requestValidateCodeAction();
+                Navigation.navigate(ROUTES.MAGIC_CODE.getRoute());
+                success.current = undefined;
+                return;
+            }
+
+            if (step.requiredFactorForNextStep === CONST.MULTI_FACTOR_AUTHENTICATION.FACTORS.OTP && !Navigation.isActiveRoute(ROUTES.OTP)) {
+                Navigation.navigate(ROUTES.OTP.getRoute());
+                success.current = undefined;
+                return;
+            }
+
+            if (!step.isRequestFulfilled) {
+                return;
+            }
+
+            if (step.wasRecentStepSuccessful && !Navigation.isActiveRoute(ROUTES.SUCCESS)) {
+                Navigation.navigate(ROUTES.SUCCESS.getRoute());
+                success.current = true;
+                return;
+            }
+
+            if (step.wasRecentStepSuccessful === false && !Navigation.isActiveRoute(ROUTES.FAILURE)) {
+                Navigation.navigate(ROUTES.FAILURE.getRoute());
+                success.current = false;
+                return;
+            }
+
+            if (step.wasRecentStepSuccessful === undefined && !Navigation.isActiveRoute(scenarioRoute)) {
+                Navigation.navigate(scenarioRoute.getRoute());
                 success.current = undefined;
             }
         },
@@ -124,7 +138,7 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
 
             const merged = setMergedStatus(status, typeOverride ?? (typeof status === 'function' ? undefined : status?.value.type));
 
-            navigateWithClear(merged, softPrompt);
+            navigate(merged, softPrompt);
 
             if (revoke) {
                 afterRevoke.current = true;
@@ -132,7 +146,7 @@ function MultifactorAuthenticationContextProvider({children}: MultifactorAuthent
 
             return merged;
         },
-        [navigateWithClear, setMergedStatus],
+        [navigate, setMergedStatus],
     );
 
     const allowedMethods = useCallback(

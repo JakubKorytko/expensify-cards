@@ -155,6 +155,18 @@ function createCancelStatus(prevStatus: MultifactorAuthenticationStatus<boolean>
     };
 }
 
+function createCancelStatusWithNoValue<T>(prevStatus: MultifactorAuthenticationStatus<T>): MultifactorAuthenticationStatus<T | undefined> {
+    return {
+        ...prevStatus,
+        value: undefined,
+        step: {
+            isRequestFulfilled: true,
+            wasRecentStepSuccessful: undefined,
+            requiredFactorForNextStep: undefined,
+        },
+    };
+}
+
 /**
  * Creates a status reflecting whether multifactorial authentication is configured.
  * Only updates the configuration flag while preserving other status fields.
@@ -220,6 +232,18 @@ const createBiometricsNotAllowedStatus = <T extends MultifactorAuthenticationSce
         authorization ? CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHORIZATION : CONST.MULTI_FACTOR_AUTHENTICATION.SCENARIO_TYPE.AUTHENTICATION,
     ];
 };
+
+const createEmptyStatus = <T>(initialValue: T, defaultText: string): MultifactorAuthenticationStatus<T> => ({
+    reason: 'multifactorAuthentication.reason.generic.notRequested',
+    message: defaultText,
+    title: defaultText,
+    value: initialValue,
+    step: {
+        wasRecentStepSuccessful: undefined,
+        requiredFactorForNextStep: undefined,
+        isRequestFulfilled: true,
+    },
+});
 
 // eslint-disable-next-line rulesdir/no-negated-variables
 const createFallbackNotAllowedStatus = <T extends MultifactorAuthenticationScenario>(
@@ -293,6 +317,8 @@ const Status = {
     createCancelStatus,
     createBaseStep,
     createRefreshStatusStatus,
+    createCancelStatusWithNoValue,
+    createEmptyStatus,
 } as const;
 
 const MergedHooksStatus = {

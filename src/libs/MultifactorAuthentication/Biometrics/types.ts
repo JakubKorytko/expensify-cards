@@ -224,8 +224,6 @@ type SignedChallenge = {
     };
 };
 
-export type {Hex, Base64URL, ChallengeJSON, ChallengeFlag, BinaryData, SignedChallenge};
-
 /**
  * Challenge used to initiate a WebAuthn-style multifactor authentication (MFA) assertion.
  *
@@ -284,8 +282,6 @@ type MFAChallenge = {
     timeout: number;
 };
 
-export type {MFAChallenge};
-
 export type {MultifactorAuthenticationScenarioParameters} from '@components/MultifactorAuthenticationContext/config';
 
 export type {
@@ -307,4 +303,11 @@ export type {
     MultifactorAuthenticationPartialStatus,
     MultifactorAuthenticationScenarioAdditionalParams,
     MultifactorAuthenticationTrigger,
+    MFAChallenge,
+    Hex,
+    Base64URL,
+    ChallengeJSON,
+    ChallengeFlag,
+    BinaryData,
+    SignedChallenge,
 };
