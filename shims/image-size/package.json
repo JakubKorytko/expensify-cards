@@ -1,0 +1,10 @@
+{
+  "name": "image-size",
+  "version": "2.0.3",
+  "description": "Metro-compatible image-size shim using probe-image-size",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "probe-image-size": "7.2.3"
+  }
+}
